@@ -320,32 +320,10 @@ begin
   if nroute = nil then
   begin
     //default routing
-    if not Assigned(fHttpRouting.DefaultRoute) then aContext.RaiseHttpErrorNotFound(Self,'The page you requested was not found');
-
-    //default routing all not matching
-    if fHttpRouting.DefaultRoute.ActionMethodName = '*' then
-    begin
-      nroute := fHttpRouting.DefaultRoute;
-      aContext.Route := nRoute;
-      //send to next middleware
-      Next(aContext);
-    end
-    else
-    begin
-      //default routing rewriting
-      aContext.Request.RewriteURL(fHttpRouting.DefaultRoute.ControllerName + '/' + aContext.Request.URL);
-      nroute := fHttpRouting.GetRoute(aContext.Request);
-      if nroute = nil then aContext.RaiseHttpErrorNotFound(Self,'The page you requested was not found')
-      else
-      begin
-        aContext.Route := nRoute;
-        //send to next middleware
-        Next(aContext);
-      end;
-      //aContext.Response.StatusCode := 404;
-      //aContext.Response.StatusText := 'Not found';
-      //aContext.Response.ContentText := 'The page you requested was not found';
-    end;
+    aContext.RaiseHttpErrorNotFound(Self,'The page you requested was not found');
+    //aContext.Response.StatusCode := 404;
+    //aContext.Response.StatusText := 'Not found';
+    //aContext.Response.ContentText := 'The page you requested was not found';
   end
   else
   begin
