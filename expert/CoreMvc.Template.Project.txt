@@ -1,0 +1,56 @@
+program {%PROJECTNAME%};
+
+{$APPTYPE CONSOLE}
+
+{$R *.res}
+
+uses
+  System.SysUtils,
+  Quick.Commons,
+  Quick.Console,
+  Quick.AppService,
+  Quick.Core.Mvc,
+  Quick.Core.Mvc.WebApi,
+  Startup in 'Startup.pas';
+
+var
+  ApiServer : TWebApiServer;
+
+begin
+  try
+    //run as console
+    if not AppService.IsRunningAsService then
+    begin
+      //create server
+      cout('Init server...',etInfo);
+      ApiServer := TWebApiServer.Create('127.0.0.1',8080,False);
+      try
+        ApiServer.UseStartup<TStartup>;
+        ApiServer.Start;
+        //Wait for Exit
+        cout(' ',ccWhite);
+        cout('Press [Enter] to quit',ccYellow);
+        ConsoleWaitForEnterKey;
+      finally
+        ApiServer.Free;
+      end;
+    end
+    else //run as a service
+    begin
+      AppService.DisplayName := '{%PROJECTNAME%}';
+      AppService.ServiceName := '{%PROJECTNAME%}' + 'Svc';
+      AppService.CanInstallWithOtherName := True;
+      AppService.OnStart := procedure
+                               begin
+                                 ApiServer := TWebApiServer.Create('127.0.0.1',8080,False);
+                                 ApiServer.UseStartup<TStartup>;
+                               end;
+      AppService.OnStop := ApiServer.Free;
+      AppService.OnExecute := ApiServer.Start;
+      AppService.CheckParams;
+    end;
+  except
+    on E: Exception do
+      Writeln(E.ClassName, ': ', E.Message);
+  end;
+end.

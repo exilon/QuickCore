@@ -1,0 +1,92 @@
+unit Startup;
+
+interface
+
+uses
+  Quick.Core.Mvc,
+  Quick.Core.DependencyInjection,
+  Quick.Core.Entity.Config,
+  WebApiService.DBContext.Shop,
+  Quick.Core.Extensions.MVC.ResponseCaching,
+  Quick.Core.Extensions.MemoryCache,
+  Quick.Core.Extensions.Entity,
+  Quick.Core.Extensions.AutoMapper,
+  Quick.Core.Logging,
+  WebApiService.Config.App,
+  Quick.Core.Mvc.Context,
+  WebApiService.Controller.Home,
+  WebApiService.Controller.Test;
+
+type
+  TStartup = class(TStartupBase)
+  public
+    class procedure ConfigureServices(services : TServiceCollection); override;
+    class procedure Configure(app : TMVCServer); override;
+  end;
+
+implementation
+
+class procedure TStartup.ConfigureServices(services : TServiceCollection);
+begin
+  services
+   .AddLogging(TLoggerBuilder.GetBuilder//(TLoggerOptionsFormat.ofYAML,False)
+        .AddConsole(procedure(aOptions : TLoggerConsoleOptions)
+            begin
+              aOptions.LogLevel := LOG_DEBUG;
+              aOptions.ShowEventColors := True;
+              aOptions.ShowTimeStamp := True;
+              aOptions.ShowEventType := False;
+              aOptions.Enabled := True;
+            end)
+        .AddFile(procedure(aOptions : TLoggerFileOptions)
+            begin
+              aOptions.FileName := '.\WebApiServer.log';
+              aOptions.MaxFileSizeInMB := 200;
+              aOptions.Enabled := True;
+            end)
+        .Build
+    )
+  .AddOptions(TOptionsFileFormat.ofJSON,True)
+  //add entity database
+  .Extension<TEntityServiceExtension>
+    .AddDBContext<TShopContext>(TDBContextOptionsBuilder.GetBuilder.UseSQLite.ConnectionStringName('ShopContext').Options)
+  //add response caching
+  .Extension<TResponseCachingServiceExtension>
+    .AddResponseCaching
+  //add memory cache
+  .Extension<TMemoryCacheServiceExtension>
+    .AddMemoryCache
+  //configure settings
+  .Configure<TAppSettings>(procedure(aOptions : TAppSettings)
+                           begin
+                             aOptions.Smtp := 'mail.domain.com';
+                             aOptions.Email := 'info@domain.com';
+                           end)
+  .Extension<TAutoMapperServiceExtension>.AddAutoMapper;
+end;
+
+class procedure TStartup.Configure(app : TMVCServer);
+begin
+  app
+  .AddControllers
+  .AddController(THomeController)
+  .AddController(TTestController)
+  //configure routing
+  //.MapRoute('default',TTestController,'{controller=Test}/{action=Index}/{id?}')
+  //.MapRoute('HelloWorld',TTestController,'Test/Hello')
+  //.DefaultRoute(TTestController,'Test/Sum/{number1}/{number2}')
+  .DefaultRoute(TTestController,'Home/Index')
+  .UseWebRoot('.\wwwroot')
+  //.UserHsts
+  .Extension<TResponseCachingMVCServerExtension>.UseResponseCaching
+  .UseStaticFiles
+  .UseRouting
+  .Use(function(aContext : THttpContextBase) : Boolean
+       begin
+         aContext.Response.Headers.Add('MyHeader','Hello');
+         Result := True;
+       end)
+  .UseMVC;
+end;
+
+end.
