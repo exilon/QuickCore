@@ -149,7 +149,7 @@ end;
 
 function TEntityIdentityStore<TUser, TRole>.ValidateCredentials(const aUsername, aPassword: string): Boolean;
 begin
-  Result := fDBContext.Users.Where('UserName = ? AND Password = ?',[aUserName,aPassword]).Count > 0;
+  Result := fDBContext.Users.Where('UserName = ? AND PasswordHash = ?',[aUserName,aPassword]).Count > 0;
 end;
 
 { TEntityStoreLinq<T> }
