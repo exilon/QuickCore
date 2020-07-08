@@ -19,8 +19,8 @@ Delphi Framework to build high-performance and scalable desktop, mobile and web 
 * **FailControl**: Fail and Retry policies.
 * **Caching:**: Cache string or objects to retrieve fast later.
 * **Templating:** Simple string templating with dictionaries.
-* **Debuging:** Utils to debug your code.
-* **MVC Web:** Create you own Api or MVC server to server your own site.
+* **Debugging:** Utils to debug your code.
+* **MVC Web:** Create your own Api or MVC server to server your own site.
 
 **Main units description:**
 
