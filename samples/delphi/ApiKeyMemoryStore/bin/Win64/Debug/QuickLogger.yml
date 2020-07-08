@@ -1,0 +1,43 @@
+Console:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: ServerApiKeyMemoryStore
+  Environment: ""
+  IncludedInfo: [iiAppName,iiHost]
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: []
+    MaxSent: 0
+  LogLevel: [etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDebug,etTrace,etDone]
+  CustomMsgOutput: false
+  Enabled: true
+  ShowEventColors: true
+  ShowTimeStamp: true
+  ShowEventType: false
+  UnderlineHeaderEventType: false
+
+File:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: ServerApiKeyMemoryStore
+  Environment: ""
+  IncludedInfo: [iiAppName,iiHost,iiUserName,iiOSVersion]
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: []
+    MaxSent: 0
+  LogLevel: [etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]
+  CustomMsgOutput: false
+  Enabled: true
+  FileName: .\WebApiServer.log
+  AutoFileNameByProcess: false
+  MaxRotateFiles: 5
+  MaxFileSizeInMB: 200
+  DailyRotate: false
+  RotatedFilesPath: ""
+  CompressRotatedFiles: false
+  ShowEventType: true
+  ShowHeaderInfo: true
+  UnderlineHeaderEventType: false
+  AutoFlush: false
+

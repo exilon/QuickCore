@@ -1,0 +1,17 @@
+ApiKey:
+  UnAuthorizedErrorCode: 401
+  UnAuthorizedErrorMessage: Not authenticated
+  ApiKeys:
+    - Name: John
+      Role: Admin
+      Key: fkjsfVMfskdfkaiienvz23k12nfaadfavbkx
+      Expiration: null
+      Active: true
+
+    - Name: Peter
+      Role: User
+      Key: mmvkasffoasd034jadsfkvnaaj3bfajxcfh
+      Expiration: null
+      Active: true
+
+

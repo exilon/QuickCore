@@ -1,0 +1,43 @@
+ConnectionStrings:
+  Connections:
+    - Name: ShopContext
+      Provider: ""
+      ConnectionString: Database=.\\shop.db
+
+    - Name: ShopContext2
+      Provider: ""
+      ConnectionString: Server=SERVER;Database=shop;User Id=user;Password=1234;
+
+
+IdentityOptions:
+  LockOut:
+    AllowedForNewUsers: false
+    DefaultLockoutTimeSpan: null
+    MaxFailedAccessAttempts: 0
+  Password:
+    RequireDigit: false
+    RequiredLength: 6
+    RequiredUniqueChars: 0
+    RequireLowercase: false
+    RequireNonAlphanumeric: false
+    RequireUppercase: false
+  SignIn:
+    RequireConfirmedAccount: false
+    RequireConfirmedEmail: false
+    RequireConfirmedPhoneNumber: false
+  Stores:
+    MaxLengthForKeys: 0
+    ProtectPersonalData: false
+  Tokens:
+    DefaultAuthenticatorProvider: ""
+    DefaultEmailProvider: ""
+    DefaultPhoneProvider: ""
+    DefaultProvider: ""
+  User:
+    AllowedUserNameCharacters: ""
+    RequireUniqueEmail: true
+
+ApiKey:
+  UnAuthorizedErrorCode: 401
+  UnAuthorizedErrorMessage: Not authenticated
+

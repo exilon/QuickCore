@@ -1,0 +1,17 @@
+Console:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  Environment: ""
+  IncludedInfo: [iiAppName,iiHost]
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: []
+    MaxSent: 0
+  LogLevel: [etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDebug,etTrace,etDone]
+  CustomMsgOutput: False
+  Enabled: True
+  ShowEventColors: True
+  ShowTimeStamp: True
+  ShowEventType: False
+  UnderlineHeaderEventType: False
+

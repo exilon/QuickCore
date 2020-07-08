@@ -1,0 +1,160 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Queues - TaskControl</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="none">
+    <link rel="stylesheet" href="/TaskControl/css1720.css">
+</head>
+    <body>
+        <!-- Wrap all page content here -->
+        <div id="wrap">
+
+            <!-- Fixed navbar -->
+            <div class="navbar navbar-default navbar-fixed-top">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="/TaskControl/">TaskControl Dashboard</a>
+                    </div>
+                    <div class="collapse navbar-collapse">
+                        
+    <ul class="nav navbar-nav">
+            <li class="active">
+                <a href="/TaskControl/jobs/enqueued">
+                    Jobs
+
+
+<span data-metric="enqueued:count-or-null" class="metric metric-null "></span>
+<span data-metric="failed:count-or-null" class="metric metric-danger highlighted">43</span>                </a>
+            </li>
+            <li class="">
+                <a href="/TaskControl/retries">
+                    Retries
+
+
+<span data-metric="retries:count" class="metric metric-warning ">56</span>                </a>
+            </li>
+            <li class="">
+                <a href="/TaskControl/recurring">
+                    Recurring Jobs
+
+
+<span data-metric="recurring:count" class="metric metric-default ">6</span>                </a>
+            </li>
+            <li class="">
+                <a href="/TaskControl/servers">
+                    Servers
+
+
+<span data-metric="servers:count" class="metric metric-default ">1</span>                </a>
+            </li>
+    </ul>
+
+                            <ul class="nav navbar-nav navbar-right">
+                                <li>
+                                    <a href="/">
+                                        <span class="glyphicon glyphicon-log-out"></span>
+                                        Back to site
+                                    </a>
+                                </li>
+                            </ul>
+                    </div>
+                    <!--/.nav-collapse -->
+                </div>
+            </div>
+
+            <!-- Begin page content -->
+            <div class="container" style="margin-bottom: 20px;">
+                
+
+<div class="row">
+    <div class="col-md-3">
+        
+    <div id="stats" class="list-group">
+            <a href="/TaskControl/jobs/enqueued" class="list-group-item active">
+                Enqueued
+                <span class="pull-right">
+
+<span data-metric="enqueued-queues:count" class="metric metric-default ">0 / 0</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/scheduled" class="list-group-item ">
+                Scheduled
+                <span class="pull-right">
+
+<span data-metric="scheduled:count" class="metric metric-info ">56</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/processing" class="list-group-item ">
+                Processing
+                <span class="pull-right">
+
+<span data-metric="processing:count" class="metric metric-warning ">1</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/succeeded" class="list-group-item ">
+                Succeeded
+                <span class="pull-right">
+
+<span data-metric="succeeded:count" class="metric metric-default ">85.553</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/failed" class="list-group-item ">
+                Failed
+                <span class="pull-right">
+
+<span data-metric="failed:count" class="metric metric-danger highlighted">43</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/deleted" class="list-group-item ">
+                Deleted
+                <span class="pull-right">
+
+<span data-metric="deleted:count" class="metric metric-default ">3.831</span>                </span>
+            </a>
+            <a href="/TaskControl/jobs/awaiting" class="list-group-item ">
+                Awaiting
+                <span class="pull-right">
+
+<span data-metric="awaiting:count" class="metric metric-default ">0</span>                </span>
+            </a>
+    </div>
+
+    </div>
+    <div class="col-md-9">
+        <h1 class="page-header">Queues</h1>
+
+            <div class="alert alert-warning">
+                No queued jobs found. Try to enqueue a job.
+            </div>
+    </div>
+</div>
+            </div>
+        </div>
+
+        <div id="footer">
+            <div class="container">
+                <ul class="list-inline credit">
+                    <li>
+                        <a href="https://www.TaskControl.io/" target="_blank" rel="noopener noreferrer">TaskControl 1.7.2
+                        </a>
+                    </li>
+                    <li>SQL Server: HSONLINE\ONLINE@HSLeads</li>
+                    <li>Time: <span data-moment-local="1571351409">17/10/2019 22:30:09</span></li>
+                    <li>Generated: 11,01ms</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="TaskControlConfig"
+             data-pollinterval="10000"
+             data-pollurl="/TaskControl/stats">
+        </div>
+
+        <script src="/TaskControl/js1720.js"></script>
+    </body>
+</html>
