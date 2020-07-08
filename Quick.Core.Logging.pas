@@ -124,6 +124,7 @@ type
     fEventTypeNames : TEventTypeNames;
     fCustomMsgOutput : Boolean;
     fEnabled : Boolean;
+    fAppName: string;
   protected
     fOutputAsJson : Boolean;
     fJsonOutputOptions : TJsonOutputOptions;
@@ -133,6 +134,7 @@ type
   published
     property MaxFailsToRestart : Integer read fMaxFailsToRestart write fMaxFailsToRestart;
     property MaxFailsToStop : Integer read fMaxFailsToStop write fMaxFailsToStop;
+    property AppName : string read fAppName write fAppName;
     property Environment : string read fEnvironment write fEnvironment;
     property IncludedInfo : TIncludedLogInfo read fIncludedInfo write fIncludedInfo;
     property SendLimits : TLogSendLimit read fSendLimits write fSendLimits;
@@ -798,6 +800,7 @@ begin
   fFormatSettings.ShortTimeFormat := 'HH:NN:SS';
   fTimePrecission := False;
   fSendLimits := TLogSendLimit.Create;
+  fAppName := GetAppName;
   fMaxFailsToRestart := 2;
   fMaxFailsToStop := 0;
   fEnabled := False;
