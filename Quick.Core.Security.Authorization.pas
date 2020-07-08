@@ -246,6 +246,7 @@ type
     fHandlers : IList<IAuthorizationHandler>;
   public
     constructor Create(aHandlers : IList<IAuthorizationHandler>); overload;
+    destructor Destroy; override;
     function GetHandlers(aContext : TAuthorizationHandlerContext) : IList<IAuthorizationHandler>;
   end;
 
@@ -405,7 +406,7 @@ end;
 constructor TAuthorizationOptions.Create;
 begin
   inherited;
-  fPolicyMap := TObjectDictionary<string,TAuthorizationPolicy>.Create;
+  fPolicyMap := TObjectDictionary<string,TAuthorizationPolicy>.Create([doOwnsValues]);
   fDefaultPolicy := TAuthorizationPolicyBuilder.GetBuilder.RequireAuthenticatedUser.Build;
   fInvokeHandlersAfterFailure := True;
 end;
@@ -539,6 +540,12 @@ constructor TDefaultAuthorizationHandlerProvider.Create(aHandlers: IList<IAuthor
 begin
   if aHandlers = nil then raise EAuthorizationArgumentError.Create('Handlers cannot be null');
   fHandlers := aHandlers;
+end;
+
+destructor TDefaultAuthorizationHandlerProvider.Destroy;
+begin
+  fHandlers := nil;
+  inherited;
 end;
 
 function TDefaultAuthorizationHandlerProvider.GetHandlers(aContext: TAuthorizationHandlerContext): IList<IAuthorizationHandler>;

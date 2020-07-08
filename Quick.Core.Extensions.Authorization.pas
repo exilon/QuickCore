@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/03/2020
-  Modified    : 20/03/2020
+  Modified    : 02/07/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -35,6 +35,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Generics.Collections,
   Quick.Options,
   Quick.Collections,
   Quick.Core.DependencyInjection,
@@ -53,6 +54,7 @@ class function TAuthorizationServiceExtension.AddAuthorization(aConfigureOptions
 var
   authOptions : TAuthorizationOptions;
   handlerlist : IList<IAuthorizationHandler>;
+  list : TList<IAuthorizationHandler>;
 begin
   Result := ServiceCollection;
   //register Authorization Options
@@ -64,11 +66,21 @@ begin
   Result.AddSingleton<IAuthorizationEvaluator,TDefaultAuthorizationEvaluator>();
   //get all Authorization Handlers
   handlerlist := TXList<IAuthorizationHandler>.Create;
-  handlerlist.FromList(Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>);
+  list := Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>;
+  try
+    handlerlist.FromList(list);
+  finally
+    list.Free;
+  end;
   if not handlerlist.Any then
   begin
     Result.AddSingleton<IAuthorizationHandler,TPassThroughAuthorizationHandler>();
-    handlerlist.FromList(Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>);
+    list := Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>;
+    try
+      handlerlist.FromList(list);
+    finally
+      list.Free;
+    end;
   end;
   //register Authorization Handler
   Result.AddSingleton<IList<IAuthorizationHandler>>(handlerlist);
@@ -77,7 +89,8 @@ begin
   //register Authorization Policy Provider
   Result.AddSingleton<IAuthorizationPolicyProvider,TDefaultAuthorizationPolicyProvider>();
   //register Authorization Service
-  Result.AddSingleton<IAuthorizationService,TDefaultAuthorizationService>()
+  Result.AddSingleton<IAuthorizationService,TDefaultAuthorizationService>();
+  handlerlist := nil;
 //  ('',function : TDefaultAuthorizationService
 //    begin
 //      Result := TDefaultAuthorizationService.Create(TDefaultAuthorizationPolicyProvider.Create(authOptions));

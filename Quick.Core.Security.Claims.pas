@@ -205,7 +205,7 @@ implementation
 
 constructor TClaimsPrincipal.Create;
 begin
-  fIdentities := TxObjectList<TClaimsIdentity>.Create(True);
+  fIdentities := TxObjectList<TClaimsIdentity>.Create(False);
 end;
 
 constructor TClaimsPrincipal.Create(aIdentity: IIdentity);
@@ -213,7 +213,7 @@ begin
   Create;
   if aIdentity = nil then raise EArgumentNilException.Create('Identity cannot be null');
   fIdentities.Add(TClaimsIdentity(aIdentity));
-  aIdentity._AddRef;
+  //aIdentity._AddRef;
 end;
 
 destructor TClaimsPrincipal.Destroy;

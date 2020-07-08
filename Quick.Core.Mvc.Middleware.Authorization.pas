@@ -126,6 +126,7 @@ begin
   Result := False;
   if aAuthorize.Roles.IsEmpty then
   begin
+    if (aContext.User = nil) or (aContext.User.Identity = nil) then Exit(False);
     Result := aContext.User.Identity.IsAuthenticated;
   end
   else
