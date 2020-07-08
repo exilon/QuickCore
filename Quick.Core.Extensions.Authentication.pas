@@ -99,26 +99,6 @@ begin
   ServiceCollection.AddSingleton<IAuthenticationHandlerProvider,TAuthenticationHandlerProvider>();
   //register Authentication Service
   ServiceCollection.AddSingleton<IAuthenticationService,TAuthenticationService>();
-
-
-//  //register Authorization Evaluator
-//  Result.AddSingleton<IAuthorizationEvaluator,TDefaultAuthorizationEvaluator>();
-//  //get all Authorization Handlers
-//  handlerlist := TXList<IAuthorizationHandler>.Create;
-//  handlerlist.FromList(Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>);
-//  if not handlerlist.Any then
-//  begin
-//    Result.AddSingleton<IAuthorizationHandler,TPassThroughAuthorizationHandler>();
-//    handlerlist.FromList(Result.AppServices.DependencyInjector.ResolveAll<IAuthorizationHandler>);
-//  end;
-//  //register Authorization Handler
-//  Result.AddSingleton<IList<IAuthorizationHandler>>(handlerlist);
-//  //register Authorization Handler Provider
-//  Result.AddSingleton<IAuthorizationHandlerProvider,TDefaultAuthorizationHandlerProvider>();
-//  //register Authorization Policy Provider
-//  Result.AddSingleton<IAuthorizationPolicyProvider,TDefaultAuthorizationPolicyProvider>();
-//  //register Authorization Service
-//  Result.AddSingleton<IAuthorizationService,TDefaultAuthorizationService>()
 end;
 
 { TIdentityStore<TUser, TRole> }

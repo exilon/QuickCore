@@ -41,6 +41,8 @@ uses
   Quick.Core.Mvc.Context,
   Quick.HttpServer.Request,
   Quick.HttpServer.Response,
+  Quick.Core.Entity,
+  Quick.Core.Identity.Store.Abstractions,
   Quick.Core.Identity,
   Quick.Core.Identity.Store.Entity,
   Quick.Core.Security.Claims,
@@ -108,11 +110,12 @@ type
     function IsValidKey(const aApiKey : string; out aValue : TApiKey) : Boolean;
   end;
 
-  TIdentityApiKeyStore = class(TInterfacedObject,IApiKeyStore)
+  TIdentityApiKeyStore<TUser,TRole : class, constructor> = class(TInterfacedObject,IApiKeyStore)
   private
     fApiKeyPropertyName : string;
+    fIdentityStore : IIdentityStore<TUser,TRole>;
   public
-    constructor Create(const aApiKeyPropertyName: string);
+    constructor Create(const aApiKeyPropertyName: string; aIdentityStore : IIdentityStore<TUser,TRole>);
     function IsValidKey(const aApiKey : string; out aValue : TApiKey) : Boolean;
   end;
 
@@ -131,7 +134,7 @@ type
   public
     constructor Create(aServiceCollection : TServiceCollection);
     procedure UseMemoryStore(aConfigureOptions : TConfigureOptionsProc<TApiKeyMemoryStoreOptions>);
-    procedure UseEntityStore(const aApiKeyPropertyName: string; aConfigureOptions : TConfigureOptionsProc<TApiKeyOptions> = nil);
+    procedure UseIdentityStore<TUser, TRole : class, constructor>(const aApiKeyPropertyName: string; aConfigureOptions : TConfigureOptionsProc<TApiKeyOptions> = nil);
   end;
 
   TApiKeyAuthenticationServiceExtension = class(TServiceCollectionExtension)
@@ -163,16 +166,18 @@ begin
   fServiceCollection := aServiceCollection;
 end;
 
-procedure TSetApiKeyStore.UseEntityStore(const aApiKeyPropertyName: string; aConfigureOptions : TConfigureOptionsProc<TApiKeyOptions> = nil);
+procedure TSetApiKeyStore.UseIdentityStore<TUser, TRole>(const aApiKeyPropertyName: string; aConfigureOptions : TConfigureOptionsProc<TApiKeyOptions> = nil);
 var
   options : TApiKeyOptions;
-  indentityStore : IApiKeyStore;
+  apikeyStore : IApiKeyStore;
+  identityStore : IIdentityStore<TUser,TRole>;
 begin
-  indentityStore := TIdentityApiKeyStore.Create(aApiKeyPropertyName);
+  identityStore := Self.fServiceCollection.Resolve<IIdentityStore<TUser,TRole>>;
+  apikeyStore := TIdentityApiKeyStore<TUser,TRole>.Create(aApiKeyPropertyName,identityStore);
   options := TApiKeyOptions.Create;
   if Assigned(aConfigureOptions) then aConfigureOptions(options);
   options.Name := 'ApiKey';
-  options.ApiKeyStore := indentityStore;
+  options.ApiKeyStore := apikeyStore;
   fServiceCollection.Configure<TApiKeyOptions>(options);
   fServiceCollection.AddTransient<IAuthenticationHandler,TApiKeyAuthenticationHandler>;
 end;
@@ -204,7 +209,6 @@ end;
 
 destructor TMemoryApiKeyStore.Destroy;
 begin
-  fOptions.Free;
   fApiKeys.Free;
   inherited;
 end;
@@ -278,11 +282,13 @@ end;
 
 function TApiKeyMemoryStoreOptions.AddApiKey(const aName, aKey: string; aExpiration: TDateTime = 0.0): TApiKeyMemoryStoreOptions;
 begin
+  Result := Self;
   fApiKeys.Add(TApiKey.Create(aName,aKey,'',aExpiration));
 end;
 
 function TApiKeyMemoryStoreOptions.AddApiKey(const aName, aRole,aKey: string; aExpiration: TDateTime): TApiKeyMemoryStoreOptions;
 begin
+  Result := Self;
   fApiKeys.Add(TApiKey.Create(aName,aRole,aKey,aExpiration));
 end;
 
@@ -305,14 +311,31 @@ end;
 
 { TIdentityApiKeyStore }
 
-constructor TIdentityApiKeyStore.Create(const aApiKeyPropertyName: string);
+constructor TIdentityApiKeyStore<TUser,TRole>.Create(const aApiKeyPropertyName: string; aIdentityStore : IIdentityStore<TUser,TRole>);
 begin
   fApiKeyPropertyName := aApiKeyPropertyName;
+  fIdentityStore := aIdentityStore;
 end;
 
-function TIdentityApiKeyStore.IsValidKey(const aApiKey : string; out aValue : TApiKey) : Boolean;
+function TIdentityApiKeyStore<TUser,TRole>.IsValidKey(const aApiKey : string; out aValue : TApiKey) : Boolean;
+var
+  user : TUser;
+  role : TRole;
 begin
-
+  user := fIdentityStore.Users.Where(Format('%s = ?',[fApiKeyPropertyName]),[aApiKey]).SelectFirst;
+  try
+    if user = nil then Exit(False);
+    aValue := TApiKey.Create(TIdentityUser<string>(user).UserName,'',aApiKey);
+    role := fIdentityStore.GetRolebyId(TIdentityUser<Int64>(user).RoleId);
+    try
+      if role <> nil then aValue.Role := TIdentityRole<Int64>(role).Name;
+    finally
+      role.Free;
+    end;
+    Result := True;
+  finally
+    user.Free;
+  end;
 end;
 
 { TApiKeyOptions }
