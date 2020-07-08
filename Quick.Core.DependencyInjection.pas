@@ -34,7 +34,7 @@ unit Quick.Core.DependencyInjection;
 interface
 
 uses
-  {$IFDEF DEBUG}
+  {$IFDEF DEBUG_DI}
     Quick.Debug.Utils,
   {$ENDIF}
   System.SysUtils,
@@ -189,6 +189,9 @@ end;
 
 destructor TServiceCollection.Destroy;
 begin
+  {$IFDEF DEBUG_DI}
+  TDebugger.Enter(Self,'Destroy');
+  {$ENDIF}
   fDependencyInjector.Free;
   if Assigned(fOptionsService) then fOptionsService.Free;
   inherited;
