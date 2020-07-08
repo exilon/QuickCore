@@ -86,33 +86,46 @@ type
     procedure SetParamter<T : class>(const aKey : string; aValue : T);
   end;
 
-  TAuthenticationTicket = class
+  IAuthenticationTicket = interface
+  ['{767D0C6F-5A4B-4DC9-B19C-FC35D2BE2C1E}']
+    function GetAuthenticationScheme: string;
+    function GetPrincipal: TClaimsPrincipal;
+    function GetProperties: TAuthenticationProperties;
+    property Principal : TClaimsPrincipal read GetPrincipal;
+    property Properties : TAuthenticationProperties read GetProperties;
+    property AuthenticationScheme : string read GetAuthenticationScheme;
+  end;
+
+  TAuthenticationTicket = class(TInterfacedObject,IAuthenticationTicket)
   private
     fPrincipal : TClaimsPrincipal;
     fAuthenticationScheme : string;
     fProperties : TAuthenticationProperties;
+    function GetAuthenticationScheme: string;
+    function GetPrincipal: TClaimsPrincipal;
+    function GetProperties: TAuthenticationProperties;
   public
     constructor Create(aPrincipal : TClaimsPrincipal; const aScheme : string); overload;
     constructor Create(aPrincipal : TClaimsPrincipal; aProperties : TAuthenticationProperties; const aScheme : string); overload;
-    property Principal : TClaimsPrincipal read fPrincipal;
-    property Properties : TAuthenticationProperties read fProperties;
-    property AuthenticationScheme : string read fAuthenticationScheme;
+    property Principal : TClaimsPrincipal read GetPrincipal;
+    property Properties : TAuthenticationProperties read GetProperties;
+    property AuthenticationScheme : string read GetAuthenticationScheme;
   end;
 
   TAuthenticateResult = record
   private
     fFailure : Exception;
-    fTicket : TAuthenticationTicket;
+    fTicket : IAuthenticationTicket;
     fAuthenticationProperties : TAuthenticationProperties;
     function GetPrincipal : TClaimsPrincipal;
     function GetSucceeded: Boolean;
   public
     property Principal : TClaimsPrincipal read GetPrincipal;
     property Properties : TAuthenticationProperties read fAuthenticationProperties write fAuthenticationProperties;
-    property Ticket : TAuthenticationTicket read fTicket write fTicket;
+    property Ticket : IAuthenticationTicket read fTicket write fTicket;
     property Succeeded : Boolean read GetSucceeded;
     function Fail(aException : Exception) : TAuthenticateResult;
-    function Success(aTicket : TAuthenticationTicket) : TAuthenticateResult;
+    function Success(aTicket : IAuthenticationTicket) : TAuthenticateResult;
     function NoResult : TAuthenticateResult;
   end;
 
@@ -297,7 +310,7 @@ begin
   Result := Self;
 end;
 
-function TAuthenticateResult.Success(aTicket : TAuthenticationTicket) : TAuthenticateResult;
+function TAuthenticateResult.Success(aTicket : IAuthenticationTicket) : TAuthenticateResult;
 begin
   fTicket := aTicket;
   Result := Self;
@@ -317,6 +330,21 @@ begin
   Create(aPrincipal,aScheme);
   if aProperties <> nil then fProperties := aProperties
     else fProperties := TAuthenticationProperties.Create;
+end;
+
+function TAuthenticationTicket.GetAuthenticationScheme: string;
+begin
+  Result := fAuthenticationScheme;
+end;
+
+function TAuthenticationTicket.GetPrincipal: TClaimsPrincipal;
+begin
+  Result := fPrincipal;
+end;
+
+function TAuthenticationTicket.GetProperties: TAuthenticationProperties;
+begin
+  Result := fProperties;
 end;
 
 { TAuthenticationScheme }
