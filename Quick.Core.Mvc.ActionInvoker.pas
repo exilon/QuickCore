@@ -34,6 +34,9 @@ unit Quick.Core.Mvc.ActionInvoker;
 interface
 
 uses
+  {$IFDEF DEBUG_CONTROLLER}
+  Quick.Debug.Utils,
+  {$ENDIF}
   System.SysUtils,
   RTTI,
   Quick.Value,
@@ -68,6 +71,9 @@ var
   actionContext : TActionContext;
 begin
   //execute controller action method
+  {$IFDEF DEBUG_CONTROLLER}
+  TDebugger.TimeIt(nil,'TActionInvoker.Invoke',Format('URL: %s',[aContext.HttpContext.Request.URL]));
+  {$ENDIF}
   rmethod := ctx.GetType(aContext.HttpContext.Route.ControllerClass).GetMethod(aContext.HttpContext.Route.ActionMethodName);
   if rmethod = nil then raise EControllerMethodNotFound.CreateFmt('Controller Method not found [%s] %s',[aContext.HttpContext.Route.ControllerName,aContext.HttpContext.Route.ActionMethodName]);
   //set param values ordered and typecasted to insert into action method
@@ -81,8 +87,14 @@ begin
       if attr.ClassName = 'FromBody' then isFromBody := True;
     end;
     //get value from url param or from body
-    if isFromBody then flexvalue := aContext.HttpContext.Request.ContentAsString
-      else flexvalue := aContext.RouteData.ParamValues.GetValue(rparam.Name);
+    if isFromBody then
+    begin
+      {$IFDEF DEBUG_CONTROLLER}
+      TDebugger.Trace(nil,'Body content: %s',[aContext.HttpContext.Request.ContentAsString]);
+      {$ENDIF}
+      flexvalue := aContext.HttpContext.Request.ContentAsString;
+    end
+    else flexvalue := aContext.RouteData.ParamValues.GetValue(rparam.Name);
 
     if flexvalue.IsNullOrEmpty then
     begin
@@ -101,6 +113,9 @@ begin
         else value := flexvalue.AsString;
       end;
     end;
+    {$IFDEF DEBUG_CONTROLLER}
+      TDebugger.Trace(nil,'Param: %s',[flexvalue.AsString]);
+      {$ENDIF}
     values := values + [value];
   end;
   //param injection
