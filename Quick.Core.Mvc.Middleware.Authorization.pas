@@ -100,8 +100,26 @@ begin
   isAuthorized := False;
   controller := aContext.Route.ControllerClass;
   methodname := aContext.Route.ActionMethodName;
-  //get global attributes
+  //controller type
   rtype := ctx.GetType(controller);
+  //get action attributes
+  for attr in rtype.GetMethod(methodname).GetAttributes do
+  begin
+    if (attr is AllowAnonymous) then isAuthorized := True
+    else if (attr is Authorize) then
+    begin
+      if IsValidRole(aContext,Authorize(attr)) then isAuthorized := True
+        else aContext.RaiseHttpUnauthorized(nil,'');
+    end
+    else if (attr is AuthorizePolicy) then
+    begin
+      if IsValidPolicy(aContext,AuthorizePolicy(attr).Name) then isAuthorized := True
+        else aContext.RaisehttpUnauthorized(nil,'');
+    end;
+  end;
+  if isAuthorized then Exit(True);
+
+  //get global attributes
   for attr in rtype.GetAttributes do
   begin
     if (attr is Authorize) then
