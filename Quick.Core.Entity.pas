@@ -181,11 +181,13 @@ type
     fUserName : string;
     fPasswordHash : string;
     fOptions : TIdentityOptions;
+    fRoleId: TKey;
   public
     property Options : TIdentityOptions read fOptions write fOptions;
   published
     [Key]
     property Id : TKey read fId write fId;
+    property RoleId : TKey read fRoleId write fRoleId;
     [StringLength(50)]
     property UserName : string read fUserName write fUserName;
     [StringLength(100)]
