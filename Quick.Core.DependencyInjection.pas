@@ -272,7 +272,11 @@ var
 begin
   Result := Self;
   environment := GetCoreEnvironment;
-  if not environment.IsEmpty then environment := '.' + environment;
+  if not environment.IsEmpty then
+  begin
+    Logger.Info('Core Environment: "%s"',[environment]);
+    environment := '.' + environment;
+  end;
 
   if not aOptionsFileName.IsEmpty then filename := aOptionsFileName
   else
