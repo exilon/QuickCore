@@ -320,7 +320,6 @@ type
       class function NewInstance(const aName : string) : TLogProviderBase;
     end;
   private
-    fEnvironment : string;
     fOptionContainer : TOptionsContainer;
     fCreateIfNotExists : Boolean;
     constructor Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True);
@@ -329,6 +328,7 @@ type
     procedure AddOptionClass(const aName : string);
     procedure LoadConfig;
     procedure AddProvider(aProvider : TLogProviderBase);
+    function GetEnvironment : string;
   protected
     fLogger : TQuickLogger;
     function AddConsole(aOptions : TConsoleLoggerOptions) : ILoggerBuilder; overload;
@@ -538,6 +538,11 @@ end;
 class function TLoggerBuilder.GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder;
 begin
   Result := TLoggerBuilder.Create(aOptionsFormat,aCreateConfigFileIfNotExists);
+end;
+
+function TLoggerBuilder.GetEnvironment: string;
+begin
+  Result := GetEnvironmentVariable('CORE_ENVIRONMENT');
 end;
 
 procedure TLoggerBuilder.LoadConfig;
@@ -751,7 +756,7 @@ var
   iserializer : IOptionsSerializer;
   environment : string;
 begin
-  environment := fEnvironment;
+  environment := GetEnvironment;
   if not environment.IsEmpty then environment := '.' + environment;
 
   if aOptionsFormat = TLoggerOptionsFormat.ofJSON then
