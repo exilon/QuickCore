@@ -202,7 +202,10 @@ begin
                 on E : Exception do raise EAutoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
               end;
             {$ELSE}
-              if not TRTTI.PathExists(aSrcObj,mapname) then raise EAutoMapperError.CreateFmt('No valid custom mapping (Source: %s - Target: %s)',[mapname,tgtprop.Name]);
+              if not TRTTI.PathExists(aSrcObj,mapname) then
+              begin
+                if not aProfileMap.fIgnoreAllNonExisting then raise EAutoMapperError.CreateFmt('No valid custom mapping (Source: %s - Target: %s)',[mapname,tgtprop.Name]);
+              end;
               TRTTI.SetPathValue(aTgtObj,tgtprop.Name,TRTTI.GetPathValue(aSrcObj,mapname));
             {$ENDIF}
           end
@@ -320,6 +323,7 @@ end;
 constructor TProfileMap.Create(aMap: TMapProc<TObject, TObject>);
 begin
   fIgnoreAllNonExisting := False;
+  fIgnoreOtherMembers := False;
   fMap := aMap;
   fCustomMapping := TCustomMapping.Create;
 end;
