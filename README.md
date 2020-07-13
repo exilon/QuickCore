@@ -1,19 +1,19 @@
 ﻿# Quick Core
 
-Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance and scalable desktop, mobile and web applications.
+Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance and scalable desktop, mobile and web applications easily.
 
 **Areas of functionality:**
 ----------
 
 * **Mapping**: Map fields from a class to other class, copy objects, etc..
-* **Config**: Easy integration of sections into you config settings. Supports Json and Yaml formats.
+* **Config**: Easy integration of sections into config settings. Supports Json and Yaml formats.
 * **Authorization**: Authorization validation.
 * **Serialization**: Object/Array serialization to/from json/Yaml.
 * **Scheduling**: Schedule tasks launching as independent threads with retry policies.
 * **Database**: Easy entity framework to work with SQLite, MSSQL, etc
 * **UserManagement**:
 * **Caching:**: Cache string or objects to retrieve fast later.
-* **MVC Web:** Create your own Api or MVC server to serve your own site.
+* **MVC Web:** Create own Api or MVC server to serve own site.
 
 
 **Main units description:**
@@ -78,7 +78,8 @@ Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance an
 * **Quick.core.Mvc.Extensions.TaskControl:** Task/Job control service.
 
 **Updates:**
-* NEW: First beta implementation.
+* 12/07/2020: Updated documentation
+* 06/07/2020: First beta implementation.
 
 **Installation:**
 ----------
@@ -93,19 +94,18 @@ Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance an
 4. Add QuickLogger folder to your path libraries on Delphi IDE.
 
 # Documentation:
----
----
-
 QuickCore is a framework to easy build desktop/mobile/web apps.
 
 ## DependencyInjection
 
-Framework is based on dependency injection priciples. A container holds all services your application needs and allows an easy infrastructure changes with no enfort.
+Entire Framework is based on dependency injection priciples. A container holds all services needed by the application, allowing easy infrastructure changes with a minor enfort.
+
 Services are automatically injected into server and configured from a single unit "startup".
+Every Core project needs a startup.pas with a class inheriting from TStartupBase (see examples on samples folder).
 
 *ServiceCollection:*
 --
-Is a dependency injection container to hold all services your application needs and control their lifetime.
+It's a collection of services where we can register predefined or custom services and control its lifecycle (singleton, transient,..). ServiceCollection is the build-in container included in QuickCore and supports constructor injection by default.
 ```delphi
 services
    .AddLogging(TLoggerBuilder.GetBuilder(TLoggerOptionsFormat.ofYAML,False)
@@ -163,9 +163,10 @@ services
 
 *Logging:*
 --
-QuickCore works with ILogger interface. You can use our Logging extension or define your own implementation and inject it.
+QuickCore works with ILogger interface. We can use build-in Logging extension or define own implementation and inject it.
 
-To use QuickLogger implementation (Needs QuickLogger library. See installation requirements):
+To use QuickLogger implementation (Needs QuickLogger library. See installation requirements).
+QuickLogger uses an ILogger builder to easy configuration. Default options can be passed as Options delegate function. When QuickLogger config file exists, no default options will be applied more:
 ```delphi
 services
    .AddLogging(TLoggerBuilder.GetBuilder(TLoggerOptionsFormat.ofYAML,False)
@@ -186,16 +187,16 @@ services
         .Build
     );
 ```
-...or add your own logger implementation
+...or add own logger implementation
 ```delphi
 services.AddLogging(MyLogger);
 ```
-QuickCore logging config file is saved as QuickLogger.yml o json file. Using CORE_ENVIRONMENT environment variable you can define what file use for every implementation. If environment variable is defined, QuickCore will try to load/save "QuickCore.[CORE_ENVIRONMENT].yaml" file.
+QuickCore logging config file is saved as QuickLogger.yml o json file. Using CORE_ENVIRONMENT environment variable we can define what file use for each implementation. If environment variable is defined, QuickCore will try to load/save "QuickCore.[CORE_ENVIRONMENT].yaml/json" file.
 
 *Options:*
 --
-QuickCore works with Options pattern. Every TOptions class is a section in your config file and can be injected into services or controllers.
-Options service needs to added to ServiceCollection before you can add your sections. You can define config filename and Json or Yaml format.
+QuickCore works with Options pattern. Every TOptions object will be saved as a section in config file and can be injected into services or controllers constructors.
+Options service needs to added to ServiceCollection before we can add sections. We can define config filename and Json or Yaml format.
 ```delphi
 .AddOptions(TOptionsFileFormat.ofYAML,True)
 ```
@@ -209,7 +210,7 @@ services.Configure<TAppSettings>(procedure(aOptions : TAppSettings)
                            end)
 
 ```
-and you can inject it later as simple as...
+and we can inject it later as simple as...
 ```delphi
 constructor TMyController.Create(aLogger : ILogger; aAppSettings : IOptions<TAppSettings>);
 begin
@@ -217,14 +218,14 @@ begin
     fSMTPServer.Host := fOptions.Smtp;
 end;
 ```
-Using CORE_ENVIRONMENT environment variable you can define what file use for every implementation. If environment variable is defined, QuickCore will try to load/save "QuickCore.[CORE_ENVIRONMENT].yaml" file.
+Using CORE_ENVIRONMENT environment variable we can define what file use for every implementation. If environment variable is defined, QuickCore will try to load/save "QuickCore.[CORE_ENVIRONMENT].yaml" file.
 
-If not Options.Name is defined, class name will be used as section name in your config file.
-Every Configured Option will be save and load to your config file, but if you want, you can hide some options from been saved. Use Options.HideOptions := True;
+If not Options.Name is defined, class name will be used as section name in config file.
+Every Configured Option will be save and load to config file, but if we want, we can hide some options from been saved. Use Options.HideOptions := True (for internal options not configurable externally).
 
 *Debugger:*
 --
-Debugger is a simple tracer-debugger. You can see QuickLib documentation. To connect debugger with your logging service only needs add Debugger service in ServiceCollection:
+Debugger is a simple tracer-debugger (See QuickLib documentation). To connect debugger with a logging service only needs to add Debugger service in ServiceCollection (by default uses a console output):
 ```delphi
 services.AddDebugger;
 ```
@@ -250,9 +251,10 @@ services.AddSingleton<TMyService>;
 
 ## Extensions
 
-Extensions are injectable services you can add to your app/server. Extensions are injected into ServiceCollection startup unit.
+Extensions are injectable services we can add to our app/server. Extensions are injected into ServiceCollection startup unit.
 ServiceCollection method Extensions works similar to .net extension methods, extendending ServiceCollection.
-To add an extension, you need to add its unit to Startup unit uses clause (See QuickCore predefined extensions above).
+
+To add an extension, we need to add its unit to Startup unit uses clause (See QuickCore predefined extensions above).
 ```delphi
 uses
     Quick.Core.Extensions.AutoMapper;
@@ -263,4 +265,215 @@ begin
 end;
 ```
 
-..more documentation soon
+# MVC Server 
+With QuickCore we can create web applications with controllers and actions.
+
+## Create AppServer
+Create an application server and define binding and security.
+```delphi
+ApiServer := TMvcServer.Create('127.0.0.1',8080,False);
+ApiServer.UseStartup<TStartup>;
+ApiServer.Start;
+```delphi
+To configure services and middlewares startup must configured
+```delphi
+class procedure TStartup.Configure(app : TMVCServer);
+begin
+  app
+  .AddControllers
+  .AddController(THomeController)
+  .DefaultRoute(THomeController,'Home/Index')
+  .UseWebRoot('.\wwwroot')
+  .UseRouting
+  .UseMVC;
+end;
+```
+**AddController(ControllerClass):** Allow add a controller to an web app server.
+
+**AddControllers:** Add all controllers registered during its initialization unit with RegisterController(ControllerClass);
+
+**UseWebRoot(path):** Define static files/data folder.
+
+**UseCustomErrorPages:** Enable use of custom error pages. On a 403 error, server will search for a 403.html, 40x.html or 4xx.html files. If dinamic page specified, simple mustache patterns will be replaced with error info (StatusCode, StatusMsg, etc).
+
+**UseMustachePages:** Simple mustache template engine to replace simple views.
+
+## Middlewares:
+Middlewares are like layers of functionality and runs into a request pipeline. Every request pass for each middlwares (in creation order) or not, depending of middelware requeriments.
+
+**UseStaticFiles:** To allow serve static content.
+
+**UseHsts:** Http Strict Transport Security middleware to allow only https connections.
+
+**UseHttpsRedirection:** Enables redirection middleware to redirect on header location found.
+
+**UseRouting:** Enables Routing middleware to get matching route from request.
+
+**UseMVC:** Enable MVC middleware to manage and redirect every request to its correspondent 
+controller action or view.
+
+**UseMiddleware:** To add custom middleware class to request pipeline.
+
+**Use(RequestDelegate):** Execute an anonymous method as a middleware.
+
+**UseAuthentication:** Tries to get authentication info from a request.
+
+**UseAuthorization:** Allow/Disallow acces to resources based on authorization policies.
+
+## Controllers
+Every controller inherites from THttpController and published methods becomes actions. With custom attributes we can define routing, authorization, etc of these methods.
+As all controllers are injected from dependency injection, we can define constructor with autoinjectable parameters and IOC will try to resolve on constructor creation.
+```delphi
+constructor THomeController.Create(aLogger: ILogger);
+```
+
+## Routing
+Http routing is custom attributes based. We need to define routing for each controller and method/action.
+```delphi
+[HttpGet('home/index')]
+function THomeController.Index : IActionResult;
+
+[HttpPost('home/GetAll')]
+function THomeController.GetAll : IActionResult;
+```
+If routing defined on class, then it's global and doesn't need to be replicated on each method/action:
+```delphi
+[Route('home/other')]
+THomeController = class(THttpController)
+published
+    [HttpPost('GetAll')] // global + local = home/other/GetAll
+    function THomeController.GetAll : IActionResult;
+```
+
+## Attributes
+* [NonAction] Method not configured as an action method.
+* [ActionName] Defines name of action if different from method name.
+* [Route] Defines controller routing or action routing.
+* [HttpGet(route)] Defines a route with a GET method.
+* [HttpPost(route)] Defines a route with a POST method.
+* [HttpPut(route)] Defines a route with a PUT method.
+* [HttpDelete(route)] Defines a route with a DELETE method.
+* [HttpMethod(method)] Defines a custom method.
+* [AccepVerbs([verbs])] Defines all accepted verbs.
+* [Authorize] Limits acces to a controller or single method to only authenticated users.
+* [Authorize(role)] Limits access to a controller or single method to users with x role/s.
+* [AllowAnonymous] If global attribute defines a more restricted authorization, using this on a method allow access it without.
+* [OutputCache(TTL)] If ResponseCaching middleware defined, then response from this action will be saved and retrieved from cache while TTL interval not reached.
+
+## Handling parameters
+Parameters are defined with attributes and automatically parsed and injected as method parameters. 
+```delphi
+[HttpGet('Add/{productname}/{price}')]
+function Add(const ProductName : string; Price : Integer): IActionResult;
+```
+Parameters can be typed defined.
+Int: numeric only
+alpha: only letters.
+Float: only floating numbers.
+```delphi
+[HttpGet('Add/{productname:alpha}/{price:float}')]
+function Add(const ProductName : string; Price : Extended): IActionResult;
+```
+An ? define a parameter as optional
+```delphi
+[HttpGet('Add/{productname:alpha}/{price:float?}')]
+function Add(const ProductName : string; Price : Extended): IActionResult;
+```
+To get a parameter from the request body (with automatic deserialization)
+```delphi
+[HttpPost('Add/User')]
+function Add([FromBody] User : TUser): IActionResult;
+```
+## Action Results
+Action results are results of a controller.
+**StatusCode(statuscode, statustext):** Returns a status code and optional status text to client.
+```delphi
+    Result := StatusCode(200,'ok');
+```
+**Ok(statustext):** Returns a 200 status code and optional statustext.
+
+**Accepted(statustext):** Returns a 202 status code and optional status text.
+
+**BadRequest(statustext):** Returns a 400 status code and optional status text.
+
+**NotFound(statustext):** Returns a 404 status code and optional status text.
+
+**Forbid(statustext):** Returns a 403 status code and optional status text.
+
+**Unauthorized(statustext):** Returns a 401 status code and optional status text.
+
+**Redirect(url):** Returns a temporal redirection to url.
+
+**RedirectPermament(url):** Returns a permanent redirection to url.
+
+**Content(text):** Returns a response text.
+
+**Json(object,onlypublishedproperties):** Returns a serialized json object or list. If OnlyPublishedProperties enabled, only object published properties will be serialized.
+```delphi
+    Result := Json(User);
+```
+**View(viewname):** Returns a view.
+```delphi
+    Result := View('home');
+```
+
+# Core Extensions
+
+## AutoMapper:
+Automapper extension allows map a class type to another class type.
+To use Automapper we must add service to ServiceCollection in Statup unit:
+```delphi
+services.Extension<TAutoMapperServiceExtension>
+    .AddAutoMapper;
+```
+Then define profile maps with mapping relationship.
+If property names are identical, we should not have to manually provide a mapping:
+```delphi
+constructor TMyProfile.Create;
+begin
+  //maps properties with same name in both classes
+  CreateMap<TDBUser,TUser>();
+end;
+
+initialization
+  TAutoMapper.RegisterProfile<TMyProfile>;
+```
+If some properties have diferent name or type, we must use custom mappings:
+```delphi
+constructor TMyProfile.Create;
+begin
+  //maps properties with delegate function and rest maps formember
+  CreateMap<TDBProduct,TProduct>(procedure(src : TDBProduct; tgt : TProduct)
+    begin
+      tgt.Id := src.uid;
+      tgt.Age := src.Age;
+    end)
+    .ForMember('Money','Cash')
+    .ForMember('Name','FullName')
+    .IgnoreOtherMembers;
+end;
+
+initialization
+  TAutoMapper.RegisterProfile<TMyProfile>;
+```
+**ForMember(SourceProperty,TargetProperty):** Maps a source property name to a target property name.
+**IgnoreAllNonExisting:** Ignore all non existing properties on target.
+
+**IgnoreOtherMembers:** Only properties defined in custom mapping will be resolved.
+
+**ResolveUnmapped:** Tries to resolve automatically any map without a profilemap defined.
+
+AutoMapper service can be injected into a object/controller defining the abstraction in uses clauses.
+```delphi
+uses
+    Quick.Core.Mapping.Abstractions;
+...
+    TMyController.Create(aMapper : IMapper);
+```
+..and use it:
+```delphi
+product := fMapper.Map(dbproduct).AsType<TProduct>;
+```
+
+
+## ..more documentation soon
