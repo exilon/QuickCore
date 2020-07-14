@@ -6,7 +6,7 @@
   Description : Core Entity FireDAC Provider
   Author      : Kike Pérez
   Version     : 1.1
-  Created     : 31/11/2019
+  Created     : 15/07/2020
   Modified    : 09/06/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
@@ -60,6 +60,9 @@ uses
     FireDAC.FMXUI.Wait,
     {$ENDIF}
     FireDAC.Comp.UI,
+  {$ENDIF}
+  {$IFDEF DELPHIRX104_UP}
+  FireDAC.Phys.SQLiteWrapper.Stat,
   {$ENDIF}
   Quick.Commons,
   Quick.Core.Entity.DAO,

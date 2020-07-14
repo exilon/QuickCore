@@ -128,6 +128,10 @@
       {$define DELPHIRX103_UP}
 	    {$define DELPHIRIO_UP}
     {$ifend}
+    {$if CompilerVersion >= 34.0} //Delphi RX10.4 Sydney
+      {$define DELPHIRX104_UP}
+	    {$define DELPHISYDNEY_UP}
+    {$ifend}
   {$else}
     //Delphi 5 or older
     {$define DELPHI6OROLDER}
@@ -154,12 +158,12 @@
 
 //Debug library
 {$IFDEF DEBUG}
-  {.$DEFINE DEBUG_LIB}
-  {.$DEFINE DEBUG_ROUTING}
-  {.$DEFINE DEBUG_MAPPER}
-  {.$DEFINE DEBUG_ENTITY}
-  {.$DEFINE DEBUG_DI}
-  {.$DEFINE DEBUG_CONTROLLER}
-  {.$DEFINE DEBUG_MSQ}
+  {$DEFINE DEBUG_LIB}
+  {$DEFINE DEBUG_ROUTING}
+  {$DEFINE DEBUG_MAPPER}
+  {$DEFINE DEBUG_ENTITY}
+  {$DEFINE DEBUG_DI}
+  {$DEFINE DEBUG_CONTROLLER}
+  {$DEFINE DEBUG_MSQ}
 {$ENDIF}
 
