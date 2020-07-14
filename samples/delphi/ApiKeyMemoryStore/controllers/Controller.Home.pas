@@ -14,7 +14,8 @@ type
   [Authorize]
   THomeController = class(THttpController)
   published
-    [HttpGet,ActionName('Index')]
+    [AllowAnonymous]
+    [HttpGet('Home/Index')]
     function Index : IActionResult;
 
     [HttpGet('Sum/{number1:int}/{number2:int}')]
