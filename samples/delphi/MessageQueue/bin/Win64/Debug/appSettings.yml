@@ -1,0 +1,16 @@
+RedisMessageQueue:
+  Host: klingon
+  Port: 6379
+  Database: 2
+  Key: mailqueue
+  Password: pass123
+  ConnectionTimeout: 20000
+  ReadTimeout: 10000
+  PopTimeoutSec: 30
+  MaxProducersPool: 10
+  MaxConsumersPool: 10
+  ReliableMessageQueue:
+    CheckHangedMessagesIntervalSec: 10
+    DetermineAsHangedAfterSec: 20
+    Enabled: true
+
