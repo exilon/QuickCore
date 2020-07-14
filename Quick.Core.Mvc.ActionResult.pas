@@ -40,6 +40,7 @@ uses
   Quick.Json.Serializer,
   Quick.Core.Mvc.Context,
   Quick.HttpServer.Types,
+  Quick.HttpServer.Response,
   Quick.Core.Mvc.ViewFeatures;
 
 type

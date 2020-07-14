@@ -41,6 +41,7 @@ uses
   Quick.Core.Caching.Abstractions,
   Quick.HttpServer.Types,
   Quick.HttpServer.Request,
+  Quick.HttpServer.Response,
   Quick.Core.Mvc.Middleware,
   Quick.Core.Mvc.Context,
   Quick.Core.Mvc.Routing;

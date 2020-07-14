@@ -95,7 +95,7 @@ var
   ctx : TRttiContext;
   rtype : TRttiType;
   attr : TCustomAttribute;
-  role : string;
+
 begin
   isAuthorized := False;
   controller := aContext.Route.ControllerClass;
@@ -160,7 +160,6 @@ function TAuthorizationMiddleware.IsValidPolicy(aContext : THttpContextBase; con
 var
   authResult : TAuthorizationResult;
 begin
-  Result := False;
   if (aContext.User = nil) or (aContext.User.Identity = nil) then Exit(True);
   authResult := fAuthorizationService.Authorize(aContext.User,nil,aPolicyName);
   Result := authResult.Succeeded;

@@ -53,7 +53,7 @@ type
     fDBEngine : TDatabaseEngine;
     fConnectionStringName: string;
   public
-    constructor Create;
+    constructor Create; override;
     property ConnectionStringName : string read fConnectionStringName write fConnectionStringName;
     property DBProvider : TDBProvider read fDBProvider write fDBProvider;
     property DBEngine : TDatabaseEngine read fDBEngine write fDBEngine;

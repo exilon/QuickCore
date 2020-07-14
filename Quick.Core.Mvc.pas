@@ -122,7 +122,6 @@ type
 
   TStartupMvc = class(TStartupBase)
   public
-    class procedure ConfigureServices(services : TServiceCollection); virtual; abstract;
     class procedure Configure(app : TMVCServer); virtual; abstract;
   end;
 

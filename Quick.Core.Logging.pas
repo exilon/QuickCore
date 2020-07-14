@@ -832,7 +832,6 @@ class function TLoggerBuilder.TLoggerProviderFactory.NewInstance(const aName: st
 var
   provname : string;
 begin
-  Result := nil;
   provname := aName.ToLower;
   if provname = 'console' then Result := TLogConsoleProvider.Create
   else if provname = 'file' then Result := TLogFileProvider.Create

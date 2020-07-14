@@ -131,7 +131,7 @@ type
     fTokens : TTokenOptions;
     fUser : TUserOptions;
   published
-    constructor Create;
+    constructor Create; override;
     destructor Destroy; override;
     property LockOut : TLockOutOptions read fLockOut write fLockOut;
     property Password : TPasswordOptions read fPassword write fPassword;

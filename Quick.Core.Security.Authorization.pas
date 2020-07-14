@@ -278,7 +278,6 @@ begin
   Result := False;
   if aContext.User <> nil then
   begin
-    found := False;
     if (fAllowedValues = nil) or (fAllowedValues.Count = 0) then
     begin
       found := aContext.User.Claims.Any('ClaimType = ?',[fClaimType]);

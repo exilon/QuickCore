@@ -192,7 +192,7 @@ type
     fDefaultSignOutScheme : string;
     fRequireAuthenticatedSignIn : Boolean;
   public
-    constructor Create;
+    constructor Create; override;
     destructor Destroy; override;
     property SchemeMap : TDictionary<string,TAuthenticationScheme> read fSchemeMap;
     property Schemes : TObjectList<TAuthenticationScheme> read fSchemes;

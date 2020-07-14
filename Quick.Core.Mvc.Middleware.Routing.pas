@@ -106,7 +106,6 @@ function THttpRouting.GetRoute(aRequest : IHttpRequest): THttpRoute;
 var
   routes : THttpRoutes;
   nroute : THttpRoute;
-  defcontroller : string;
 begin
   Result := nil;
   //get controller matching url
@@ -270,7 +269,6 @@ procedure THttpRouting.MapRoute(const aName : string; aController : THttpControl
 var
   nRoute : THttpRoute;
   controllerRoutes : THttpRoutes;
-  nseg : Integer;
 begin
   //add manual defined route
   nRoute := THttpRoute.Create;
