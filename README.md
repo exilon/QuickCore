@@ -78,7 +78,8 @@ Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance an
 * **Quick.core.Mvc.Extensions.TaskControl:** Task/Job control service.
 
 **Updates:**
-* 12/07/2020: Updated documentation
+* 11/08/2020: Added commandline extension.
+* 12/07/2020: Updated documentation.
 * 06/07/2020: First beta implementation.
 
 **Installation:**
@@ -228,6 +229,35 @@ Every Configured Option will be save and load to config file, but if we want, we
 Debugger is a simple tracer-debugger (See QuickLib documentation). To connect debugger with a logging service only needs to add Debugger service in ServiceCollection (by default uses a console output):
 ```delphi
 services.AddDebugger;
+```
+
+*Commandline parameters:*
+--
+Working with commandline parameters will be easy using commandline extension.
+Define a class inherited from TParameters or TServiceParameters (if working with QuickAppServices) with your possible arguments:
+```delphi
+uses
+  Quick.Parameters;
+type
+  TArguments = class(TParameters)
+  private
+    fPort : Integer;
+    fSilent : Boolean;
+  published
+    [ParamCommand(1)]
+    [ParamHelp('Define listen port','port')]
+    property Port : Integer read fPort write fPort;
+    property Silent : Boolean read fSilent write fSilent;
+  end;
+```
+And pass to de commandline extension:
+```delphi
+services.AddCommandline<TArguments>;
+```
+When you call your exe with --help you get documentation. If you need to check for a switch or value, you can do like this:
+```delphi
+if services.Commandline<TArguments>.Port = 0 then ...
+if services.Commandline<TArguments>.Silent then ...
 ```
 
 *Add custom services:*
