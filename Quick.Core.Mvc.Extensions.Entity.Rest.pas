@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 12/03/2020
-  Modified    : 09/06/2020
+  Modified    : 01/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -60,9 +60,14 @@ type
   private
     fDBContext : TDBContext;
     function GetWhereId(aModel: TEntityModel; const aId : string): string;
+    procedure RaiseEntityNotFound(const aMsg : string);
+    procedure RaiseEntityError(const aMsg : string);
   public
     constructor Create(aDBContext : T);
   published
+    [HttpPost('connect')]
+    function Connect(const User, Password : string) : IActionResult;
+
     [HttpPost('query/select')]
     function SelectQuery(const [FromBody]request: TEntitySelectRequest) : IActionResult;
 
@@ -72,11 +77,17 @@ type
     [HttpPost('query/delete')]
     function DeleteQuery(const [FromBody]request: TEntityDeleteRequest) : IActionResult;
 
+    [HttpPost('query/count')]
+    function CountQuery(const [FromBody]request: TEntityCountRequest) : IActionResult;
+
     [HttpGet('{table}/{id}')]
     function Get(const table : string; id : string) : IActionResult;
 
     [HttpPost('{table}')]
     function Add(const table : string; const [FromBody]value : string) : IActionResult;
+
+    [HttpPut('{table}/AOU/{id}')]
+    function AddOrUpdate(const table: string; const id : string; const [FromBody]value: string): IActionResult;
 
     [HttpPut('{table}/{id}')]
     function Update(const table: string; const id : string; const [FromBody]value: string): IActionResult;
@@ -84,6 +95,8 @@ type
     [HttpDelete('{table}/{id}')]
     function Delete(const table : string; id : string) : IActionResult;
   end;
+
+  EEntityRestError = class(EControlledException);
 
 implementation
 
@@ -96,7 +109,7 @@ begin
   begin
     MVCServer.AddController(TEntityRestController<T>);
   end
-  else raise Exception.Create('DBContext dependency not found. Need to be added before!');
+  else raise EEntityRestError.Create(nil,'DBContext dependency not found. Need to be added before!');
 end;
 
 { TEntityRestController }
@@ -113,6 +126,27 @@ begin
   else Result := Format('%s = "%s"',[aModel.PrimaryKey.Name,aId]);
 end;
 
+procedure TEntityRestController<T>.RaiseEntityError(const aMsg: string);
+begin
+  Response.StatusCode := 500;
+  Response.StatusText := aMsg;
+  raise EControlledException.Create(nil,aMsg);
+end;
+
+procedure TEntityRestController<T>.RaiseEntityNotFound(const aMsg: string);
+begin
+  Response.StatusCode := 404;
+  Response.StatusText := aMsg;
+  raise EControlledException.Create(nil,aMsg);
+end;
+
+function TEntityRestController<T>.Connect(const User, Password: string): IActionResult;
+begin
+  //if User and Password then
+
+  Result := Content(Integer(fDBContext.Connection.Provider).ToString);
+end;
+
 function TEntityRestController<T>.SelectQuery(const request: TEntitySelectRequest): IActionResult;
 var
   dbset : TDBSet<TEntity>;
@@ -124,31 +158,34 @@ begin
     TDebugger.Enter(Self,'SelectQuery').TimeIt;
   {$ENDIF}
   list := nil;
-  dbset := fDBContext.GetDBSet(request.Table);
-
-  //set where clause
-  linq := dbset.Where(request.WhereClause);
-
-  //set order clause
-  if not request.Order.IsEmpty then
-  begin
-    if request.OrderAsc then linq.OrderBy(request.Order)
-      else linq.OrderByDescending(request.Order);
-  end;
-
-  //select
-  list := TObjectList<TEntity>.Create(True);
-  if request.Limit = 1 then list.Add(linq.SelectFirst)
-  else if request.Limit = -1 then list.Add(linq.SelectLast)
-  else
-  begin
-    linq.SelectTop(request.Limit).ToObjectList(list);
-  end;
-
   try
-    Result := Json(list,True);
-  finally
-    list.Free;
+    dbset := fDBContext.GetDBSet(request.Table);
+
+    //set where clause
+    linq := dbset.Where(request.WhereClause);
+
+    //set order clause
+    if not request.Order.IsEmpty then
+    begin
+      if request.OrderAsc then linq.OrderBy(request.Order)
+        else linq.OrderByDescending(request.Order);
+    end;
+
+    //select
+    list := TObjectList<TEntity>.Create(True);
+    try
+      if request.Limit = 1 then list.Add(linq.SelectFirst)
+      else if request.Limit = -1 then list.Add(linq.SelectLast)
+      else
+      begin
+        linq.SelectTop(request.Limit).ToObjectList(list);
+      end;
+      Result := Json(list,True);
+    finally
+      list.Free;
+    end;
+  except
+    on E : Exception do RaiseEntityError(Format('Entity: %s',[e.Message]));
   end;
 end;
 
@@ -160,12 +197,42 @@ begin
 
 end;
 
+function TEntityRestController<T>.CountQuery(const request: TEntityCountRequest): IActionResult;
+var
+  dbset : TDBSet<TEntity>;
+begin
+  {$IFDEF DEBUG_ENTITY}
+    TDebugger.Enter(Self,'CountQuery').TimeIt;
+  {$ENDIF}
+  try
+    dbset := fDBContext.GetDBSet(request.Table);
+    Result := Content(dbset.Where(request.WhereClause).Count.ToString);
+  except
+    on E : Exception do RaiseEntityError(Format('Entity: %s',[e.Message]));
+  end;
+end;
+
 function TEntityRestController<T>.DeleteQuery(const request: TEntityDeleteRequest): IActionResult;
+var
+  dbset : TDBSet<TEntity>;
+  linq : IEntityLinqQuery<TEntity>;
+  reslinq : IEntityResult<TEntity>;
 begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.Enter(Self,'DeleteQuery');
   {$ENDIF}
+  try
+    dbset := fDBContext.GetDBSet(request.Table);
 
+    //set where clause
+    linq := dbset.Where(request.WhereClause);
+
+    //delete
+    linq.Delete;
+    Result := Ok;
+  except
+    on E : Exception do RaiseEntityError(Format('Entity: %s',[e.Message]));
+  end;
 end;
 
 function TEntityRestController<T>.Get(const table: string; id: string): IActionResult;
@@ -180,8 +247,12 @@ begin
 
   entity := dbset.Where(GetWhereId(dbset.Model,id),[]).SelectFirst;
 
-  if entity = nil then HttpContext.RaiseHttpErrorNotFound(nil,'register not found in database');
-  Result := Json(entity,True);
+  if entity = nil then RaiseEntityNotFound('register not found in database');
+  try
+    Result := Json(entity,True);
+  finally
+    entity.Free;
+  end;
 end;
 
 function TEntityRestController<T>.Add(const table: string; const value: string): IActionResult;
@@ -194,9 +265,34 @@ begin
   {$ENDIF}
   dbset := fDBContext.GetDBSet(table);
   entity := dbset.Model.Table.Create;
-  Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
-  if dbset.Add(entity) then Result := Self.StatusCode(THttpStatusCode.Created,'')
-    else HttpContext.RaiseHttpErrorNotFound(nil,'Cannot add register to database!');
+  try
+    Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
+    if dbset.Add(entity) then Result := Self.StatusCode(THttpStatusCode.Created,'')
+      else RaiseEntityNotFound('Cannot add register to database!');
+  finally
+    entity.Free;
+  end;
+end;
+
+function TEntityRestController<T>.AddOrUpdate(const table: string; const id : string; const value: string): IActionResult;
+var
+  dbset : TDBSet<TEntity>;
+  entity : TEntity;
+begin
+  {$IFDEF DEBUG_ENTITY}
+    TDebugger.Enter(Self,'AddOrUpdate').TimeIt;
+  {$ENDIF}
+  dbset := fDBContext.GetDBSet(table);
+  entity := dbset.Model.Table.Create;
+  try
+    Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
+    if VarIsEmpty(entity.FieldByName(dbset.Model.PrimaryKey.Name)) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
+
+    if dbset.AddOrUpdate(entity) then Result := Ok
+      else RaiseEntityNotFound('Cannot add or update register to database!');
+  finally
+    entity.Free;
+  end;
 end;
 
 function TEntityRestController<T>.Update(const table: string; const id : string; const value: string): IActionResult;
@@ -209,11 +305,15 @@ begin
   {$ENDIF}
   dbset := fDBContext.GetDBSet(table);
   entity := dbset.Model.Table.Create;
-  Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
-  if VarIsEmpty(entity.FieldByName(dbset.Model.PrimaryKey.Name)) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
+  try
+    Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
+    if VarIsEmpty(entity.FieldByName(dbset.Model.PrimaryKey.Name)) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
 
-  if dbset.Update(entity) then Result := Ok
-    else HttpContext.RaiseHttpErrorNotFound(nil,'Cannot update register to database!');
+    if dbset.Update(entity) then Result := Ok
+      else RaiseEntityNotFound('Cannot update register to database!');
+  finally
+    entity.Free;
+  end;
 end;
 
 function TEntityRestController<T>.Delete(const table: string; id: string): IActionResult;
@@ -226,7 +326,7 @@ begin
   dbset := fDBContext.GetDBSet(table);
 
   if dbset.Where(GetWhereId(dbset.Model,id),[]).Delete then Result := Ok
-    else HttpContext.RaiseHttpErrorNotFound(nil,'register not found in database');
+    else RaiseEntityNotFound('register not found in database');
 end;
 
 end.
