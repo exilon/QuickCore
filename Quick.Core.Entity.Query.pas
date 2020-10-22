@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 06/06/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -228,7 +228,7 @@ begin
         end
         else
         begin
-          //value := value;
+          Result := aValue.AsOrdinal.ToString;
         end;
       end;
     tkClass :
@@ -249,17 +249,24 @@ begin
       end;
     tkRecord :
       begin
-        rttijson := TRTTIJson.Create(TSerializeLevel.slPublishedProperty);
-        try
-          if aValue.IsEmpty then Exit('null');
-          jpair := TJSONPair.Create(aFieldName,rttijson.SerializeRecord(aValue));
+        if aValue.TypeInfo = System.TypeInfo(TGUID) then
+        begin
+          Result := QuotedStr(fQueryGenerator.GUIDToDBField(aValue.AsType<TGUID>));
+        end
+        else
+        begin
+          rttijson := TRTTIJson.Create(TSerializeLevel.slPublishedProperty);
           try
-            Result := QuotedStr(jpair.ToJSON);
+            if aValue.IsEmpty then Exit('null');
+            jpair := TJSONPair.Create(aFieldName,rttijson.SerializeRecord(aValue));
+            try
+              Result := QuotedStr(jpair.ToJSON);
+            finally
+              jpair.Free;
+            end;
           finally
-            jpair.Free;
+            rttijson.Free;
           end;
-        finally
-          rttijson.Free;
         end;
       end;
     else Result := 'null';
@@ -291,8 +298,13 @@ begin
           end;
           propvalue := rProp.GetValue(aEntity);
           value := GetRecordValue(propertyname,propvalue);
-          if not ((CompareText(propertyname,fModel.PrimaryKey.Name) = 0) and (rProp.PropertyType.Name = 'TAutoID')) then Result := Result + Format('[%s]=%s,',[propertyname,value])
-            else if propvalue.TypeInfo = TypeInfo(TModifiedDate) then value := fQueryGenerator.DateTimeToDBField(Now());
+          if (propvalue.TypeInfo = TypeInfo(TCreationDate)) or (propvalue.TypeInfo = TypeInfo(TModifiedDate)) then
+          begin
+            if propvalue.AsExtended > 0 then Result := Result + Format('[%s]=%s,',[propertyname,value]);
+          end
+          else
+          if not ((CompareText(propertyname,fModel.PrimaryKey.Name) = 0) and (rProp.PropertyType.Name = 'TAutoID')) then Result := Result + Format('[%s]=%s,',[propertyname,value]);
+          //  else if propvalue.TypeInfo = TypeInfo(TModifiedDate) then value := fQueryGenerator.DateTimeToDBField(Now());
 
           //rProp.SetValue(Self,GetDBFieldValue(propertyname,rProp.GetValue(Self)));
         end;
@@ -498,16 +510,24 @@ begin
       tkRecord :
         begin
           if IsNull then Exit(nil);
-          rttijson := TRTTIJson.Create(TSerializeLevel.slPublishedProperty);
-          try
-            json := TJSONObject.ParseJSONValue('{'+fieldvalue+'}') as TJSONObject;
+
+          if aValue.TypeInfo = System.TypeInfo(TGUID) then
+          begin
+            Result := TValue.From<TGUID>(fQueryGenerator.DBFieldToGUID(fieldvalue));
+          end
+          else
+          begin
+            rttijson := TRTTIJson.Create(TSerializeLevel.slPublishedProperty);
             try
-              Result := rttijson.DeserializeRecord(aValue,Self,json.GetValue(aFieldName) as TJSONObject);
+              json := TJSONObject.ParseJSONValue('{'+fieldvalue+'}') as TJSONObject;
+              try
+                Result := rttijson.DeserializeRecord(aValue,Self,json.GetValue(aFieldName) as TJSONObject);
+              finally
+                json.Free;
+              end;
             finally
-              json.Free;
+              rttijson.Free;
             end;
-          finally
-            rttijson.Free;
           end;
         end;
       tkMethod, tkPointer, tkClassRef ,tkInterface, tkProcedure :
@@ -670,6 +690,7 @@ begin
       {$ENDIF}
       vtChar : value := fQueryGenerator.QuotedStr(aWhereParams[i].VChar);
       vtPChar : value := fQueryGenerator.QuotedStr(string(aWhereParams[i].VPChar));
+      vtWideChar : value := fQueryGenerator.QuotedStr(WideChar(aWhereParams[i].VWideChar));
       vtVariant :
       begin
         vari := aWhereParams[i].VVariant^;

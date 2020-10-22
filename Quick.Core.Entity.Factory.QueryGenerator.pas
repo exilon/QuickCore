@@ -62,7 +62,6 @@ begin
     TDBProvider.dbMSSQL : Result := TMSSQLQueryGenerator.Create;
     TDBProvider.dbMySQL : Result := TMySQLQueryGenerator.Create;
     TDBProvider.dbSQLite : Result := TSQLiteQueryGenerator.Create;
-    TDBProvider.dbRestServer : Result := nil;
     //TDAODBType.daoFirebase : Result := TFireBaseQueryGenerator.Create;
     else raise EEntityQueryGeneratorError.Create('No valid QueryGenerator provider specified!');
   end;

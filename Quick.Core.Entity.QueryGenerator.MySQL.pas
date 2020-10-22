@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 22/11/2019
-  Modified    : 25/05/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -59,15 +59,17 @@ type
     function Delete(const aTableName : string; const aWhere : string) : string;
     function DateTimeToDBField(aDateTime : TDateTime) : string;
     function DBFieldToDateTime(const aValue : string) : TDateTime;
+    function DBFieldToGUID(const aValue : string) : TGUID;
+    function GUIDToDBField(aGuid : TGUID) : string;
   end;
 
 implementation
 
 const
   {$IFNDEF FPC}
-  DBDATATYPES : array of string = ['varchar(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime'];
+  DBDATATYPES : array of string = ['varchar(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','varchar(38)'];
   {$ELSE}
-  DBDATATYPES : array[0..10] of string = ('varchar(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime');
+  DBDATATYPES : array[0..10] of string = ('varchar(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','varchar(38)');
   {$ENDIF}
 
 { TSQLiteQueryGenerator }
@@ -258,7 +260,17 @@ end;
 
 function TMySQLQueryGenerator.Delete(const aTableName, aWhere: string) : string;
 begin
-  Result := Format('SELECT COUNT(*) AS cnt FROM [%s] WHERE %s',[aTableName,aWhere]);
+  Result := Format('DELETE FROM [%s] WHERE %s',[aTableName,aWhere]);
+end;
+
+function TMySQLQueryGenerator.DBFieldToGUID(const aValue: string): TGUID;
+begin
+  Result := StringToGUID(aValue);
+end;
+
+function TMySQLQueryGenerator.GUIDToDBField(aGuid: TGUID): string;
+begin
+  Result := aGuid.ToString;
 end;
 
 end.

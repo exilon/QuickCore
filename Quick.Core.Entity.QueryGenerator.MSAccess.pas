@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 22/11/2019
-  Modified    : 25/05/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -59,15 +59,17 @@ type
     function Delete(const aTableName : string; const aWhere : string) : string;
     function DateTimeToDBField(aDateTime : TDateTime) : string;
     function DBFieldToDateTime(const aValue : string) : TDateTime;
+    function DBFieldToGUID(const aValue : string) : TGUID;
+    function GUIDToDBField(aGuid : TGUID) : string;
   end;
 
 implementation
 
 const
   {$IFNDEF FPC}
-  DBDATATYPES : array of string = ['text(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime'];
+  DBDATATYPES : array of string = ['text(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','guid'];
   {$ELSE}
-  DBDATATYPES : array[0..10] of string = ('text(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime');
+  DBDATATYPES : array[0..10] of string = ('text(%d)','text','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','guid');
   {$ENDIF}
 
 { TMSSQLQueryGenerator }
@@ -297,14 +299,27 @@ begin
   Result := FormatDateTime('YYYY/MM/DD hh:nn:ss',aDateTime);
 end;
 
+function TMSAccessQueryGenerator.Delete(const aTableName, aWhere: string) : string;
+begin
+  Result := Format('DELETE FROM [%s] WHERE %s',[aTableName,aWhere]);
+end;
+
 function TMSAccessQueryGenerator.DBFieldToDateTime(const aValue: string): TDateTime;
 begin
   Result := StrToDateTime(aValue);
 end;
 
-function TMSAccessQueryGenerator.Delete(const aTableName, aWhere: string) : string;
+function TMSAccessQueryGenerator.DBFieldToGUID(const aValue: string): TGUID;
 begin
-  Result := Format('SELECT COUNT(*) AS cnt FROM [%s] WHERE %s',[aTableName,aWhere]);
+  Result := StringToGUID(aValue);
+end;
+
+function TMSAccessQueryGenerator.GUIDToDBField(aGuid: TGUID): string;
+begin
+  SetLength(Result, 38);
+  StrLFmt(PChar(Result), 38,'%.8x-%.4x-%.4x-%.2x%.2x-%.2x%.2x%.2x%.2x%.2x%.2x',   // do not localize
+    [aGuid.D1, aGuid.D2, aGuid.D3, aGuid.D4[0], aGuid.D4[1], aGuid.D4[2], aGuid.D4[3],
+    aGuid.D4[4], aGuid.D4[5], aGuid.D4[6], aGuid.D4[7]]);
 end;
 
 end.

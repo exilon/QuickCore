@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 22/06/2018
-  Modified    : 25/05/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -60,15 +60,17 @@ type
     function DateTimeToDBField(aDateTime : TDateTime) : string;
     function DBFieldToDateTime(const aValue : string) : TDateTime;
     function QuotedStr(const aValue: string): string; override;
+    function DBFieldToGUID(const aValue : string) : TGUID;
+    function GUIDToDBField(aGuid : TGUID) : string;
   end;
 
 implementation
 
 const
   {$IFNDEF FPC}
-  DBDATATYPES : array of string = ['varchar(%d)','varchar(max)','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime'];
+  DBDATATYPES : array of string = ['varchar(%d)','varchar(max)','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','uniqueidentifier'];
   {$ELSE}
-  DBDATATYPES : array[0..10] of string = ('varchar(%d)','varchar(max)','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime');
+  DBDATATYPES : array[0..10] of string = ('varchar(%d)','varchar(max)','char(%d)','int','integer','bigint','decimal(%d,%d)','bit','date','time','datetime','datetime','datetime','uniqueidentifier');
   {$ENDIF}
 
 { TMSSQLQueryGenerator }
@@ -298,7 +300,23 @@ end;
 
 function TMSSQLQueryGenerator.Delete(const aTableName, aWhere: string) : string;
 begin
-  Result := Format('SELECT COUNT(*) AS cnt FROM [%s] WHERE %s',[aTableName,aWhere]);
+  Result := Format('DELETE FROM [%s] WHERE %s',[aTableName,aWhere]);
+end;
+
+function TMSSQLQueryGenerator.DBFieldToGUID(const aValue: string): TGUID;
+begin
+  if aValue.Contains('{') then Result := StringToGUID(aValue)
+    else  Result := StringToGUID('{' + aValue + '{');
+end;
+
+function TMSSQLQueryGenerator.GUIDToDBField(aGuid: TGUID): string;
+begin
+  Result := GUIDToString(aGuid);
+  exit;
+  SetLength(Result, 38);
+  StrLFmt(PChar(Result), 38,'%.8x-%.4x-%.4x-%.2x%.2x-%.2x%.2x%.2x%.2x%.2x%.2x',   // do not localize
+    [aGuid.D1, aGuid.D2, aGuid.D3, aGuid.D4[0], aGuid.D4[1], aGuid.D4[2], aGuid.D4[3],
+    aGuid.D4[4], aGuid.D4[5], aGuid.D4[6], aGuid.D4[7]]);
 end;
 
 end.

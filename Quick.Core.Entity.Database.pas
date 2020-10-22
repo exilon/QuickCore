@@ -38,7 +38,6 @@ uses
   Quick.Debug.Utils,
   {$ENDIF}
   System.SysUtils,
-  Quick.Json.Serializer,
   Quick.Core.Entity.DAO,
   Quick.Core.Entity.Factory.QueryGenerator;
 

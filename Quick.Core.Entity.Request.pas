@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 06/04/2020
+  Modified    : 07/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -37,7 +37,16 @@ uses
   System.SysUtils;
 
 type
-  TEntityRequestAction = (raSelect, raAdd, raUpdate, raDelete);
+  TEntityRequestAction = (raSelect, raAdd, raUpdate, raAddOrUpdate, raDelete, raCount);
+
+  TEntityConnectRequest = class
+  private
+    fUser : string;
+    fPassword : string;
+  published
+    property User : string read fUser write fUser;
+    property Password : string read fPassword write fPassword;
+  end;
 
   TEntityRequest = class abstract
   private
@@ -72,10 +81,12 @@ type
     property Values : string read fValues write fValues;
   end;
 
+  TEntityCountRequest = class(TEntityRequest);
+
   TEntityDeleteRequest = class(TEntityRequest);
 
 const
-  EntityRequestActionStr : array[Low(TEntityRequestAction)..High(TEntityRequestAction)] of string = ('Select','Add','Update','Delete');
+  EntityRequestActionStr : array[Low(TEntityRequestAction)..High(TEntityRequestAction)] of string = ('Select','Add','Update','AddOrUpdate','Delete','Count');
 
 implementation
 

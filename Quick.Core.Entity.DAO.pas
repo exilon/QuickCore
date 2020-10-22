@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 09/06/2020
+  Modified    : 30/08/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -45,7 +45,6 @@ uses
   {$ENDIF}
   Quick.RTTI.Utils,
   Quick.Commons,
-  Quick.Json.Serializer,
   Quick.Collections;
 
 type
@@ -84,16 +83,18 @@ type
     dbMySQL        = $00030,
     dbSQLite       = $00040,
     dbIBM400       = $00050,
-    dbFirebase     = $00060,
-    dbRestServer   = $01000);
+    dbFirebase     = $00060);
 
-  TFieldDataType = (dtString, dtstringMax, dtChar, dtInteger, dtAutoID, dtInt64, dtFloat, dtBoolean, dtDate, dtTime, dtDateTime, dtCreationDate, dtModifiedDate);
+  TFieldDataType = (dtString, dtstringMax, dtChar, dtInteger, dtAutoID, dtInt64, dtFloat, dtBoolean, dtDate, dtTime, dtDateTime, dtCreationDate, dtModifiedDate, dtGUID);
 
+  EEntityConnectionError = class(Exception);
   EEntityModelError = class(Exception);
   EEntityCreationError = class(Exception);
   EEntityUpdateError = class(Exception);
   EEntitySelectError = class(Exception);
   EEntityDeleteError = class(Exception);
+  EEntityProviderError = class(Exception);
+  EEntityRestRequestError = class(Exception);
 
   TEntity = class;
 
@@ -244,6 +245,8 @@ type
     function DateTimeToDBField(aDateTime : TDateTime) : string;
     function DBFieldToDateTime(const aValue : string) : TDateTime;
     function QuotedStr(const aValue : string) : string;
+    function DBFieldToGUID(const aValue : string) : TGUID;
+    function GUIDToDBField(aGuid : TGUID) : string;
   end;
 
   IEntityLinqQuery<T : class> = interface
@@ -383,8 +386,21 @@ begin
 end;
 
 function TEntity.FieldByName(const aFieldName: string): Variant;
+//begin
+//  Result := TRTTI.GetPropertyValue(Self,aFieldName).AsVariant;
+//end;
+
+//function TEntity.FieldAsText(const aFieldName: string): string;
+var
+  value : TValue;
 begin
-  Result := TRTTI.GetPropertyValue(Self,aFieldName).AsVariant;
+  value := TRTTI.GetPropertyValue(Self,aFieldName);
+  if value.Kind = tkRecord then
+  begin
+    if value.IsType<TGUID> then Result := QuotedStr(GUIDToString(value.AsType<TGUID>))
+      else Result := value.ToString;
+  end
+  else Result := value.AsVariant;
 end;
 
 { TEntityIndexes }
@@ -568,7 +584,7 @@ begin
         begin
           if attr is MapField then propertyname := MapField(attr).Name;
           if attr is StringLength then entityField.DataSize := StringLength(attr).Size;
-          if attr is StringLength then
+          if attr is DecimalLength then
           begin
             entityField.DataSize := DecimalLength(attr).Size;
             entityField.Precision := DecimalLength(attr).Decimals;
@@ -580,7 +596,7 @@ begin
         //value := rProp.GetValue(Self.Table);
         //propType := rProp.PropertyType.TypeKind;
         case rProp.PropertyType.TypeKind of
-          tkDynArray, tkArray, tkClass, tkRecord :
+          tkDynArray, tkArray, tkClass :
             begin
               entityField.DataType := dtstringMax;
             end;
@@ -656,6 +672,18 @@ begin
               else
               begin
                 entityField.DataType := dtInteger;
+              end;
+            end;
+          tkRecord :
+            begin
+              value := rProp.GetValue(Self.Table);
+              if (value.TypeInfo = System.TypeInfo(TGUID)) then
+              begin
+                entityField.DataType := dtGUID;
+              end
+              else
+              begin
+                entityField.DataType := dtstringMax;
               end;
             end;
         end;

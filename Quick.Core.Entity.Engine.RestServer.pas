@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 08/06/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -85,15 +85,19 @@ type
     property Connection : TRestServerConnection read fConnection write fConnection;
     property Model : TEntityModel read fModel write fModel;
     property Results : TList<T> read fResults write fResults;
+    function ConnectRequest(aRequest : TEntityConnectRequest; out vResult : string) : Boolean;
     function SendRequest(aRequest: TEntityRequest): Boolean; overload;
     function SendRequest(aAction : TEntityRequestAction; aValue : TEntity) : Boolean; overload;
+    function SendRequest(aRequest: TEntityRequest; out vResult : string): Boolean; overload;
   end;
 
   TRestServerEntityDataBase = class(TEntityDatabase)
   private
     fRestServerConnection : TRestServerConnection;
     fInternalQuery : TRestServerQuery<TEntity>;
+    fDBProvider : TDBProvider;
     function GetDriverID(aDBProvider : TDBProvider) : string;
+    function DoConnect(const aUser, aPassword : string): Boolean;
   protected
     function CreateConnectionString: string; override;
     procedure ExecuteSQLQuery(const aQueryText : string); override;
@@ -183,19 +187,23 @@ begin
 end;
 
 function TRestServerEntityDataBase.Connect: Boolean;
-var
-  host : string;
-  user : string;
-  pass : string;
 begin
   //creates connection string based on parameters of connection property
-  inherited;
+  {$IFDEF DEBUG_ENTITY}
+    TDebugger.TimeIt(Self,'Connect','');
+  {$ENDIF}
+  Result := False;
   CreateConnectionString;
   fRestServerConnection.Host := Connection.Server;
   fRestServerConnection.User := Connection.UserName;
   fRestServerConnection.Password := Connection.Password;
-  fRestServerConnection.Connected := True;
   fInternalQuery.Connection := fRestServerConnection;
+  try
+    fRestServerConnection.Connected := DoConnect(Connection.UserName,Connection.Password);
+  except
+    on E : Exception do raise EEntityConnectionError.CreateFmt('Entity connection error: %s',[e.Message]);
+  end;
+  inherited;
   Result := IsConnected;
   //CreateTables;
   //CreateIndexes;
@@ -223,6 +231,27 @@ procedure TRestServerEntityDataBase.Disconnect;
 begin
   inherited;
   fRestServerConnection.Connected := False;
+end;
+
+function TRestServerEntityDataBase.DoConnect(const aUser, aPassword : string): Boolean;
+var
+  request : TEntityConnectRequest;
+  response : string;
+begin
+  Result := False;
+  request := TEntityConnectRequest.Create;
+  try
+    request.User := aUser;
+    request.Password := aPassword;
+    Result := fInternalQuery.ConnectRequest(request,response);
+    if Result then
+    begin
+      fDBProvider := TDBProvider(response.ToInteger);
+      Connection.Provider := fDBProvider;
+    end;
+  finally
+    request.Free;
+  end;
 end;
 
 procedure TRestServerEntityDataBase.ExecuteSQLQuery(const aQueryText: string);
@@ -264,7 +293,7 @@ begin
     TDBProvider.dbMSSQL : Result := 'MSSQL';
     TDBProvider.dbMySQL : Result := 'MySQL';
     TDBProvider.dbSQLite : Result := 'SQLite';
-    else raise Exception.Create('Unknow DBProvider or not supported by this engine');
+    else raise EEntityProviderError.Create('Unknow DBProvider or not supported by this engine');
   end;
 end;
 
@@ -357,12 +386,23 @@ end;
 
 function TRestServerEntityQuery<T>.AddOrUpdate(aEntity: TEntity): Boolean;
 begin
-  Result := fQuery.SendRequest(TEntityRequestAction.raUpdate,aEntity);
+  Result := fQuery.SendRequest(TEntityRequestAction.raAddOrUpdate,aEntity);
 end;
 
 function TRestServerEntityQuery<T>.Count: Int64;
+var
+  request : TEntityCountRequest;
+  response : string;
 begin
-  raise ENotImplemented.Create('not implemented yet!');
+  request := TEntityCountRequest.Create;
+  try
+    request.Table := fModel.TableName;
+    request.Action := TEntityRequestAction.raCount;
+    request.WhereClause := fWhereClause;
+    if fQuery.SendRequest(request,response) then Result := response.ToInt64;
+  finally
+    request.Free;
+  end;
 end;
 
 function TRestServerEntityQuery<T>.CountResults: Integer;
@@ -434,18 +474,22 @@ function TRestServerEntityQuery<T>.Select: IEntityResult<T>;
 var
   request : TEntitySelectRequest;
 begin
-  request := TEntitySelectRequest.Create;
   try
-    request.Table := fModel.TableName;
-    request.Action := TEntityRequestAction.raSelect;
-    request.Fields := '';
-    request.Limit := 0;
-    request.WhereClause := fWhereClause;
-    request.Order := fOrderClause;
-    request.OrderAsc := fOrderAsc;
-    if fQuery.SendRequest(request) then Result := TEntityResult<T>.Create(Self);
-  finally
-    request.Free;
+    request := TEntitySelectRequest.Create;
+    try
+      request.Table := fModel.TableName;
+      request.Action := TEntityRequestAction.raSelect;
+      request.Fields := '';
+      request.Limit := 0;
+      request.WhereClause := fWhereClause;
+      request.Order := fOrderClause;
+      request.OrderAsc := fOrderAsc;
+      if fQuery.SendRequest(request) then Result := TEntityResult<T>.Create(Self);
+    finally
+      request.Free;
+    end;
+  except
+    on E : Exception do raise EEntitySelectError.Create(e.message);
   end;
 end;
 
@@ -604,9 +648,17 @@ begin
     var crono := TDebugger.TimeIt(Self,'SendRequest',RequestActionToStr(aAction) + ' Entity');
     {$ENDIF}
     if aAction = TEntityRequestAction.raAdd then response := fHttpClient.Post(Format('%s/api/%s',[Connection.Host,fModel.TableName]),content)
-    else if aAction = TEntityRequestAction.raUpdate then response := fHttpClient.Put(Format('%s/api/%s/%s',
-                                                                     [Connection.Host,fModel.TableName,aValue.FieldByName(fModel.PrimaryKey.Name)]),content)
-    else raise Exception.Create('Method not allowed here');
+    else if aAction = TEntityRequestAction.raAddOrUpdate then
+    begin
+      response := fHttpClient.Put(Format('%s/api/%s/AOU/%s',
+                            [Connection.Host,fModel.TableName,aValue.FieldByName(fModel.PrimaryKey.Name)]),content);
+    end
+    else if aAction = TEntityRequestAction.raUpdate then
+    begin
+      response := fHttpClient.Put(Format('%s/api/%s/%s',
+                            [Connection.Host,fModel.TableName,aValue.FieldByName(fModel.PrimaryKey.Name)]),content);
+    end
+    else raise EEntityRestRequestError.Create('Entity Method not allowed here');
     {$IFDEF DEBUG_ENTITY}
     crono.Stop;
     {$ENDIF}
@@ -614,6 +666,8 @@ begin
     content.Free;
   end;
   Result := response.StatusCode in [200,201];
+  if response.StatusCode in [200,201] then Result := True
+    else if response.StatusCode <> 404 then raise EEntityRestRequestError.Create(response.StatusText);
 end;
 
 function TRestServerQuery<T>.SendRequest(aRequest: TEntityRequest): Boolean;
@@ -636,8 +690,82 @@ begin
       {$ENDIF}
       if response.StatusCode in [200,201] then
       begin
-        fSerializer.JsonToObject(fResults,rescontent.DataString);
+        if aRequest.Action = TEntityRequestAction.raSelect then fSerializer.JsonToObject(fResults,rescontent.DataString);
         Result := True;
+      end
+      else if response.StatusCode <> 404 then
+      begin
+        raise EEntityRestRequestError.Create(response.StatusText);
+      end;
+    finally
+      rescontent.Free;
+    end;
+  finally
+    content.Free;
+  end;
+end;
+
+function TRestServerQuery<T>.SendRequest(aRequest: TEntityRequest; out vResult : string): Boolean;
+var
+  response : IHTTPResponse;
+  content : TStringStream;
+  rescontent : TStringStream;
+begin
+  Result := False;
+  content := TStringStream.Create(fSerializer.ObjectToJson(aRequest));
+  try
+    rescontent := TStringStream.Create;
+    try
+      {$IFDEF DEBUG_ENTITY}
+      var crono := TDebugger.TimeIt(Self,'SendRequest', RequestActionToStr(aRequest.Action) + ' query');
+      {$ENDIF}
+      response := fHttpClient.Post(Format('%s/api/query/%s',[Connection.Host,RequestActionToStr(aRequest.Action)]),content,rescontent);
+      {$IFDEF DEBUG_ENTITY}
+      crono.Stop;
+      {$ENDIF}
+      if response.StatusCode in [200,201] then
+      begin
+        vResult := response.ContentAsString;
+        Result := True;
+      end
+      else if response.StatusCode <> 404 then
+      begin
+        raise EEntityRestRequestError.Create(response.StatusText);
+      end;
+    finally
+      rescontent.Free;
+    end;
+  finally
+    content.Free;
+  end;
+end;
+
+function TRestServerQuery<T>.ConnectRequest(aRequest: TEntityConnectRequest; out vResult : string): Boolean;
+var
+  response : IHTTPResponse;
+  content : TStringStream;
+  rescontent : TStringStream;
+begin
+  Result := False;
+  content := TStringStream.Create(fSerializer.ObjectToJson(aRequest));
+  try
+    rescontent := TStringStream.Create;
+    try
+      {$IFDEF DEBUG_ENTITY}
+      var crono := TDebugger.TimeIt(Self,'ConnectRequest', Format('Connecting to %s',[Connection.Host]));
+      {$ENDIF}
+      response := fHttpClient.Post(Format('%s/api/connect',[Connection.Host]),content,rescontent);
+      {$IFDEF DEBUG_ENTITY}
+      crono.Stop;
+      {$ENDIF}
+      if response.StatusCode in [200,201] then
+      begin
+        vResult := response.ContentAsString;
+        Result := True;
+      end
+      else if response.StatusCode <> 404 then
+      begin
+        raise EEntityRestRequestError.Create(response.StatusText);
       end;
     finally
       rescontent.Free;

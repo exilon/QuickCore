@@ -193,7 +193,7 @@ end;
 function TDBContextOptionsBuilder.UseRestServer: IDBContextOptionsBuilder;
 begin
   Result := Self;
-  fOptions.DBProvider := TDBProvider.dbRestServer;
+  fOptions.DBProvider := TDBProvider.dbSQLite;
   fOptions.DBEngine := TDatabaseEngine.deRestServer;
 end;
 

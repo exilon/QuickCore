@@ -36,6 +36,9 @@ interface
 uses
   Classes,
   System.SysUtils,
+  {$IFDEF DEBUG_ENTITY}
+    Quick.Debug.Utils,
+  {$ENDIF}
   //Winapi.ActiveX,
   FireDAC.Comp.Client,
   FireDAC.Stan.Def,
@@ -126,7 +129,7 @@ implementation
 constructor TFireDACEntityDataBase.Create;
 begin
   inherited;
-  fFireDACConnection := TFDConnection.Create(nil);
+
   fInternalQuery := TFDQuery.Create(nil);
 end;
 
@@ -157,7 +160,15 @@ function TFireDACEntityDataBase.Connect: Boolean;
 begin
   //creates connection string based on parameters of connection property
   inherited;
-  fFireDACConnection.ConnectionString := CreateConnectionString;
+  if fFireDACConnection <> nil then Exit;
+
+  var params := TStringList.Create;
+  for var p in (CreateConnectionString + ';Pooled=True').Split([';']) do params.Add(p);
+  FDManager.AddConnectionDef('FDDBContext','SQLite',params);
+  fFireDACConnection := TFDConnection.Create(nil);
+  fFireDACConnection.ConnectionDefName := 'FDDBContext';
+  //fFireDACConnection.Params.Add('LockingMode=Normal');
+  //fFireDACConnection.ConnectionString := CreateConnectionString;
   fFireDACConnection.Connected := True;
   fInternalQuery.Connection := fFireDACConnection;
   Result := IsConnected;
@@ -281,6 +292,8 @@ end;
 
 function TFireDACEntityDataBase.IsConnected: Boolean;
 begin
+  if fFireDACConnection = nil then Exit(False);
+
   Result := fFireDACConnection.Connected;
 end;
 
