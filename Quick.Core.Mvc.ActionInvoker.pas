@@ -120,15 +120,24 @@ begin
   end;
   //param injection
   value := rmethod.Invoke(aController,values);
-
-  //if response is IActionResult execute ExecuteResult
-  if value.AsInterface is TActionResult  then
-  begin
-    actionContext := TActionContext.Create(aContext.HttpContext,aContext.RouteData);
-    try
-      IActionResult(value.AsInterface).ExecuteResult(actionContext);
-    finally
-      actionContext.Free;
+  try
+    //if response is IActionResult execute ExecuteResult
+    if value.AsInterface is TActionResult  then
+    begin
+      actionContext := TActionContext.Create(aContext.HttpContext,aContext.RouteData);
+      try
+        IActionResult(value.AsInterface).ExecuteResult(actionContext);
+      finally
+        actionContext.Free;
+      end;
+    end;
+  finally
+    //free controller result
+    if value.IsObjectInstance then value.AsObject.Free;
+    //free params injected into controller
+    for value in values do
+    begin
+      if value.IsObjectInstance then value.AsObject.Free;
     end;
   end;
 end;
