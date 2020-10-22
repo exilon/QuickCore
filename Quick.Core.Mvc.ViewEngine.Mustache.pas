@@ -45,7 +45,7 @@ uses
 type
 
   TMustacheViewEngine = class(TViewEngine)
-  protected
+  public
     function FindView(aActionContext : TActionContext; const aViewName : string) : IView; override;
   end;
 
