@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/02/2020
-  Modified    : 30/05/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -37,6 +37,7 @@ uses
   System.SysUtils,
   typinfo,
   System.Rtti,
+  Quick.RTTI.Utils,
   System.Generics.Collections,
   Quick.Value,
   Quick.Core.Mapping.Abstractions;
@@ -226,7 +227,14 @@ begin
       else
       begin
         obj := tgtprop.GetValue(aTgtObj).AsObject;
-        if obj = nil then obj := GetObjectProp(aSrcObj,tgtprop.Name).ClassType.Create;// TObject.Create;
+        if obj = nil then
+        begin
+          if TRTTI.PropertyExists(aSrcObj.ClassInfo,tgtprop.Name) then obj := GetObjectProp(aSrcObj,tgtprop.Name).ClassType.Create// TObject.Create;
+          else
+          begin
+            if (Assigned(aProfileMap)) and (aProfileMap.fIgnoreAllNonExisting) then Continue;
+          end;
+        end;
 
         if obj <> nil then
         begin
@@ -235,7 +243,7 @@ begin
               and (not rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).IsEmpty) then clname := rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject.ClassName
             else Continue;
           except
-            on E : Exception do raise EAUtoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
+            on E : Exception do raise EAutoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
           end;
           if clname.StartsWith('TObjectList') then ObjListMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap)
             else ObjMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap,False)
@@ -282,7 +290,7 @@ end;
 
 class constructor TProfile.Create;
 begin
-  fMappings := TObjectDictionary<string,TProfileMap>.Create;
+  fMappings := TObjectDictionary<string,TProfileMap>.Create([doOwnsValues]);
   fResolveUnmapped := False;
   fDefaultProfileMap := TProfileMap.Create(nil);
 end;
