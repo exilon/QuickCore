@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 22/02/2020
-  Modified    : 18/06/2020
+  Modified    : 11/09/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -48,8 +48,8 @@ type
     function FromObject(aObject : TObject): string;
     function FromValue(aValue : TValue) : string;
     //function FromArray<T>(aArray : TArray<T>; aIndent : Boolean = False) : string;
-    function ToObject(aType : TClass; const aYaml: string) : TObject; overload;
-    function ToObject(aObject : TObject; const aYaml: string) : TObject; overload;
+    function ToObject(aType : TClass; const aSerialized: string) : TObject; overload;
+    function ToObject(aObject : TObject; const aSerialized: string) : TObject; overload;
     //function ToArray<T>(const aYaml : string) : TArray<T>;
   end;
 
