@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 19/10/2019
-  Modified    : 05/06/2020
+  Modified    : 05/08/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -42,10 +42,12 @@ uses
   System.TypInfo,
   Quick.Commons,
   Quick.Options,
+  Quick.Parameters,
   Quick.Options.Serializer.Json,
   Quick.Options.Serializer.Yaml,
   Quick.Core.Logging.Abstractions,
   Quick.Core.Serialization,
+  Quick.Core.Commandline,
   Quick.IOC;
 
 type
@@ -126,6 +128,7 @@ type
     function AddTypedFactory<TFactoryInterface : IInterface; TFactoryType : class, constructor>(const aName : string = '') : TServiceCollection;
     function AddLogging(aLoggerService: ILogger): TServiceCollection;
     function AddDebugger : TServiceCollection;
+    function AddCommandline<TArguments : TParameters> : TServiceCollection;
     function AbstractFactory<T : class, constructor> : T;
     procedure Build;
   end;
@@ -242,6 +245,7 @@ begin
   Result := Self;
   {$IFDEF DEBUG}
     TDebugger.SetLogger(fLoggerService);
+    TDebugger.Log.Warn('Debug logging enabled');
   {$ENDIF}
 end;
 
@@ -250,6 +254,12 @@ begin
   Result := Self;
   fLoggerService := aLoggerService;
   fDependencyInjector.RegisterInstance<ILogger>(aLoggerService).AsSingleton;
+end;
+
+function TServiceCollection.AddCommandline<TArguments> : TServiceCollection;
+begin
+  Result := Self;
+  fDependencyInjector.RegisterInstance<ICommandline<TArguments>>(TCommandline<TArguments>.Create).AsSingleton;
 end;
 
 function TServiceCollection.AddOptions(aOptionsFileFormat : TOptionsFileFormat = ofJSON; aReloadOnChange : Boolean = True; const aOptionsFileName: string = ''): TServiceCollection;
@@ -267,6 +277,7 @@ end;
 function TServiceCollection.AddOptions(aSerializer : IOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection;
 var
   filename : string;
+  fnalternative : string;
   iserializer : IOptionsSerializer;
   environment : string;
 begin
@@ -281,9 +292,25 @@ begin
   if not aOptionsFileName.IsEmpty then filename := aOptionsFileName
   else
   begin
-    if aSerializer is TJsonOptionsSerializer then filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.json'
-      else if aSerializer is TYamlOptionsSerializer then filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.yml'
-        else raise EServiceConfigError.Create('Options Serializer not recognized!');
+    if aSerializer is TJsonOptionsSerializer then
+    begin
+      filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.json';
+      if not FileExists(filename) then
+      begin
+        Logger.Warn('Config file not found: "%s"',[filename]);
+        filename := path.EXEPATH + PathDelim + 'appSettings.json';
+      end;
+    end
+    else if aSerializer is TYamlOptionsSerializer then
+    begin
+      filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.yml';
+      if not FileExists(filename) then
+      begin
+        Logger.Warn('Config file not found: "%s"',[filename]);
+        filename := path.EXEPATH + PathDelim + 'appSettings.yml';
+      end;
+    end
+    else raise EServiceConfigError.Create('Options Serializer not recognized!');
   end;
   if aSerializer <> nil then iserializer := aSerializer
     else iserializer := TJsonOptionsSerializer.Create;
