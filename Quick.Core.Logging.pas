@@ -53,7 +53,9 @@ uses
   {$ENDIF}
   Quick.Logger.Provider.Telegram,
   Quick.Logger.Provider.Slack,
+  {$IFDEF DEBUG}
   Quick.Logger.ExceptionHook,
+  {$ENDIF}
   Quick.Logger.UnhandledExceptionHook;
 
 type
@@ -323,7 +325,6 @@ type
     fOptionContainer : TOptionsContainer;
     fCreateIfNotExists : Boolean;
     constructor Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True);
-    destructor Destroy; override;
     procedure AddOptions(aOptionsFormat : TLoggerOptionsFormat);
     procedure AddOptionClass(const aName : string);
     procedure LoadConfig;
@@ -344,6 +345,7 @@ type
     {$ENDIF}
     function Build : ILogger;
   public
+    destructor Destroy; override;
     class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder;
   end;
 
