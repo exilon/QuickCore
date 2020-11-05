@@ -62,7 +62,7 @@ type
   private
     fCacheService : IDistributedCache;
     function GetResponseFromCache(aContext : THttpContextBase) : Boolean;
-    function SaveResponseToCache(aContext: THttpContextBase; aDurationMS : Integer): Boolean;
+    procedure SaveResponseToCache(aContext: THttpContextBase; aDurationMS : Integer);
   public
     constructor Create(aNext: TRequestDelegate; aCacheService : IDistributedCache);
     destructor Destroy; override;
@@ -104,7 +104,7 @@ begin
   end;
 end;
 
-function TCacheMiddleware.SaveResponseToCache(aContext: THttpContextBase; aDurationMS : Integer): Boolean;
+procedure TCacheMiddleware.SaveResponseToCache(aContext: THttpContextBase; aDurationMS : Integer);
 var
   cacheitem : TResponseCacheItem;
 begin
