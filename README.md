@@ -508,4 +508,5 @@ product := fMapper.Map(dbproduct).AsType<TProduct>;
 
 ## ..more documentation soon
 
-Do you want learn delphi? [learndelphi.org](https://learndelphi.org)
+>Do you want to learn delphi or improve your skills? [learndelphi.org](https://learndelphi.org)
+
