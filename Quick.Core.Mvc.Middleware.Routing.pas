@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 12/10/2019
-  Modified    : 01/07/2020
+  Modified    : 16/11/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -79,6 +79,8 @@ type
     constructor Create(aNext : TRequestDelegate; aHttpRouting : THttpRouting);
     procedure Invoke(aContext : THttpContextBase); override;
   end;
+
+  ENotValidMvcRoute = class(Exception);
 
 implementation
 
@@ -241,7 +243,14 @@ begin
     end;
   end;
   //add controller routes to main routing
-  fRoutes.Add(nroute.ControllerName,routes);
+  try
+    fRoutes.Add(nroute.ControllerName,routes);
+  except
+    on E : Exception do
+    begin
+      raise ENotValidMvcRoute.CreateFmt('Error creating Mvc routing: %s',[e.Message]);
+    end;
+  end;
 end;
 
 class function THttpRouting.GetControllerByName(const aControllerName : string) : THttpControllerClass;
@@ -287,7 +296,7 @@ begin
   end;
   //set a normal route
   if aURL.Split(['/']).Count > 1 then nRoute.ActionMethodName := aURL.Split(['/'])[1]
-    else raise Exception.CreateFmt('Not valid map route defined [%s]',[aURL]);
+    else raise ENotValidMvcRoute.CreateFmt('Not valid map route defined [%s]',[aURL]);
   //add map to existing controllers routes if already exists
   if fRoutes.TryGetValue(THttpRouting.GetControllerName(aController),controllerRoutes) then
   begin
