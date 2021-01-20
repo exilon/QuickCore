@@ -388,7 +388,7 @@ function TMVCServer.UseWebRoot(const aPath: string): TMVCServer;
 begin
   Result := Self;
   fWebRoot := IncludeTrailingPathDelimiter(aPath);
-  if not DirectoryExists(fWebRoot) then Logger.Warn('Error accessing WebRoot: Directory not found!');
+  if not DirectoryExists(fWebRoot) then Logger.Warn('Error accessing WebRoot "%s": Directory not found!',[fWebRoot]);
 end;
 
 function TMVCServer.AddController(aHttpController: THttpControllerClass) : TMVCServer;
