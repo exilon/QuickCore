@@ -34,6 +34,9 @@ unit Quick.Core.Logging;
 interface
 
 uses
+  {$IFDEF DEBUG_LOGGING}
+  Quick.Debug.Utils,
+  {$ENDIF}
   System.SysUtils,
   Quick.Commons,
   Quick.Options,
@@ -61,6 +64,8 @@ uses
 type
 
   TQuickLogger = class(TInterfacedObject,ILogger)
+  private
+    fLogger : TLogger;
   public
     constructor Create;
     destructor Destroy; override;
@@ -322,9 +327,12 @@ type
       class function NewInstance(const aName : string) : TLogProviderBase;
     end;
   private
+    fUseOptionsFile : Boolean;
+    fOptionsFilename : string;
     fOptionContainer : TOptionsContainer;
     fCreateIfNotExists : Boolean;
-    constructor Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True);
+    constructor Create; overload;
+    constructor Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True; aOptionsFilename : string = ''); overload;
     procedure AddOptions(aOptionsFormat : TLoggerOptionsFormat);
     procedure AddOptionClass(const aName : string);
     procedure LoadConfig;
@@ -346,7 +354,8 @@ type
     function Build : ILogger;
   public
     destructor Destroy; override;
-    class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder;
+    class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder; overload;
+    class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean; aOptionsFilename : string) : ILoggerBuilder; overload;
   end;
 
   ELoggerConfigError = class(Exception);
@@ -364,6 +373,18 @@ implementation
 
 { TQuickLogger }
 
+constructor TQuickLogger.Create;
+begin
+  fLogger := TLogger.Create;
+  Init;
+end;
+
+destructor TQuickLogger.Destroy;
+begin
+  fLogger.Free;
+  inherited;
+end;
+
 procedure TQuickLogger.Init;
 begin
   //if IsDebug then GlobalLogConsoleProvider.LogLevel := LOG_DEBUG;
@@ -375,113 +396,102 @@ end;
 
 function TQuickLogger.Providers: TLogProviderList;
 begin
-  Result := Logger.Providers;
+  Result := fLogger.Providers;
 end;
 
 procedure TQuickLogger.Info(const aMsg: string);
 begin
-  Logger.Info(aMsg);
+  fLogger.Info(aMsg);
 end;
 
 procedure TQuickLogger.Info(const aMsg: string; aValues: array of const);
 begin
-  Logger.Info(aMsg,aValues);
+  fLogger.Info(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Succ(const aMsg: string);
 begin
-  Logger.Succ(aMsg);
+  fLogger.Succ(aMsg);
 end;
 
 procedure TQuickLogger.Succ(const aMsg: string; aParams: array of const);
 begin
-  Logger.Succ(aMsg,aParams);
+  fLogger.Succ(aMsg,aParams);
 end;
 
 procedure TQuickLogger.Done(const aMsg: string);
 begin
-  Logger.Done(aMsg);
+  fLogger.Done(aMsg);
 end;
 
 procedure TQuickLogger.Done(const aMsg: string; aValues: array of const);
 begin
-  Logger.Done(aMsg,aValues);
+  fLogger.Done(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Warn(const aMsg: string);
 begin
-  Logger.Warn(aMsg);
+  fLogger.Warn(aMsg);
 end;
 
 procedure TQuickLogger.Warn(const aMsg: string; aValues: array of const);
 begin
-  Logger.Warn(aMsg,aValues);
+  fLogger.Warn(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Error(const aMsg: string);
 begin
-  Logger.Error(aMsg);
+  fLogger.Error(aMsg);
 end;
 
 procedure TQuickLogger.Error(const aMsg: string; aValues: array of const);
 begin
-  Logger.Error(aMsg,aValues);
+  fLogger.Error(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Critical(const aMsg: string);
 begin
-  Logger.Critical(aMsg);
-end;
-
-constructor TQuickLogger.Create;
-begin
-  Init;
+  fLogger.Critical(aMsg);
 end;
 
 procedure TQuickLogger.Critical(const aMsg: string; aValues: array of const);
 begin
-  Logger.Critical(aMsg,aValues);
+  fLogger.Critical(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Trace(const aMsg: string);
 begin
-  Logger.Trace(aMsg);
+  fLogger.Trace(aMsg);
 end;
 
 procedure TQuickLogger.Trace(const aMsg: string; aValues: array of const);
 begin
-  Logger.Trace(aMsg,aValues);
+  fLogger.Trace(aMsg,aValues);
 end;
 
 procedure TQuickLogger.Debug(const aMsg: string);
 begin
-  Logger.Debug(aMsg);
+  fLogger.Debug(aMsg);
 end;
 
 procedure TQuickLogger.Debug(const aMsg: string; aValues: array of const);
 begin
-  Logger.Debug(aMsg,aValues);
-end;
-
-destructor TQuickLogger.Destroy;
-begin
-
-  inherited;
+  fLogger.Debug(aMsg,aValues);
 end;
 
 procedure TQuickLogger.&Except(const aMsg: string; aValues: array of const);
 begin
-  Logger.&Except(aMsg,aValues);
+  fLogger.&Except(aMsg,aValues);
 end;
 
 procedure TQuickLogger.&Except(const aMsg: string; aValues: array of const; const aException, aStackTrace: string);
 begin
-  Logger.&Except(aMsg,aValues,aException,aStacktrace);
+  fLogger.&Except(aMsg,aValues,aException,aStacktrace);
 end;
 
 procedure TQuickLogger.&Except(const aMsg, aException, aStackTrace: string);
 begin
-  Logger.&Except(aMsg,aException,aStackTrace);
+  fLogger.&Except(aMsg,aException,aStackTrace);
 end;
 
 { TLoggerConsoleProviderBuilder }
@@ -523,8 +533,18 @@ end;
 
 { TLoggerBuilder }
 
-constructor TLoggerBuilder.Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True);
+constructor TLoggerBuilder.Create;
 begin
+  fOptionsFilename := '';
+  fCreateIfNotExists := False;
+  fUseOptionsFile := False;
+  fLogger := TQuickLogger.Create;
+end;
+
+constructor TLoggerBuilder.Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True; aOptionsFilename : string = '');
+begin
+  fUseOptionsFile := not aOptionsFilename.IsEmpty;
+  fOptionsFilename := aOptionsFilename;
   fCreateIfNotExists := aCreateConfigFileIfNotExists;
   fLogger := TQuickLogger.Create;
   //load settings
@@ -539,7 +559,12 @@ end;
 
 class function TLoggerBuilder.GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder;
 begin
-  Result := TLoggerBuilder.Create(aOptionsFormat,aCreateConfigFileIfNotExists);
+  Result := GetBuilder(aOptionsFormat,aCreateConfigFileIfNotExists,'');
+end;
+
+class function TLoggerBuilder.GetBuilder(aOptionsFormat: TLoggerOptionsFormat; aCreateConfigFileIfNotExists: Boolean; aOptionsFilename: string): ILoggerBuilder;
+begin
+  Result := TLoggerBuilder.Create(aOptionsFormat,aCreateConfigFileIfNotExists,aOptionsFilename);
 end;
 
 function TLoggerBuilder.GetEnvironment: string;
@@ -556,6 +581,8 @@ var
   sections : TArray<string>;
   sectionName : string;
 begin
+  if not fUseOptionsFile then Exit;
+
   for iprovider in fLogger.Providers do iprovider.Stop;
   fLogger.Providers.Clear;
   //get options in file
@@ -574,8 +601,8 @@ begin
     logprovider := TLoggerProviderFactory.NewInstance(oplogger.Name);
     TObjMapper.Map(oplogger,logprovider);
     fLogger.Providers.Add(logprovider);
-    {$IFDEF COREDEBUG}
-    fLogger.Debug('Loaded Logger provider %s',[logprovider.Name]);
+    {$IFDEF DEBUG_LOGGING}
+    TDebugger.Trace(Self,Format('Loaded Logger provider %s',[logprovider.Name]));
     {$ENDIF}
   end;
 end;
@@ -583,8 +610,8 @@ end;
 procedure TLoggerBuilder.AddProvider(aProvider : TLogProviderBase);
 begin
   fLogger.Providers.Add(aProvider);
-  {$IFDEF COREDEBUG}
-  fLogger.Debug('Added Logger provider %s',[aProvider.Name]);
+  {$IFDEF DEBUG_LOGGING}
+    TDebugger.Trace(Self,Format('Added Logger provider %s',[aProvider.Name]));
   {$ENDIF}
   //loggerConsole.Enabled := True;
 end;
@@ -595,9 +622,14 @@ var
   loggerConsole : TLogConsoleProvider;
 begin
   Result := Self;
-  if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TConsoleLoggerOptions,'Console')) then Exit;
+  if fUseOptionsFile then
+  begin
+    if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TConsoleLoggerOptions,'Console')) then Exit;
 
-  options := fOptionContainer.AddSection(TConsoleLoggerOptions,'Console') as TConsoleLoggerOptions;
+    options := fOptionContainer.AddSection(TConsoleLoggerOptions,'Console') as TConsoleLoggerOptions;
+  end
+  else options := TConsoleLoggerOptions.Create;
+
   loggerConsole := TLogConsoleProvider.Create;
   loggerConsole.Name := options.Name;
   TObjMapper.Map(loggerConsole,options);
@@ -617,9 +649,13 @@ var
   loggerfile : TLogFileProvider;
 begin
   Result := Self;
-  if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TFileLoggerOptions,'File')) then Exit;
+  if fUseOptionsFile then
+  begin
+    if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TFileLoggerOptions,'File')) then Exit;
 
-  options := fOptionContainer.AddSection(TFileLoggerOptions,'File') as TFileLoggerOptions;
+    options := fOptionContainer.AddSection(TFileLoggerOptions,'File') as TFileLoggerOptions;
+  end
+  else options := TFileLoggerOptions.Create;
   loggerfile := TLogFileProvider.Create;
   loggerfile.Name := options.Name;
   TObjMapper.Map(loggerfile,options);
@@ -757,18 +793,22 @@ var
   filename : string;
   iserializer : IOptionsSerializer;
   environment : string;
+  opfilename : string;
 begin
   environment := GetEnvironment;
   if not environment.IsEmpty then environment := '.' + environment;
 
+  if fOptionsFilename.IsEmpty then opfilename := 'QuickLogger'
+    else opfilename := fOptionsFilename;
+
   if aOptionsFormat = TLoggerOptionsFormat.ofJSON then
   begin
-      filename := path.EXEPATH + PathDelim + 'QuickLogger' + environment + '.json';
+      filename := path.EXEPATH + PathDelim + opfilename + environment + '.json';
     iserializer := TJsonOptionsSerializer.Create;
   end
   else if aOptionsFormat = TLoggerOptionsFormat.ofYAML then
   begin
-    filename := path.EXEPATH + PathDelim + 'QuickLogger' + environment + '.yml';
+    filename := path.EXEPATH + PathDelim + opfilename + environment + '.yml';
     iserializer := TYamlOptionsSerializer.Create;
   end
   else raise ELoggerConfigError.Create('Logger Options Serializer not recognized!');
@@ -776,16 +816,16 @@ begin
   fOptionContainer := TOptionsContainer.Create(filename,iserializer,False);
   if FileExists(filename) then
   begin
-    {$IFDEF COREDEBUG}
-    Logger.Debug('Loading Logger settings from "%s"',[filename]);
+    {$IFDEF DEBUG_LOGGING}
+    TDebugger.Trace(Self,Format('Loading Logger settings from "%s"',[filename]));
     {$ENDIF}
     //load config
     LoadConfig;
   end
   else
   begin
-    {$IFDEF COREDEBUG}
-    Logger.Debug('Autocreate Logger settings "%s"',[filename]);
+    {$IFDEF DEBUG_LOGGING}
+    TDebugger.Trace(Self,Format('Autocreate Logger settings "%s"',[filename]));
     {$ENDIF}
   end;
 end;
