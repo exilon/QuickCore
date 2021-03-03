@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Extensions.MessageQueue.Redis
   Description : Core Redis MessageQueue Extension
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 12/07/2020
+  Modified    : 02/03/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -74,6 +74,7 @@ type
     fConnectionTimeout: Integer;
     fReadTimeout: Integer;
     fRealiableMessageQueue: TRealiableMessageQueue;
+    fRetainDoneMessages : Boolean;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -89,6 +90,7 @@ type
     property MaxProducersPool : Integer read fMaxProducersPool write fMaxProducersPool;
     property MaxConsumersPool : Integer read fMaxConsumersPool write fMaxConsumersPool;
     property ReliableMessageQueue : TRealiableMessageQueue read fRealiableMessageQueue write fRealiableMessageQueue;
+    property RetainDoneMessages : Boolean read fRetainDoneMessages write fRetainDoneMessages;
   end;
 
   TRedisMessageQueue<T : class, constructor> = class(TMessageQueue<T>)
@@ -100,6 +102,7 @@ type
     fLogger : ILogger;
     fWorkingKey : string;
     fFailedKey : string;
+    fDoneKey : string;
     procedure ConfigureRedisPooling;
     procedure CreateScheduler;
     function CreateRedisPool(aMaxPool, aConnectionTimemout, aReadTimeout : Integer) : TObjectPool<TRedisClient>;
@@ -151,6 +154,8 @@ begin
   inherited Create;
   fOptions := aOptions.Value;
   fWorkingKey := fOptions.Key + '.working';
+  fFailedKey := fOptions.Key + '.failed';
+  fDoneKey := fOptions.Key + '.done';
   if fOptions.ReliableMessageQueue.Enabled then CreateScheduler;
   ConfigureRedisPooling;
 end;
@@ -248,6 +253,7 @@ var
 begin
   try
     done := fPopRedisPool.Get.Item.RedisBRPOP(fOptions.Key,msg,fOptions.PopTimeoutSec);
+    if msg.IsEmpty then done := False;// raise Exception.Create('MessageQueue: Msg Empty!');
 
     if done then
     begin
@@ -266,23 +272,33 @@ end;
 
 function TRedisMessageQueue<T>.Remove(const aMessage: T): Boolean;
 var
-  key : string;
+  msg : string;
 begin
-  if fOptions.ReliableMessageQueue.Enabled then key := fWorkingKey
-    else key := fOptions.Key;
+  if not fOptions.ReliableMessageQueue.Enabled then Exit(True);
 
-  Result := fPushRedisPool.Get.Item.RedisLREM(key,Serialize(aMessage),-1);
+  msg := Serialize(aMessage);
+  //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
+  Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,msg);
+  {$IFDEF DEBUG_MSQ}
+  if not Result then TDebugger.Trace(Self,Format('RemoveDoneMSQ: "%s" cannot be deleted',[msg]));
+  {$ENDIF}
+  if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,msg);
 end;
 
 function TRedisMessageQueue<T>.Failed(const aMessage: T): Boolean;
 var
-  key : string;
+  msg : string;
 begin
-  if fOptions.ReliableMessageQueue.Enabled then key := fWorkingKey
-    else key := fOptions.Key;
-
-  Result := fPushRedisPool.Get.Item.RedisLREM(key,Serialize(aMessage),-1);
-  Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,Serialize(aMessage));
+  if fOptions.ReliableMessageQueue.Enabled then
+  begin
+    msg := Serialize(aMessage);
+    //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
+    Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,msg);
+    {$IFDEF DEBUG_MSQ}
+    if not Result then TDebugger.Trace(Self,Format('RemoveFailedMSQ: "%s" cannot be deleted',[msg]));
+    {$ENDIF}
+  end;
+  Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,msg);
 end;
 
 { TQueueServiceExtension }
@@ -315,6 +331,7 @@ begin
   fRealiableMessageQueue.CheckHangedMessagesIntervalSec := 300;
   fRealiableMessageQueue.DetermineAsHangedAfterSec := 60;
   fRealiableMessageQueue.Enabled := False;
+  fRetainDoneMessages := False;
 end;
 
 destructor TRedisMessageQueueOptions.Destroy;
