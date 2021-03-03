@@ -88,6 +88,9 @@ type
     function Clone : TDBConnectionSettings;
   end;
 
+  TConnectionFailureEvent = procedure(aException : Exception) of object;
+  TQueryErrorEvent = procedure(aException : Exception) of object;
+
   TEntityDatabase = class
   private
     fDBConnection : TDBConnectionSettings;
@@ -95,11 +98,16 @@ type
     fQueryGenerator : IEntityQueryGenerator;
     fModels : TEntityModels;
     fIndexes : TEntityIndexes;
+    fOnQueryError: TQueryErrorEvent;
+    fOnConnectionFailure: TConnectionFailureEvent;
+    procedure ExecuteSQLQuery(const aQueryText : string);
+    procedure OpenSQLQuery(const aQueryText: string);
+    function CheckIsConnectionError(aException : Exception) : Boolean;
   protected
     property OwnsConnection : Boolean read fOwnsConnection write fOwnsConnection;
     function CreateConnectionString : string; virtual; abstract;
-    procedure ExecuteSQLQuery(const aQueryText : string); virtual; abstract;
-    procedure OpenSQLQuery(const aQueryText: string); virtual; abstract;
+    procedure DoExecuteSQLQuery(const aQueryText : string); virtual; abstract;
+    procedure DoOpenSQLQuery(const aQueryText: string); virtual; abstract;
     function ExistsTable(aModel : TEntityModel) : Boolean; virtual; abstract;
     function CreateTable(const aModel : TEntityModel): Boolean; virtual;
     function ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean; virtual; abstract;
@@ -115,6 +123,8 @@ type
     property Connection : TDBConnectionSettings read fDBConnection write fDBConnection;
     property Models : TEntityModels read fModels write fModels;
     property Indexes : TEntityIndexes read fIndexes write fIndexes;
+    property OnConnectionFailure : TConnectionFailureEvent read fOnConnectionFailure write fOnConnectionFailure;
+    property OnQueryError : TQueryErrorEvent read fOnQueryError write fOnQueryError;
     function CreateQuery(aModel : TEntityModel) : IEntityQuery<TEntity>; virtual; abstract;
     function GetTableNames : TArray<string>; virtual; abstract;
     function GetFieldNames(const aTableName : string) : TArray<string>; virtual; abstract;
@@ -146,6 +156,66 @@ begin
   fModels.Free;
   fIndexes.Free;
   inherited;
+end;
+
+function TEntityDatabase.CheckIsConnectionError(aException : Exception) : Boolean;
+var
+  emessage : string;
+begin
+  {$IFDEF DEBUG_ENTITY}
+    TDebugger.Trace(Self,'Check is connection error...');
+  {$ENDIF}
+  emessage := aException.Message.ToLower;
+  if (emessage.Contains('connection') or emessage.Contains('network') or emessage.Contains('server')) and
+     (emessage.Contains('failure') or emessage.Contains('error')
+      or emessage.Contains('refused') or emessage.Contains('closed')) then Exit(True);
+
+  if emessage.Contains('not connection') or emessage.Contains('not connect') then Exit(True);
+  Result := False;
+end;
+
+procedure TEntityDatabase.ExecuteSQLQuery(const aQueryText: string);
+begin
+  try
+    DoExecuteSQLQuery(aQueryText);
+  except
+    on E : Exception do
+    begin
+      if Assigned(fOnQueryError) then fOnQueryError(e);
+      //if connection failure, reconnects
+      if CheckIsConnectionError(e) then
+      begin
+        {$IFDEF DEBUG_ENTITY}
+        TDebugger.Trace(Self,'Connection error: Reconnecting...');
+        {$ENDIF}
+        Disconnect;
+        Connect;
+      end;
+      raise E;
+    end;
+  end;
+end;
+
+procedure TEntityDatabase.OpenSQLQuery(const aQueryText: string);
+begin
+  try
+    DoOpenSQLQuery(aQueryText);
+  except
+    on E : Exception do
+    begin
+      if Assigned(fOnQueryError) then fOnQueryError(e);
+      //if connection failure, reconnects
+      if CheckIsConnectionError(e) then
+      begin
+        {$IFDEF DEBUG_ENTITY}
+        TDebugger.Trace(Self,'Connection error: Reconnecting...');
+        {$ENDIF}
+        Disconnect;
+        Connect;
+      end;
+      raise E;
+    end;
+  end;
 end;
 
 procedure TEntityDatabase.CreateIndexes;
@@ -182,7 +252,7 @@ end;
 function TEntityDatabase.CreateTable(const aModel : TEntityModel): Boolean;
 begin
   try
-    ExecuteSQLQuery(QueryGenerator.CreateTable(aModel));
+    DoExecuteSQLQuery(QueryGenerator.CreateTable(aModel));
     Result := True;
   except
     on E : Exception do raise EEntityCreationError.CreateFmt('Error creating table "%s" : %s!',[aModel.TableName,e.Message])
@@ -195,13 +265,17 @@ begin
     TDebugger.TimeIt(Self,'Connect','');
   {$ENDIF}
   Result := False;
-  fQueryGenerator := TEntityQueryGeneratorFactory.Create(fDBConnection.Provider);
+  try
+    fQueryGenerator := TEntityQueryGeneratorFactory.Create(fDBConnection.Provider);
+  except
+    on E : Exception do raise EEntityConnectionError.CreateFmt('Cannot connect to Entity Database! (%s)',[e.message]);
+  end;
 end;
 
 procedure TEntityDatabase.AddColumnToTable(aModel : TEntityModel; aField : TEntityField);
 begin
   try
-    ExecuteSQLQuery(QueryGenerator.AddColumn(aModel,aField));
+    DoExecuteSQLQuery(QueryGenerator.AddColumn(aModel,aField));
   except
     on E : Exception do raise EEntityCreationError.CreateFmt('Error creating table "%s" fields',[aModel.TableName]);
   end;
@@ -213,7 +287,7 @@ var
 begin
   try
     query := QueryGenerator.SetPrimaryKey(aModel);
-    if not query.IsEmpty then ExecuteSQLQuery(query);
+    if not query.IsEmpty then DoExecuteSQLQuery(query);
   except
     on E : Exception do raise EEntityCreationError.Create('Error modifying primary key field');
   end;
@@ -227,7 +301,7 @@ begin
   try
     query := QueryGenerator.CreateIndex(aModel,aIndex);
     if query.IsEmpty then Exit;
-    ExecuteSQLQuery(query);
+    DoExecuteSQLQuery(query);
   except
     on E : Exception do raise EEntityCreationError.CreateFmt('Error creating index "%s" on table "%s"',[aIndex.FieldNames[0],aModel.TableName]);
   end;

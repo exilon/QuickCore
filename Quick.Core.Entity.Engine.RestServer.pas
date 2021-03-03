@@ -100,8 +100,8 @@ type
     function DoConnect(const aUser, aPassword : string): Boolean;
   protected
     function CreateConnectionString: string; override;
-    procedure ExecuteSQLQuery(const aQueryText : string); override;
-    procedure OpenSQLQuery(const aQueryText: string); override;
+    procedure DoExecuteSQLQuery(const aQueryText : string); override;
+    procedure DoOpenSQLQuery(const aQueryText: string); override;
     function ExistsTable(aModel : TEntityModel) : Boolean; override;
     function ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean; override;
   public
@@ -254,14 +254,14 @@ begin
   end;
 end;
 
-procedure TRestServerEntityDataBase.ExecuteSQLQuery(const aQueryText: string);
+procedure TRestServerEntityDataBase.DoExecuteSQLQuery(const aQueryText: string);
 begin
   //Not needed: Theses operations were made on server part
   //fInternalQuery.SQL.Text := aQueryText;
   //fInternalQuery.ExecSQL;
 end;
 
-procedure TRestServerEntityDataBase.OpenSQLQuery(const aQueryText: string);
+procedure TRestServerEntityDataBase.DoOpenSQLQuery(const aQueryText: string);
 begin
   //Not needed: Theses operations were made on server part
   //fInternalQuery.SQL.Text := aQueryText;

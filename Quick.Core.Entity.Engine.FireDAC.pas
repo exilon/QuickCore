@@ -81,8 +81,8 @@ type
     function GetDriverID(aDBProvider : TDBProvider) : string;
   protected
     function CreateConnectionString: string; override;
-    procedure ExecuteSQLQuery(const aQueryText : string); override;
-    procedure OpenSQLQuery(const aQueryText: string); override;
+    procedure DoExecuteSQLQuery(const aQueryText : string); override;
+    procedure DoOpenSQLQuery(const aQueryText: string); override;
     function ExistsTable(aModel : TEntityModel) : Boolean; override;
     function ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean; override;
   public
@@ -129,7 +129,7 @@ implementation
 constructor TFireDACEntityDataBase.Create;
 begin
   inherited;
-
+  fFireDACConnection := TFDConnection.Create(nil);
   fInternalQuery := TFDQuery.Create(nil);
 end;
 
@@ -160,15 +160,7 @@ function TFireDACEntityDataBase.Connect: Boolean;
 begin
   //creates connection string based on parameters of connection property
   inherited;
-  if fFireDACConnection <> nil then Exit;
-
-  var params := TStringList.Create;
-  for var p in (CreateConnectionString + ';Pooled=True').Split([';']) do params.Add(p);
-  FDManager.AddConnectionDef('FDDBContext','SQLite',params);
-  fFireDACConnection := TFDConnection.Create(nil);
-  fFireDACConnection.ConnectionDefName := 'FDDBContext';
-  //fFireDACConnection.Params.Add('LockingMode=Normal');
-  //fFireDACConnection.ConnectionString := CreateConnectionString;
+  fFireDACConnection.ConnectionString := CreateConnectionString;
   fFireDACConnection.Connected := True;
   fInternalQuery.Connection := fFireDACConnection;
   Result := IsConnected;
@@ -201,13 +193,13 @@ begin
   fFireDACConnection.Connected := False;
 end;
 
-procedure TFireDACEntityDataBase.ExecuteSQLQuery(const aQueryText: string);
+procedure TFireDACEntityDataBase.DoExecuteSQLQuery(const aQueryText: string);
 begin
   fInternalQuery.SQL.Text := aQueryText;
   fInternalQuery.ExecSQL;
 end;
 
-procedure TFireDACEntityDataBase.OpenSQLQuery(const aQueryText: string);
+procedure TFireDACEntityDataBase.DoOpenSQLQuery(const aQueryText: string);
 begin
   fInternalQuery.SQL.Text := aQueryText;
   fInternalQuery.Open;
@@ -216,7 +208,7 @@ end;
 function TFireDACEntityDataBase.ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean;
 begin
   Result := False;
-  OpenSQLQuery(QueryGenerator.ExistsColumn(aModel,aFieldName));
+  DoOpenSQLQuery(QueryGenerator.ExistsColumn(aModel,aFieldName));
   while not fInternalQuery.Eof do
   begin
     if CompareText(fInternalQuery.FieldByName('name').AsString,aFieldName) = 0 then
@@ -232,7 +224,7 @@ end;
 function TFireDACEntityDataBase.ExistsTable(aModel: TEntityModel): Boolean;
 begin
   Result := False;
-  OpenSQLQuery(QueryGenerator.ExistsTable(aModel));
+  DoOpenSQLQuery(QueryGenerator.ExistsTable(aModel));
   while not fInternalQuery.Eof do
   begin
     if CompareText(fInternalQuery.FieldByName('name').AsString,aModel.TableName) = 0 then
@@ -292,8 +284,6 @@ end;
 
 function TFireDACEntityDataBase.IsConnected: Boolean;
 begin
-  if fFireDACConnection = nil then Exit(False);
-
   Result := fFireDACConnection.Connected;
 end;
 

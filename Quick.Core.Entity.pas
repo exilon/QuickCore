@@ -395,7 +395,8 @@ end;
 
 function TDBContext.Connect: Boolean;
 begin
-  if not fDatabase.IsConnected then
+  Result := fDatabase.IsConnected;
+  if not Result then
   begin
     GetModelsFromContext;
     Result := fDatabase.Connect;

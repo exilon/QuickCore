@@ -65,8 +65,8 @@ type
     function GetDBProviderName(aDBProvider: TDBProvider): string;
   protected
     function CreateConnectionString: string; override;
-    procedure OpenSQLQuery(const aQueryText: string); override;
-    procedure ExecuteSQLQuery(const aQueryText: string); override;
+    procedure DoOpenSQLQuery(const aQueryText: string); override;
+    procedure DoExecuteSQLQuery(const aQueryText: string); override;
     function ExistsTable(aModel : TEntityModel) : Boolean; override;
     function ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean; override;
   public
@@ -156,6 +156,11 @@ begin
   if Connection.IsCustomConnectionString then Result := Format('Provider=%s;%s',[GetDBProviderName(Connection.Provider),Connection.GetCustomConnectionString])
   else
   begin
+    if (Connection.Server.IsEmpty) or
+       (Connection.Database.IsEmpty) or
+       (Connection.UserName.IsEmpty) then raise EEntityConnectionError.Create('Entity ConnectionString missing info!');
+
+
     if Connection.Server = '' then dbconn := 'Data Source=' + Connection.Database
       else dbconn := Format('Database=%s;Data Source=%s',[Connection.Database,Connection.Server]);
 
@@ -222,13 +227,13 @@ begin
   Result := fADOConnection.Connected;
 end;
 
-procedure TADOEntityDataBase.OpenSQLQuery(const aQueryText: string);
+procedure TADOEntityDataBase.DoOpenSQLQuery(const aQueryText: string);
 begin
   fInternalQuery.SQL.Text := aQueryText;
   fInternalQuery.Open;
 end;
 
-procedure TADOEntityDataBase.ExecuteSQLQuery(const aQueryText: string);
+procedure TADOEntityDataBase.DoExecuteSQLQuery(const aQueryText: string);
 begin
   fInternalQuery.SQL.Text := aQueryText;
   fInternalQuery.ExecSQL;
@@ -251,7 +256,7 @@ begin
   end
   else
   begin
-    OpenSQLQuery(QueryGenerator.ExistsColumn(aModel,aFieldName));
+    DoOpenSQLQuery(QueryGenerator.ExistsColumn(aModel,aFieldName));
     while not fInternalQuery.Eof do
     begin
       if CompareText(fInternalQuery.FieldByName('name').AsString,aFieldName) = 0 then
@@ -279,7 +284,7 @@ begin
   end
   else
   begin
-    OpenSQLQuery(QueryGenerator.ExistsTable(aModel));
+    DoOpenSQLQuery(QueryGenerator.ExistsTable(aModel));
     while not fInternalQuery.Eof do
     begin
       if CompareText(fInternalQuery.FieldByName('name').AsString,aModel.TableName) = 0 then
