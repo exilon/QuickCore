@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Mvc
   Description : Core MVC Server
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 30/09/2019
-  Modified    : 18/06/2020
+  Modified    : 23/02/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -57,6 +57,7 @@ uses
   Quick.Core.Mvc.Middleware.Hsts,
   Quick.Core.Mvc.Middleware.HttpsRedirection,
   Quick.Core.Mvc.Middleware.MVC,
+  Quick.Core.Mvc.Middleware.LogRequest,
   Quick.Core.Mvc.Middleware.Authentication,
   Quick.Core.Mvc.Middleware.Authorization,
   Quick.Core.Mvc.ViewFeatures,
@@ -115,6 +116,8 @@ type
     function UseSession : TMVCServer;
     function UseMVC : TMVCServer;
     function UseMustachePages : TMVCServer;
+    function UseLogRequest : TMVCServer; overload;
+    function UseLogRequest(aLoggerService : ILogger) : TMVCServer; overload;
     //function Run(aDelegateFunction : TRequestDelegateFunc);
     procedure Start; virtual;
     procedure Stop; virtual;
@@ -316,6 +319,19 @@ function TMVCServer.UseHttpsRedirection: TMVCServer;
 begin
   Result := Self;
   fMiddlewares.Add(THttpsRedirectionMiddleware.Create(nil,307));
+end;
+
+function TMVCServer.UseLogRequest(aLoggerService: ILogger): TMVCServer;
+begin
+  Result := Self;
+  if aLoggerService = nil then raise Exception.Create('UseLogRequest Logger cannot be nil!');
+  fMiddlewares.Add(TLogRequestMiddleware.Create(nil,aLoggerService));
+end;
+
+function TMVCServer.UseLogRequest: TMVCServer;
+begin
+  Result := Self;
+  UseLogRequest(Logger);
 end;
 
 function TMVCServer.UseMiddleware(aCustomMiddlewareClass: TRequestDelegateClass): TMVCServer;
