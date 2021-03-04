@@ -1,13 +1,13 @@
 ﻿{ ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.DependencyInjection
   Description : Core Services Dependency Injection
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 19/10/2019
-  Modified    : 05/08/2020
+  Modified    : 03/03/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -48,6 +48,7 @@ uses
   Quick.Core.Logging.Abstractions,
   Quick.Core.Serialization,
   Quick.Core.Commandline,
+  Quick.Core.Extensions.Hosting,
   Quick.IOC;
 
 type
@@ -64,10 +65,8 @@ type
     function ConfigureServices(aRegisterProc : TRegisterServicesProc) : TServiceCollection;
     function AddOptions(aOptionsFileFormat : TOptionsFileFormat = ofJSON; aReloadOnChange : Boolean = True; const aOptionsFileName: string = ''): TServiceCollection; overload;
     function AddOptions(aSerializer : IOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection; overload;
-    //function AddAutoMapper(aAutoMapperService : IAutoMapper) : TServiceCollection;
     function AddLogging(aLoggerService : ILogger) : TServiceCollection;
     function AddDebugger : TServiceCollection;
-    //function AddAuthorization(aAuthorizationSchema : IAuthorizationSchema) : TServiceCollection;
     procedure Build;
   end;
 
@@ -90,23 +89,25 @@ type
     fSerializer : ISerializers;
     fDependencyInjector : TDependencyInjector;
     fOptionsService : TOptionsContainer;
+    fHostEnvironment : IHostEnvironment;
   protected
     function DependencyInjector : TDependencyInjector; inline;
     function Options : TOptionsContainer; inline;
     function Serializer : ISerializers; inline;
     function Logger : ILogger; inline;
-    function GetCoreEnvironment: string;
   public
     constructor Create;
     class function CreateFromStartup<T : TStartupBase> : TServiceCollection;
     destructor Destroy; override;
     function AppServices : TAppServices;
+    function Environment : IHostEnvironment;
     function IsRegistered<TInterface : IInterface; TImplementation : class>(const aName : string = '') : Boolean; overload;
     function IsRegistered<TInterface : IInterface>(const aName: string = ''): Boolean; overload;
     function Configure<T : TOptions>(const aSectionName : string = '') : TServiceCollection; overload;
     function Configure<T : TOptions>(aConfigureOptionsFunc : TConfigureOptionsProc<T>): TServiceCollection; overload;
     function Configure<T : TOptions>(const aSectionName : string; aConfigureOptionsFunc : TConfigureOptionsProc<T>): TServiceCollection; overload;
     function Configure<T : TOptions>(aOptions : TOptions) : TServiceCollection; overload;
+    function GetConfiguration<T : TOptions> : T;
     function Resolve<T>(const aName : string = '') : T; overload;
     function Resolve(aServiceType: PTypeInfo; const aName : string = ''): TValue; overload;
     function ConfigureServices(aRegisterProc : TRegisterServicesProc) : TServiceCollection;
@@ -181,6 +182,7 @@ begin
   fLoggerService := TNullLogger.Create;
   fDependencyInjector := TDependencyInjector.Create;
   fSerializer := TSerializers.Create;
+  fHostEnvironment := THostEnvironment.Create;
 end;
 
 class function TServiceCollection.CreateFromStartup<T> : TServiceCollection;
@@ -200,9 +202,14 @@ begin
   inherited;
 end;
 
-function TServiceCollection.GetCoreEnvironment: string;
+function TServiceCollection.Environment: IHostEnvironment;
 begin
-  Result := GetEnvironmentVariable('CORE_ENVIRONMENT');
+  Result := fHostEnvironment;
+end;
+
+function TServiceCollection.GetConfiguration<T>: T;
+begin
+  Result := fOptionsService.GetSection<T>;
 end;
 
 function TServiceCollection.IsRegistered<TInterface, TImplementation>(const aName: string = ''): Boolean;
@@ -279,14 +286,14 @@ var
   filename : string;
   fnalternative : string;
   iserializer : IOptionsSerializer;
-  environment : string;
+  env : string;
 begin
   Result := Self;
-  environment := GetCoreEnvironment;
-  if not environment.IsEmpty then
+  env := Environment.EnvironmentName;
+  if not env.IsEmpty then
   begin
-    Logger.Info('Core Environment: "%s"',[environment]);
-    environment := '.' + environment;
+    Logger.Info('Core Environment: "%s"',[env]);
+    env := '.' + env;
   end;
 
   if not aOptionsFileName.IsEmpty then filename := aOptionsFileName
@@ -294,7 +301,7 @@ begin
   begin
     if aSerializer is TJsonOptionsSerializer then
     begin
-      filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.json';
+      filename := path.EXEPATH + PathDelim + 'appSettings' + env + '.json';
       if not FileExists(filename) then
       begin
         Logger.Warn('Config file not found: "%s"',[filename]);
@@ -303,7 +310,7 @@ begin
     end
     else if aSerializer is TYamlOptionsSerializer then
     begin
-      filename := path.EXEPATH + PathDelim + 'appSettings' + environment + '.yml';
+      filename := path.EXEPATH + PathDelim + 'appSettings' + env + '.yml';
       if not FileExists(filename) then
       begin
         Logger.Warn('Config file not found: "%s"',[filename]);
