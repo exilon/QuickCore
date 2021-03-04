@@ -53,6 +53,7 @@ type
   end;
 
   EControllerMethodNotFound = class(Exception);
+  EActionInvokerAlreadyFreeParam = class(Exception);
 
 implementation
 
@@ -69,6 +70,7 @@ var
   attr : TCustomAttribute;
   isFromBody : Boolean;
   actionContext : TActionContext;
+
 begin
   //execute controller action method
   {$IFDEF DEBUG_CONTROLLER}
@@ -90,7 +92,7 @@ begin
     if isFromBody then
     begin
       {$IFDEF DEBUG_CONTROLLER}
-      TDebugger.Trace(nil,'Body content: %s',[aContext.HttpContext.Request.ContentAsString]);
+      TDebugger.Trace(nil,'TActionInvoker.Invoke Body content: %s',[aContext.HttpContext.Request.ContentAsString]);
       {$ENDIF}
       flexvalue := aContext.HttpContext.Request.ContentAsString;
     end
@@ -137,7 +139,19 @@ begin
     //free params injected into controller
     for value in values do
     begin
-      if value.IsObjectInstance then value.AsObject.Free;
+      if (not value.IsEmpty) and (value.IsObjectInstance) then
+      begin
+        try
+          value.AsObject.Free;
+        except
+          {$IFDEF DEBUG_CONTROLLER}
+          TDebugger.Trace(nil,'TActionInvoker.Invoke: Controller param objects auto free on exit, don''t free it before!');
+          {$ENDIF}
+          {$IFDEF DEBUG}
+            raise EActionInvokerAlreadyFreeParam.Create('TActionInvoker.Invoke: Controller param objects auto free on exit, don''t free it before!');
+          {$ENDIF}
+        end;
+      end;
     end;
   end;
 end;
