@@ -172,6 +172,7 @@ type
   end;
 
   EServiceConfigError = class(Exception);
+  EServiceBuildError = class(Exception);
 
 implementation
 
@@ -187,9 +188,16 @@ end;
 
 class function TServiceCollection.CreateFromStartup<T> : TServiceCollection;
 begin
-  Result := TServiceCollection.Create;
-  T.ConfigureServices(Result);
-  Result.Build;
+  try
+    Result := TServiceCollection.Create;
+    T.ConfigureServices(Result);
+    Result.Build;
+  except
+    on E : Exception do
+    begin
+      raise EServiceBuildError.CreateFmt('DependencyInjection: Failed to build services (%s)',[e.Message]);
+    end;
+  end;
 end;
 
 destructor TServiceCollection.Destroy;
