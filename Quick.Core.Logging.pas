@@ -354,6 +354,7 @@ type
     function Build : ILogger;
   public
     destructor Destroy; override;
+    class function GetBuilder(aUseConfigFile : Boolean) : ILoggerBuilder; overload;
     class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder; overload;
     class function GetBuilder(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean; aOptionsFilename : string) : ILoggerBuilder; overload;
   end;
@@ -543,7 +544,7 @@ end;
 
 constructor TLoggerBuilder.Create(aOptionsFormat : TLoggerOptionsFormat; aCreateConfigFileIfNotExists : Boolean = True; aOptionsFilename : string = '');
 begin
-  fUseOptionsFile := not aOptionsFilename.IsEmpty;
+  fUseOptionsFile := True;
   fOptionsFilename := aOptionsFilename;
   fCreateIfNotExists := aCreateConfigFileIfNotExists;
   fLogger := TQuickLogger.Create;
@@ -555,6 +556,13 @@ destructor TLoggerBuilder.Destroy;
 begin
   if Assigned(fOptionContainer) then fOptionContainer.Free;
   inherited;
+end;
+
+//builder without save to file
+class function TLoggerBuilder.GetBuilder(aUseConfigFile : Boolean) : ILoggerBuilder;
+begin
+  if aUseConfigFile then Result := GetBuilder
+    else Result := TLoggerBuilder.Create;
 end;
 
 class function TLoggerBuilder.GetBuilder(aOptionsFormat : TLoggerOptionsFormat = ofYAML; aCreateConfigFileIfNotExists : Boolean = True) : ILoggerBuilder;
@@ -605,6 +613,9 @@ begin
     TDebugger.Trace(Self,Format('Loaded Logger provider %s',[logprovider.Name]));
     {$ENDIF}
   end;
+  {$IFDEF DEBUG_LOGGING}
+    TDebugger.Trace(Self,Format('Loaded %d logger providers',[fLogger.Providers.Count]));
+  {$ENDIF}
 end;
 
 procedure TLoggerBuilder.AddProvider(aProvider : TLogProviderBase);
@@ -636,6 +647,7 @@ begin
   aConfigureProc(options);
   TObjMapper.Map(options,loggerConsole);
   AddProvider(loggerConsole);
+  if not fUseOptionsFile then options.Free;
 end;
 
 function TLoggerBuilder.AddConsole(aOptions: TConsoleLoggerOptions): ILoggerBuilder;
@@ -646,7 +658,7 @@ end;
 function TLoggerBuilder.AddFile(aConfigureProc: TLoggerOptionsProc<TFileLoggerOptions>): ILoggerBuilder;
 var
   options : TFileLoggerOptions;
-  loggerfile : TLogFileProvider;
+  loggerFile : TLogFileProvider;
 begin
   Result := Self;
   if fUseOptionsFile then
@@ -656,117 +668,124 @@ begin
     options := fOptionContainer.AddSection(TFileLoggerOptions,'File') as TFileLoggerOptions;
   end
   else options := TFileLoggerOptions.Create;
-  loggerfile := TLogFileProvider.Create;
-  loggerfile.Name := options.Name;
-  TObjMapper.Map(loggerfile,options);
+  loggerFile := TLogFileProvider.Create;
+  loggerFile.Name := options.Name;
+  TObjMapper.Map(loggerFile,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,loggerfile);
-  AddProvider(loggerfile);
+  TObjMapper.Map(options,loggerFile);
+  AddProvider(loggerFile);
+  if not fUseOptionsFile then options.Free;
 end;
 
 function TLoggerBuilder.AddRedis(aConfigureProc: TLoggerOptionsProc<TRedisLoggerOptions>): ILoggerBuilder;
 var
   options : TRedisLoggerOptions;
-  loggerredis : TLogRedisProvider;
+  loggerRedis : TLogRedisProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TRedisLoggerOptions,'Redis')) then Exit;
 
   options := fOptionContainer.AddSection(TRedisLoggerOptions,'Redis') as TRedisLoggerOptions;
-  loggerredis := TLogRedisProvider.Create;
-  loggerredis.Name := options.Name;
-  TObjMapper.Map(loggerredis,options);
+  loggerRedis := TLogRedisProvider.Create;
+  loggerRedis.Name := options.Name;
+  TObjMapper.Map(loggerRedis,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,loggerredis);
-  AddProvider(loggerredis);
+  TObjMapper.Map(options,loggerRedis);
+  AddProvider(loggerRedis);
+  if not fUseOptionsFile then options.Free;
 end;
 
 function TLoggerBuilder.AddRest(aConfigureProc: TLoggerOptionsProc<TRestLoggerOptions>): ILoggerBuilder;
 var
   options : TRestLoggerOptions;
-  loggerrest : TLogRestProvider;
+  loggerRest : TLogRestProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TRestLoggerOptions,'Rest')) then Exit;
 
   options := fOptionContainer.AddSection(TRestLoggerOptions,'Rest') as TRestLoggerOptions;
-  loggerrest := TLogRestProvider.Create;
-  loggerrest.Name := options.Name;
-  TObjMapper.Map(loggerrest,options);
+  loggerRest := TLogRestProvider.Create;
+  loggerRest.Name := options.Name;
+  TObjMapper.Map(loggerRest,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,loggerrest);
-  AddProvider(loggerrest);
+  TObjMapper.Map(options,loggerRest);
+  AddProvider(loggerRest);
+  if not fUseOptionsFile then options.Free;
 end;
 
 {$IFDEF MSWINDOWS}
 function TLoggerBuilder.AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
 var
   options : TEventLogLoggerOptions;
-  logeventlog : TLogEventLogProvider;
+  loggerEventLog : TLogEventLogProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TEventLogLoggerOptions,'EventLog')) then Exit;
 
   options := fOptionContainer.AddSection(TEventLogLoggerOptions,'EventLog') as TEventLogLoggerOptions;
-  logeventlog := TLogEventLogProvider.Create;
-  logeventlog.Name := options.Name;
-  TObjMapper.Map(logeventlog,options);
+  loggerEventLog := TLogEventLogProvider.Create;
+  loggerEventLog.Name := options.Name;
+  TObjMapper.Map(loggerEventLog,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,logeventlog);
-  AddProvider(logeventlog);
+  TObjMapper.Map(options,loggerEventLog);
+  AddProvider(loggerEventLog);
+  if not fUseOptionsFile then options.Free;
 end;
 {$ENDIF}
 
 function TLoggerBuilder.AddTelegram(aConfigureProc: TLoggerOptionsProc<TTelegramLoggerOptions>): ILoggerBuilder;
 var
   options : TTelegramLoggerOptions;
-  logtelegram : TLogTelegramProvider;
+  loggerTelegram : TLogTelegramProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TTelegramLoggerOptions,'Telegram')) then Exit;
 
   options := fOptionContainer.AddSection(TTelegramLoggerOptions,'Telegram') as TTelegramLoggerOptions;
-  logtelegram := TLogTelegramProvider.Create;
-  logtelegram.Name := options.Name;
-  TObjMapper.Map(logtelegram,options);
+  loggerTelegram := TLogTelegramProvider.Create;
+  loggerTelegram.Name := options.Name;
+  TObjMapper.Map(loggerTelegram,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,logtelegram);
-  AddProvider(logtelegram);
+  TObjMapper.Map(options,loggerTelegram);
+  AddProvider(loggerTelegram);
+  if not fUseOptionsFile then options.Free;
 end;
 
 function TLoggerBuilder.AddSlack(aConfigureProc: TLoggerOptionsProc<TSlackLoggerOptions>): ILoggerBuilder;
 var
   options : TSlackLoggerOptions;
-  logslack : TLogSlackProvider;
+  loggerSlack : TLogSlackProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TSlackLoggerOptions,'Slack')) then Exit;
 
   options := fOptionContainer.AddSection(TSlackLoggerOptions,'Slack') as TSlackLoggerOptions;
-  logslack := TLogSlackProvider.Create;
-  logslack.Name := options.Name;
-  TObjMapper.Map(logslack,options);
+  loggerSlack := TLogSlackProvider.Create;
+  loggerSlack.Name := options.Name;
+  TObjMapper.Map(loggerSlack,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,logslack);
-  AddProvider(logslack);
+  TObjMapper.Map(options,loggerSlack);
+  AddProvider(loggerSlack);
+  if not fUseOptionsFile then options.Free;
 end;
 
 {$IFDEF MSWINDOWS}
 function TLoggerBuilder.AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
 var
   options : TADODBLoggerOptions;
-  logsADODB : TLogADODBProvider;
+  loggerADODB : TLogADODBProvider;
 begin
   Result := Self;
   if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TADODBLoggerOptions,'ADODB')) then Exit;
 
   options := fOptionContainer.AddSection(TADODBLoggerOptions,'ADODB') as TADODBLoggerOptions;
-  logsADODB := TLogADODBProvider.Create;
-  logsADODB.Name := options.Name;
-  TObjMapper.Map(logsADODB,options);
+  loggerADODB := TLogADODBProvider.Create;
+  loggerADODB.Name := options.Name;
+  TObjMapper.Map(loggerADODB,options);
   aConfigureProc(options);
-  TObjMapper.Map(options,logsADODB);
-  AddProvider(logsADODB);
+  TObjMapper.Map(options,loggerADODB);
+  AddProvider(loggerADODB);
+  if not fUseOptionsFile then options.Free;
 end;
 {$ENDIF}
 
