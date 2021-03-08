@@ -34,6 +34,9 @@ unit Quick.Core.Mvc.Context;
 interface
 
 uses
+  {$IFDEF DEBUG_HTTPCONTEXT}
+    Quick.Debug.Utils,
+  {$ENDIF}
   System.SysUtils,
   Quick.Arrays,
   Quick.Cache.Intf,
@@ -114,6 +117,9 @@ end;
 
 destructor THttpContextBase.Destroy;
 begin
+  {$IFDEF DEBUG_HTTPCONTEXT}
+  TDebugger.Trace(Self,'Destroy');
+  {$ENDIF}
   fUser.Free;
   if Assigned(fRequestServices) then fRequestServices.Free;
   inherited;
