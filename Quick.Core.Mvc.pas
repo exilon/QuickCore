@@ -77,6 +77,8 @@ type
   private
     fHttpServer : IHttpServer;
     fHttpRouting : THttpRouting;
+    fHost : string;
+    fPort : Integer;
     fServices : TServiceCollection;
     fAppServices : TAppServices;
     fMiddlewares : TObjectList<TRequestDelegate>;
@@ -160,6 +162,8 @@ begin
   fMiddlewares := TObjectList<TRequestDelegate>.Create(True);
   fPathBase := '/';
   fWebRoot := './wwwroot/';
+  fHost := fHttpServer.Host;
+  fPort := fHttpServer.Port;
 end;
 
 constructor TMVCServer.Create(const aHost : string; aPort : Integer; aSSLEnabled : Boolean);
@@ -267,11 +271,14 @@ procedure TMVCServer.Start;
 begin
   if not fIsInitialized then Initialize;
   fHttpServer.Start;
+  Logger.Info('%s listening on %s:%d',[fServices.Environment.ApplicationName,fHost,fPort]);
 end;
 
 procedure TMVCServer.Stop;
 begin
+  Logger.Info('%s stopping...',[fServices.Environment.ApplicationName]);
   fHttpServer.Stop;
+  Logger.Info('%s stopped',[fServices.Environment.ApplicationName]);
 end;
 
 function TMVCServer.UseAuthentication: TMVCServer;
