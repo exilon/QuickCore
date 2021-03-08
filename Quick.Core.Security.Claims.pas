@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Security.Claims
   Description : Core Security Claims
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/03/2020
-  Modified    : 07/03/2020
+  Modified    : 05/03/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -34,6 +34,9 @@ unit Quick.Core.Security.Claims;
 interface
 
 uses
+  {$IFDEF DEBUG_AUTENTICATION}
+    Quick.Debug.Utils,
+  {$ENDIF}
   System.SysUtils,
   System.Generics.Collections,
   Quick.Collections;
@@ -205,7 +208,7 @@ implementation
 
 constructor TClaimsPrincipal.Create;
 begin
-  fIdentities := TxObjectList<TClaimsIdentity>.Create(False);
+  fIdentities := TxObjectList<TClaimsIdentity>.Create(True);
 end;
 
 constructor TClaimsPrincipal.Create(aIdentity: IIdentity);
@@ -218,7 +221,9 @@ end;
 
 destructor TClaimsPrincipal.Destroy;
 begin
-
+  {$IFDEF DEBUG_AUTENTICATION}
+  TDebugger.Trace(Self,'Destroy');
+  {$ENDIF}
   inherited;
 end;
 
@@ -252,7 +257,6 @@ begin
   begin
     if aMatch(claim) then Result.Add(claim);
   end;
-
 end;
 
 function TClaimsPrincipal.FindFirst(aMatch : TPredicate<TClaim>): TClaim;
