@@ -55,9 +55,13 @@ type
     fCheckHangedMessagesIntervalSec : Integer;
     fEnabled: Boolean;
     fDetermineAsHangedAfterSec: Integer;
+    fRetryFailedMessages : Boolean;
+    fRetryFailedMessageEverySec : Integer;
   published
     property CheckHangedMessagesIntervalSec : Integer read fCheckHangedMessagesIntervalSec write fCheckHangedMessagesIntervalSec;
     property DetermineAsHangedAfterSec : Integer read fDetermineAsHangedAfterSec write fDetermineAsHangedAfterSec;
+    property RetryFailedMessages : Boolean read fRetryFailedMessages write fRetryFailedMessages;
+    property RetryFailedMessageEverySec : Integer read fRetryFailedMessageEverySec write fRetryFailedMessageEverySec;
     property Enabled : Boolean read fEnabled write fEnabled;
   end;
 
@@ -108,6 +112,7 @@ type
     function CreateRedisPool(aMaxPool, aConnectionTimemout, aReadTimeout : Integer) : TObjectPool<TRedisClient>;
     procedure CreateJobs;
     procedure EnqueueHangedMessages;
+    procedure EnqueueFailedMessages;
   public
     constructor Create(aOptions : IOptions<TRedisMessageQueueOptions>; aLogger : ILogger);
     destructor Destroy; override;
@@ -174,6 +179,16 @@ begin
                   end
                   ).StartInSeconds(fOptions.ReliableMessageQueue.CheckHangedMessagesIntervalSec)
                   .RepeatEvery(fOptions.ReliableMessageQueue.CheckHangedMessagesIntervalSec,TTimeMeasure.tmSeconds);
+    fScheduler.AddTask('EnqueueFailedMessages',procedure (task : ITask)
+                  begin
+                    if fOptions.ReliableMessageQueue.RetryFailedMessages then EnqueueFailedMessages;
+                  end
+                  ).OnException(procedure(task : ITask; aException : Exception)
+                  begin
+                    fLogger.Error('RedisMSQ EnqueueFailedMessages Job error: %s',[aException.Message]);
+                  end
+                  ).StartInSeconds(fOptions.ReliableMessageQueue.RetryFailedMessageEverySec)
+                  .RepeatEvery(15,TTimeMeasure.tmSeconds);
   end;
 end;
 
@@ -231,6 +246,47 @@ begin
     begin
       {$IFDEF DEBUG_MSQ}
       TDebugger.Trace(Self,Format('EnqueueHangedMessages: %s cannot be deleted',[resarray[i].value]));
+      {$ENDIF}
+    end;
+  end;
+end;
+
+procedure TRedisMessageQueue<T>.EnqueueFailedMessages;
+var
+  redis : TRedisClient;
+  i : Integer;
+  resarray : TArray<TRedisSortedItem>;
+  value : string;
+  ttl : Integer;
+  limitTime : Int64;
+begin
+  limitTime := DateTimeToUnix(IncSecond(Now(),fOptions.ReliableMessageQueue.RetryFailedMessageEverySec * -1));
+  {$IFDEF DEBUG_MSQ}
+  TDebugger.Trace(Self,Format('EnqueueFailedMessages LimitTime %d',[limitTime]));
+  {$ENDIF}
+  redis := fPushRedisPool.Get.Item;
+  resarray := redis.RedisZRANGEBYSCORE(fFailedKey,0,limittime);
+  {$IFDEF DEBUG_MSQ}
+  TDebugger.Trace(Self,Format('EnqueueFailedMessages resarray.count %d',[High(resarray)]));
+  {$ENDIF}
+  for i := 0 to High(resarray) do
+  begin
+    {$IFDEF DEBUG_MSQ}
+    TDebugger.Trace(Self,Format('EnqueueFailedMessages: remove id: %d / value: %s',[resarray[i].Score,resarray[i].Value]));
+    {$ENDIF}
+    if redis.RedisZREM(fFailedKey,resarray[i].Value) then
+    begin
+      if not redis.RedisLPUSH(fOptions.Key,resarray[i].Value) then
+      begin
+        {$IFDEF DEBUG_MSQ}
+        TDebugger.Trace(Self,Format('EnqueueFailedMessages: %s cannot be re-enqueued',[resarray[i].value]));
+        {$ENDIF}
+      end;
+    end
+    else
+    begin
+      {$IFDEF DEBUG_MSQ}
+      TDebugger.Trace(Self,Format('EnqueueFailedMessages: %s cannot be deleted',[resarray[i].value]));
       {$ENDIF}
     end;
   end;
@@ -301,7 +357,11 @@ begin
     if not Result then TDebugger.Trace(Self,Format('RemoveFailedMSQ: "%s" cannot be deleted',[msg]));
     {$ENDIF}
   end;
-  Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,msg);
+  if fOptions.ReliableMessageQueue.Enabled then
+  begin
+    fPushRedisPool.Get.Item.redisZADD(fFailedKey,msg,DateTimeToUnix(Now));
+  end
+  else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,msg);
 end;
 
 { TQueueServiceExtension }
