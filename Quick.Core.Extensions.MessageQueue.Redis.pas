@@ -179,8 +179,8 @@ end;
 
 procedure TRedisMessageQueue<T>.ConfigureRedisPooling;
 begin
-  fPushRedisPool := CreateRedisPool(fOptions.MaxProducersPool,fOptions.ConnectionTimeout,fOptions.ReadTimeout);
-  fPopRedisPool := CreateRedisPool(fOptions.MaxConsumersPool,fOptions.ConnectionTimeout, (fOptions.PopTimeoutSec + 5) * 1000);
+  fPushRedisPool := CreateRedisPool(Round(fOptions.MaxProducersPool * 1.5) + 10,fOptions.ConnectionTimeout,fOptions.ReadTimeout);
+  fPopRedisPool := CreateRedisPool(Round(fOptions.MaxConsumersPool * 1.5) + 10,fOptions.ConnectionTimeout, (fOptions.PopTimeoutSec + 5) * 1000);
 end;
 
 destructor TRedisMessageQueue<T>.Destroy;
@@ -251,6 +251,7 @@ var
   msg : string;
   done : Boolean;
 begin
+  oMessage := nil;
   try
     done := fPopRedisPool.Get.Item.RedisBRPOP(fOptions.Key,msg,fOptions.PopTimeoutSec);
     if msg.IsEmpty then done := False;// raise Exception.Create('MessageQueue: Msg Empty!');
@@ -275,6 +276,7 @@ var
   msg : string;
 begin
   if not fOptions.ReliableMessageQueue.Enabled then Exit(True);
+  if aMessage = nil then raise Exception.Create('RedisMSQ.Remove: Message cannot be null!');
 
   msg := Serialize(aMessage);
   //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
@@ -291,6 +293,7 @@ var
 begin
   if fOptions.ReliableMessageQueue.Enabled then
   begin
+    if aMessage = nil then raise Exception.Create('RedisMSQ.Failed: Message cannot be null!');
     msg := Serialize(aMessage);
     //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
     Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,msg);
