@@ -34,7 +34,7 @@ unit Quick.Core.DependencyInjection;
 interface
 
 uses
-  {$IFDEF DEBUG_DI}
+  {$IFDEF DEBUG}
     Quick.Debug.Utils,
   {$ENDIF}
   System.SysUtils,
@@ -259,6 +259,7 @@ end;
 function TServiceCollection.AddLogging(aLoggerService: ILogger): TServiceCollection;
 begin
   Result := Self;
+  if aLoggerService = nil then aLoggerService := TNullLogger.Create;
   fLoggerService := aLoggerService;
   fDependencyInjector.RegisterInstance<ILogger>(aLoggerService).AsSingleton;
 end;
