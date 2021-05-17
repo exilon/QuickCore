@@ -83,6 +83,8 @@ type
 
   TStartupBase = class;
 
+  TStartupClass = class of TStartupBase;
+
   TServiceCollection = class(TInterfacedObject,IServiceCollection)
   private
     fLoggerService : ILogger;
