@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.AutoMapper
   Description : Core AutoMapper
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/02/2020
-  Modified    : 11/09/2020
+  Modified    : 07/04/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -94,6 +94,7 @@ type
     fResolveUnmapped : Boolean;
     fMappingList : TObjectDictionary<string,TProfileMap>;
     procedure ObjMapper(aSrcObj : TObject; aTgtObj : TObject; aProfileMap : TProfileMap; IsRootClass : Boolean); overload;
+    procedure ListMapper(aSrcList, aTgtList : TObject; aProfileMap : TProfileMap);
     procedure ObjListMapper(aSrcObjList, aTgtObjList: TObject; aProfileMap: TProfileMap);
   public
     constructor Create;
@@ -121,6 +122,63 @@ destructor TAutoMapper.Destroy;
 begin
   fDefaultProfileMap.Free;
   inherited;
+end;
+
+procedure TAutoMapper.ListMapper(aSrcList, aTgtList: TObject; aProfileMap: TProfileMap);
+var
+  rtype: TRttiType;
+  rtype2 : TRttiType;
+  typinfo : PTypeInfo;
+  methToArray: TRttiMethod;
+  value: TValue;
+  valuecop : TValue;
+  obj : TObject;
+  i : Integer;
+  rprop : TRttiProperty;
+  ctx : TRttiContext;
+begin
+  rtype := ctx.GetType(aSrcList.ClassInfo);
+  methToArray := rtype.GetMethod('ToArray');
+  if Assigned(methToArray) then
+  begin
+    value := methToArray.Invoke(aSrcList,[]);
+    Assert(value.IsArray);
+
+    rtype2 := ctx.GetType(aTgtList.ClassInfo);
+    rProp := rtype2.GetProperty('List');
+    typinfo := GetTypeData(rProp.PropertyType.Handle).DynArrElType^;
+
+    case typinfo.Kind of
+      tkChar, tkString, tkWChar, tkWString : TList<string>(aTgtList).Capacity := value.GetArrayLength;
+      tkInteger, tkInt64 : TList<Integer>(aTgtList).Capacity := value.GetArrayLength;
+      tkFloat : TList<Extended>(aTgtList).Capacity := value.GetArrayLength;
+      tkRecord :
+        begin
+          ObjMapper(aSrcList,aTgtList,aProfileMap,False);
+          exit;
+        end;
+      else TList<TObject>(aTgtList).Capacity := value.GetArrayLength;
+    end;
+
+    for i := 0 to value.GetArrayLength - 1 do
+    begin
+      if typinfo.Kind = tkClass then
+      begin
+        obj := typinfo.TypeData.ClassType.Create;
+        ObjMapper(value.GetArrayElement(i).AsObject,obj,aProfileMap,False);
+        TList<TObject>(aTgtList).Add(obj);
+      end
+      else
+      begin
+        valuecop := value.GetArrayElement(i);
+        case typinfo.Kind of
+          tkChar, tkString, tkWChar, tkWString : TList<string>(aTgtList).Add(valuecop.AsString);
+          tkInteger, tkInt64 : TList<Integer>(aTgtList).Add(valuecop.AsInt64);
+          tkFloat : TList<Extended>(aTgtList).Add(valuecop.AsExtended);
+        end;
+      end;
+    end;
+  end;
 end;
 
 class procedure TAutoMapper.RegisterProfile<T>;
@@ -245,7 +303,8 @@ begin
           except
             on E : Exception do raise EAutoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
           end;
-          if clname.StartsWith('TObjectList') then ObjListMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap)
+          if clname.StartsWith('TList') then ListMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap)
+          else if clname.StartsWith('TObjectList') then ObjListMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap)
             else ObjMapper(rType.GetProperty(tgtprop.Name).GetValue(aSrcObj).AsObject,obj,aProfileMap,False)
         end
         else raise EAutoMapperError.CreateFmt('Target object "%s" not autocreated by class',[tgtprop.Name]);
