@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Caching.Redis
   Description : Core Caching Redis
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 24/02/2020
-  Modified    : 22/06/2020
+  Modified    : 17/05/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -141,7 +141,7 @@ end;
 
 function TRedisDistributedCache.GetValue(const aKey: string): string;
 begin
-
+  TryGetValue(aKey,Result);
 end;
 
 procedure TRedisDistributedCache.Refresh(const aKey: string; aExpirationMilliseconds : Integer);
@@ -151,7 +151,7 @@ end;
 
 procedure TRedisDistributedCache.RemoveValue(const aKey: string);
 begin
-
+  fRedisPool.Get.Item.RedisDEL(aKey);
 end;
 
 procedure TRedisDistributedCache.SetValue(const aKey, aValue: string; aExpirationMilliseconds: Integer);
