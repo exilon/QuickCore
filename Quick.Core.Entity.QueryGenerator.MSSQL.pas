@@ -152,7 +152,7 @@ begin
         if field.DataSize > 0 then datatype := Format(DBDATATYPES[Integer(field.DataType)],[field.DataSize])
           else datatype := DBDATATYPES[Integer(field.DataType)];
       end;
-      if field.DataType = dtAutoID then querytext.Add(Format('[%s] %s IDENTITY(1,1),',[field.Name,datatype]))
+      if (field.DataType = dtAutoID) and (field.IsPrimaryKey) then querytext.Add(Format('[%s] %s IDENTITY(1,1),',[field.Name,datatype]))
         else querytext.Add(Format('[%s] %s,',[field.Name,datatype]))
     end;
     if not aTable.PrimaryKey.Name.IsEmpty then
