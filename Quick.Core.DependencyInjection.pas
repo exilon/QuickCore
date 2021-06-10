@@ -394,6 +394,9 @@ var
   i : Integer;
   canSave : Boolean;
 begin
+  {$IFDEF DEBUG_DI}
+  TDebugger.Trace(Self,'Build');
+  {$ENDIF}
   fDependencyInjector.Build;
   if Assigned(fOptionsService) then
   begin

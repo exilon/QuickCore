@@ -116,8 +116,8 @@ begin
       end;
     end;
     {$IFDEF DEBUG_CONTROLLER}
-      TDebugger.Trace(nil,'Param: %s',[flexvalue.AsString]);
-      {$ENDIF}
+    TDebugger.Trace(nil,'Param: %s',[flexvalue.AsString]);
+    {$ENDIF}
     values := values + [value];
   end;
   //param injection
