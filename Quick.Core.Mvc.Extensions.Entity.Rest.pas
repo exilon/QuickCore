@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Mvc.Extensions.Entity.Rest
   Description : Core MVC Extensions TaskControl
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 12/03/2020
-  Modified    : 01/09/2020
+  Modified    : 21/05/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -41,6 +41,7 @@ uses
   System.Variants,
   System.Rtti,
   System.Generics.Collections,
+  Quick.Options,
   Quick.Core.MVC,
   Quick.Core.Entity,
   Quick.HttpServer.Types,
@@ -50,23 +51,35 @@ uses
   Quick.Core.Entity.DAO;
 
 type
+  TEntityRestOptions = class(TOptions)
+  private
+    fUser : string;
+    fPassword : string;
+    fNeedCredentials : Boolean;
+  published
+    property User : string read fUser write fUser;
+    property Password : string read fPassword write fPassword;
+    property NeedCredentials : Boolean read fNeedCredentials write fNeedCredentials;
+  end;
+
   TEntityRestMVCServerExtension = class(TMVCServerExtension)
-    class function UseRestApi<T : TDBContext> : TMVCServer;
+    class function UseRestApi<T : TDBContext>(aOptionsProc : TConfigureOptionsProc<TEntityRestOptions> = nil) : TMVCServer;
   end;
 
   [Route('api')]
-  [Authorize]
+  //[Authorize]
   TEntityRestController<T : TDBContext> = class(THttpController)
   private
     fDBContext : TDBContext;
+    fOptions : TEntityRestOptions;
     function GetWhereId(aModel: TEntityModel; const aId : string): string;
     procedure RaiseEntityNotFound(const aMsg : string);
     procedure RaiseEntityError(const aMsg : string);
   public
-    constructor Create(aDBContext : T);
+    constructor Create(aDBContext : T; aOptions : IOptions<TEntityRestOptions>);
   published
     [HttpPost('connect')]
-    function Connect(const User, Password : string) : IActionResult;
+    function Connect(const [FromBody]request: TEntityConnectRequest) : IActionResult;
 
     [HttpPost('query/select')]
     function SelectQuery(const [FromBody]request: TEntitySelectRequest) : IActionResult;
@@ -102,11 +115,24 @@ implementation
 
 { TEntityRestMVCServerExtension }
 
-class function TEntityRestMVCServerExtension.UseRestApi<T>: TMVCServer;
+class function TEntityRestMVCServerExtension.UseRestApi<T>(aOptionsProc : TConfigureOptionsProc<TEntityRestOptions> = nil) : TMVCServer;
+var
+  restOptions : TEntityRestOptions;
 begin
   Result := MVCServer;
   if MVCServer.Services.IsRegistered<T>('') then
   begin
+   // restOptions := MVCServer.Services.Resolve<IOptions<TEntityRestOptions>>.Value;
+    restOptions := TEntityRestOptions.Create;
+    if Assigned(aOptionsProc) then aOptionsProc(restOptions)
+    else
+    begin
+      restOptions.NeedCredentials := True;
+      restOptions.User := 'admin';
+      restOptions.Password := 'admin';
+    end;
+    MVCServer.Services.Configure<TEntityRestOptions>(restOptions);
+
     MVCServer.AddController(TEntityRestController<T>);
   end
   else raise EEntityRestError.Create(nil,'DBContext dependency not found. Need to be added before!');
@@ -114,9 +140,10 @@ end;
 
 { TEntityRestController }
 
-constructor TEntityRestController<T>.Create(aDBContext : T);
+constructor TEntityRestController<T>.Create(aDBContext : T; aOptions : IOptions<TEntityRestOptions>);
 begin
   fDBContext := aDBContext as TDBContext;
+  fOptions := aOptions.Value;
 end;
 
 function TEntityRestController<T>.GetWhereId(aModel: TEntityModel; const aId : string): string;
@@ -140,9 +167,15 @@ begin
   raise EControlledException.Create(nil,aMsg);
 end;
 
-function TEntityRestController<T>.Connect(const User, Password: string): IActionResult;
+function TEntityRestController<T>.Connect(const [FromBody]request: TEntityConnectRequest) : IActionResult;
 begin
-  //if User and Password then
+  //check credentials
+  if fOptions.NeedCredentials then
+  begin
+    if (CompareText(fOptions.User,request.User) <> 0) or (fOptions.Password <> request.Password) then RaiseEntityError('User/Pass not valid!');
+  end;
+
+  //if HttpContext.User.Identity.IsAuthenticated then Writeln('ok');
 
   Result := Content(Integer(fDBContext.Connection.Provider).ToString);
 end;
