@@ -12,5 +12,8 @@ RedisMessageQueue:
   ReliableMessageQueue:
     CheckHangedMessagesIntervalSec: 10
     DetermineAsHangedAfterSec: 20
+    RetryFailedMessages: false
+    RetryFailedMessageEverySec: 0
     Enabled: true
+  RetainDoneMessages: false
 
