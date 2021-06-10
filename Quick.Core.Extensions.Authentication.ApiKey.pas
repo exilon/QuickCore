@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Extensions.Authentication.Apikey
   Description : Core Extensions Authentication ApiKey
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 10/03/2020
-  Modified    : 09/06/2020
+  Modified    : 20/05/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -325,10 +325,28 @@ begin
   user := fIdentityStore.Users.Where(Format('%s = ?',[fApiKeyPropertyName]),[aApiKey]).SelectFirst;
   try
     if user = nil then Exit(False);
-    aValue := TApiKey.Create(TIdentityUser<string>(user).UserName,'',aApiKey);
-    role := fIdentityStore.GetRolebyId(TIdentityUser<Int64>(user).RoleId);
+    if TObject(user).ClassParent = TIdentityUser<TGUID> then
+    begin
+      aValue := TApiKey.Create(TIdentityUser<TGUID>(user).UserName,'',aApiKey);
+      role := fIdentityStore.GetRolebyId(TIdentityUser<TGUID>(user).RoleId.ToString);
+    end
+    else if TObject(user).ClassParent = TIdentityUser<Int64> then
+    begin
+      aValue := TApiKey.Create(TIdentityUser<Int64>(user).UserName,'',aApiKey);
+      role := fIdentityStore.GetRolebyId(TIdentityUser<Int64>(user).RoleId);
+    end
+    else
+    begin
+      aValue := TApiKey.Create(TIdentityUser<string>(user).UserName,'',aApiKey);
+      role := fIdentityStore.GetRolebyId(TIdentityUser<string>(user).RoleId);
+    end;
     try
-      if role <> nil then aValue.Role := TIdentityRole<Int64>(role).Name;
+      if role <> nil then
+      begin
+        if TObject(role).ClassParent = TIdentityRole<TGUID> then aValue.Role := TIdentityRole<TGUID>(role).Name
+        else if TObject(role).ClassParent = TIdentityRole<Int64> then aValue.Role := TIdentityRole<Int64>(role).Name
+          else aValue.Role := TIdentityRole<string>(role).Name;
+      end;
     finally
       role.Free;
     end;
