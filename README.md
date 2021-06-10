@@ -219,6 +219,17 @@ begin
     fSMTPServer.Host := fOptions.Smtp;
 end;
 ```
+Into startup config you can use read options to do some optional actions:
+```delphi
+  if services.GetConfiguration<TAppSettings>.UseCache then
+  begin
+    //do some stuff or define service implementation
+  end
+  else
+  begin
+    //do some stuff or define alternative service implementation
+  end;
+```
 Using CORE_ENVIRONMENT environment variable we can define what file use for every implementation. If environment variable is defined, QuickCore will try to load/save "QuickCore.[CORE_ENVIRONMENT].yaml" file.
 
 If not Options.Name is defined, class name will be used as section name in config file.
