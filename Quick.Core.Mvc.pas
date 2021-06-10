@@ -231,6 +231,7 @@ begin
   GetAttributeRouting;
   Logger.Debug('Attribute Routing ready');
   fIsInitialized := True;
+  fHttpServer.Logger := Logger;
 end;
 
 function TMVCServer.Logger: ILogger;
