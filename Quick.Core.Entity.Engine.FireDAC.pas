@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 15/07/2020
-  Modified    : 09/06/2020
+  Modified    : 12/08/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -80,6 +80,7 @@ type
     fInternalQuery : TFDQuery;
     function GetDriverID(aDBProvider : TDBProvider) : string;
   protected
+    function GetDefName : string;
     function CreateConnectionString: string; override;
     procedure DoExecuteSQLQuery(const aQueryText : string); override;
     procedure DoOpenSQLQuery(const aQueryText: string); override;
@@ -101,6 +102,7 @@ type
 
   TFireDACEntityQuery<T : class, constructor> = class(TEntityQuery<T>)
   private
+    fFDConnection : TFDConnection;
     fConnection : TDBConnectionSettings;
     fQuery : TFDQuery;
   protected
@@ -136,9 +138,10 @@ end;
 constructor TFireDACEntityDataBase.CreateFromConnection(aConnection: TFDConnection; aOwnsConnection : Boolean);
 begin
   Create;
-  if OwnsConnection then fFireDACConnection.Free;
+  //if OwnsConnection then fFireDACConnection.Free;
   OwnsConnection := aOwnsConnection;
-  fFireDACConnection := aConnection;
+  //fFireDACConnection := aConnection;
+  fFireDACConnection.ConnectionDefName := aConnection.ConnectionDefName;
 end;
 
 destructor TFireDACEntityDataBase.Destroy;
@@ -157,10 +160,30 @@ begin
 end;
 
 function TFireDACEntityDataBase.Connect: Boolean;
+var
+  value : string;
+  params : TStringList;
 begin
   //creates connection string based on parameters of connection property
   inherited;
-  fFireDACConnection.ConnectionString := CreateConnectionString;
+  //pooled
+  FDManager.Close;
+  params := TStringList.Create;
+  try
+    for value in CreateConnectionString.Split([';']) do params.Add(value);
+    FDManager.AddConnectionDef(GetDefName,fFireDACConnection.DriverName,params);
+  finally
+    params.Free;
+  end;
+  //FDManager.ConnectionDefs.ConnectionDefByName(GetDefName).Params.Pooled := True;
+  FDManager.Open;
+  //create internal connection
+  //fFireDACConnection.ConnectionString := CreateConnectionString;
+  fFireDACConnection.ConnectionDefName := GetDefName;
+  fFireDACConnection.ResourceOptions.KeepConnection := True;
+  fFireDACConnection.ResourceOptions.AutoReconnect := True;
+  fFireDACConnection.LoginPrompt := False;
+  //connect to db
   fFireDACConnection.Connected := True;
   fInternalQuery.Connection := fFireDACConnection;
   Result := IsConnected;
@@ -168,12 +191,34 @@ begin
   CreateIndexes;
 end;
 
-function TFireDACEntityDataBase.CreateConnectionString: string;
+function TFireDACEntityDataBase.GetDefName : string;
 begin
-  if Connection.IsCustomConnectionString then Result := Format('DriverID=%s;%s',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString])
+  Result := Connection.Server + '_' + Connection.Database;
+end;
+
+function TFireDACEntityDataBase.CreateConnectionString: string;
+var
+  pair : string;
+  param : string;
+  value : string;
+begin
+  if Connection.IsCustomConnectionString then
+  begin
+    Result := Format('DriverID=%s;%s;Pooled=True;',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString]);
+    for pair in Connection.GetCustomConnectionString.Split([';']) do
+    begin
+      value := pair.Substring(pair.IndexOf('=')+1);
+      param := pair.Substring(0,pair.IndexOf('='));
+      param := param.Trim.ToLower;
+      if param = 'server' then Connection.Server := value
+      else if param = 'database' then Connection.Database := value
+      else if param = 'user_name' then Connection.UserName := value
+      else if param = 'password' then Connection.Password := value;
+    end;
+  end
   else
   begin
-    Result := Format('DriverID=%s;User_Name=%s;Password=%s;Database=%s;Server=%s',[
+    Result := Format('DriverID=%s;User_Name=%s;Password=%s;Database=%s;Server=%s;Pooled=True;',[
                               GetDriverID(Connection.Provider),
                               Connection.UserName,
                               Connection.Password,
@@ -275,7 +320,8 @@ var
 begin
   sl := TStringList.Create;
   try
-    fInternalQuery.Connection.GetTableNames(Connection.Database,'dbo','',sl,[osMy],[tkTable],True);
+    fInternalQuery.Connection.GetTableNames('', '', '', sl);
+    //fInternalQuery.Connection.GetTableNames(Connection.Database,'dbo','',sl,[osMy],[tkTable],True);
     Result := StringsToArray(sl);
   finally
     sl.Free;
@@ -297,14 +343,21 @@ end;
 constructor TFireDACEntityQuery<T>.Create(aEntityDataBase : TEntityDatabase; aModel : TEntityModel; aQueryGenerator : IEntityQueryGenerator);
 begin
   inherited;
+  fFDConnection := TFDConnection.Create(nil);
+  fFDConnection.ConnectionDefName := TFireDACEntityDataBase(aEntityDataBase).GetDefName;
   fQuery := TFDQuery.Create(nil);
-  fQuery.Connection := TFireDACEntityDataBase(aEntityDataBase).fFireDACConnection;
+  fQuery.Connection := fFDConnection; //TFireDACEntityDataBase(aEntityDataBase).fFireDACConnection;
   fConnection := aEntityDataBase.Connection;
 end;
 
 destructor TFireDACEntityQuery<T>.Destroy;
 begin
   if Assigned(fQuery) then fQuery.Free;
+  if Assigned(fFDConnection) then
+  begin
+    fFDConnection.Close;
+    fFDConnection.Free;
+  end;
   inherited;
 end;
 
