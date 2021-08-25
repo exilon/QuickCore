@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/02/2020
-  Modified    : 07/04/2021
+  Modified    : 07/07/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -120,7 +120,7 @@ end;
 
 destructor TAutoMapper.Destroy;
 begin
-  fDefaultProfileMap.Free;
+  fDefaultProfileMap := nil;
   inherited;
 end;
 
@@ -357,6 +357,8 @@ end;
 class destructor TProfile.Destroy;
 begin
   fMappings.Free;
+  if Assigned(fDefaultProfileMap) then fDefaultProfileMap.Free;
+  fDefaultProfileMap := nil;
   inherited;
 end;
 
