@@ -38,6 +38,32 @@ uses
   Quick.Commons;
 
 type
+  IHost = interface
+  ['{7E5F7540-66F1-41F1-BBB7-59C114ADD7B0}']
+    procedure Start;
+    procedure Stop;
+  end;
+
+  IHostCore = interface(IHost)
+    procedure SetOnStart(const Value: TProc);
+    procedure SetOnStop(const Value: TProc);
+    property OnStart : TProc write SetOnStart;
+    property OnStop : TProc write SetOnStop;
+  end;
+
+  THostCore = class(TInterfacedObject,IHostCore)
+  private
+    fOnStop: TProc;
+    fOnStart: TProc;
+    procedure SetOnStart(const Value: TProc);
+    procedure SetOnStop(const Value: TProc);
+  public
+    property OnStart : TProc read fOnStart write SetOnStart;
+    property OnStop : TProc read fOnStop write SetOnStop;
+    procedure Start; virtual;
+    procedure Stop; virtual;
+  end;
+
   IHostEnvironment =  interface
     function GetApplicationName: string;
     function GetContentRootPath: string;
@@ -75,9 +101,6 @@ type
   end;
 
 implementation
-
-
-
 
 { THostingEnvironment }
 
@@ -141,6 +164,28 @@ end;
 procedure THostEnvironment.SetEnvironmentName(const Value: string);
 begin
   fEnvironmentName := Value;
+end;
+
+{ THostCore }
+
+procedure THostCore.SetOnStart(const Value: TProc);
+begin
+  fOnStart := Value;
+end;
+
+procedure THostCore.SetOnStop(const Value: TProc);
+begin
+  fOnStop := Value;
+end;
+
+procedure THostCore.Start;
+begin
+  if Assigned(fOnStart) then fOnStart;
+end;
+
+procedure THostCore.Stop;
+begin
+  if Assigned(fOnStop) then fOnStop;
 end;
 
 end.
