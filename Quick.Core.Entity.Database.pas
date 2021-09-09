@@ -51,6 +51,10 @@ type
     function GetDatabase : string;
     function GetUserName : string;
     function GetPassword : string;
+    procedure SetDatabase(const Value: string);
+    procedure SetPassword(const Value: string);
+    procedure SetServer(const Value: string);
+    procedure SetUserName(const Value: string);
     property Provider : TDBProvider read GetProvider;
     property Server : string read GetServer;
     property Database : string read GetDatabase;
@@ -75,15 +79,20 @@ type
     function GetDatabase : string;
     function GetUserName : string;
     function GetPassword : string;
+    procedure SetDatabase(const Value: string);
+    procedure SetPassword(const Value: string);
+    procedure SetServer(const Value: string);
+    procedure SetUserName(const Value: string);
   public
     constructor Create;
     property Provider : TDBProvider read GetProvider write fDBProvider;
-    property Server : string read fServer write fServer;
-    property Database : string read fDatabase write fDatabase;
-    property UserName : string read fUserName write fUserName;
-    property Password : string read fPassword write fPassword;
+    property Server : string read GetServer write SetServer;
+    property Database : string read GetDatabase write SetDatabase;
+    property UserName : string read GetUserName write SetUserName;
+    property Password : string read GetPassword write SetPassword;
     function IsCustomConnectionString : Boolean;
     procedure FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
+    procedure FromConnection(aDBConnection : IDBConnectionSettings);
     function GetCustomConnectionString : string;
     function Clone : TDBConnectionSettings;
   end;
@@ -352,6 +361,15 @@ begin
   fIsCustomConnectionString := False;
 end;
 
+procedure TDBConnectionSettings.FromConnection(aDBConnection: IDBConnectionSettings);
+begin
+  fDBProvider := aDBConnection.Provider;
+  fServer := aDBConnection.Server;
+  fDatabase := aDBConnection.Database;
+  fUserName := aDBConnection.UserName;
+  fPassword := aDBConnection.Password;
+end;
+
 procedure TDBConnectionSettings.FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
 begin
   if aConnectionString.IsEmpty then fIsCustomConnectionString := False
@@ -396,6 +414,26 @@ end;
 function TDBConnectionSettings.IsCustomConnectionString: Boolean;
 begin
   Result := fIsCustomConnectionString;
+end;
+
+procedure TDBConnectionSettings.SetDatabase(const Value: string);
+begin
+  fDatabase := Value;
+end;
+
+procedure TDBConnectionSettings.SetPassword(const Value: string);
+begin
+  fPassword := Value;
+end;
+
+procedure TDBConnectionSettings.SetServer(const Value: string);
+begin
+  fServer := Value;
+end;
+
+procedure TDBConnectionSettings.SetUserName(const Value: string);
+begin
+  fUserName := Value;
 end;
 
 function TDBConnectionSettings.GetPassword: string;

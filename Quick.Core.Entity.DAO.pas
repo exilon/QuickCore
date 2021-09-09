@@ -251,8 +251,11 @@ type
 
   IEntityLinqQuery<T : class> = interface
   ['{5655FDD9-1D4C-4B67-81BB-7BDE2D2C860B}']
-    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const) : IEntityLinqQuery<T>; overload;
-    function Where(const aWhereClause: string) : IEntityLinqQuery<T>; overload;
+    {$IFDEF VALUE_FORMATPARAMS}
+    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of TValue): IEntityLinqQuery<T>; overload;
+    {$ELSE}
+    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>; overload;
+    {$ENDIF}function Where(const aWhereClause: string) : IEntityLinqQuery<T>; overload;
     function Select : IEntityResult<T>; overload;
     function Select(const aFieldNames : string) : IEntityResult<T>; overload;
     function SelectFirst : T;

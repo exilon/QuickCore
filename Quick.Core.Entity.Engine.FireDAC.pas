@@ -1,6 +1,6 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Entity.Engine.FireDAC
   Description : Core Entity FireDAC Provider
@@ -53,16 +53,18 @@ uses
   FireDAC.Phys.MSAcc,
   {$ENDIF}
   //FireDAC.Phys.MSSQL,
-  {$IFDEF CONSOLE}
-    FireDAC.ConsoleUI.Wait,
-  {$ELSE}
-    FireDAC.UI.Intf,
-    {$IFDEF VCL}
-    FireDAC.VCLUI.Wait,
+  {$IFDEF FIREDAC_SHOW_WAITCURSOR}
+    {$IFDEF CONSOLE}
+      FireDAC.ConsoleUI.Wait,
     {$ELSE}
-    FireDAC.FMXUI.Wait,
+      FireDAC.UI.Intf,
+      {$IFDEF VCL}
+      FireDAC.VCLUI.Wait,
+      {$ELSE}
+      FireDAC.FMXUI.Wait,
+      {$ENDIF}
+      FireDAC.Comp.UI,
     {$ENDIF}
-    FireDAC.Comp.UI,
   {$ENDIF}
   {$IFDEF DELPHIRX104_UP}
   FireDAC.Phys.SQLiteWrapper.Stat,
@@ -118,10 +120,11 @@ type
     function Eof : Boolean; override;
 
   end;
-
-{$IFNDEF CONSOLE}
-var
-  FDGUIxWaitCursor : TFDGUIxWaitCursor;
+{$IFDEF FIREDAC_SHOW_WAITCURSOR}
+  {$IFNDEF CONSOLE}
+  var
+    FDGUIxWaitCursor : TFDGUIxWaitCursor;
+  {$ENDIF}
 {$ENDIF}
 
 implementation
@@ -133,6 +136,8 @@ begin
   inherited;
   fFireDACConnection := TFDConnection.Create(nil);
   fInternalQuery := TFDQuery.Create(nil);
+  fInternalQuery.ResourceOptions.SilentMode := True;
+  fInternalQuery.FetchOptions.Mode := FireDAC.Stan.Option.TFDFetchMode.fmAll;
 end;
 
 constructor TFireDACEntityDataBase.CreateFromConnection(aConnection: TFDConnection; aOwnsConnection : Boolean);
@@ -348,6 +353,8 @@ begin
   fQuery := TFDQuery.Create(nil);
   fQuery.Connection := fFDConnection; //TFireDACEntityDataBase(aEntityDataBase).fFireDACConnection;
   fConnection := aEntityDataBase.Connection;
+  fQuery.ResourceOptions.SilentMode := True;
+  fQuery.FetchOptions.Mode := FireDAC.Stan.Option.TFDFetchMode.fmAll;
 end;
 
 destructor TFireDACEntityQuery<T>.Destroy;
@@ -405,14 +412,18 @@ end;
 
 initialization
   //if (IsConsole) or (IsService) then CoInitialize(nil);
-  {$IFNDEF CONSOLE}
-  FDGUIxWaitCursor := TFDGUIxWaitCursor.Create(nil);
+  {$IFDEF FIREDAC_SHOW_WAITCURSOR}
+    {$IFNDEF CONSOLE}
+    FDGUIxWaitCursor := TFDGUIxWaitCursor.Create(nil);
+    {$ENDIF}
   {$ENDIF}
 
 finalization
   //if (IsConsole) or (IsService) then CoUninitialize;
-  {$IFNDEF CONSOLE}
-  FDGUIxWaitCursor.Free;
+  {$IFDEF FIREDAC_SHOW_WAITCURSOR}
+    {$IFNDEF CONSOLE}
+    FDGUIxWaitCursor.Free;
+    {$ENDIF}
   {$ENDIF}
 
 end.

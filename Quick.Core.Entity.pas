@@ -83,6 +83,7 @@ type
     fIndexOrder : TEntityIndexOrder;
   public
     constructor Create(const aFieldname : string; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending); overload;
+    constructor Create(const aFieldname1, aFieldname2 : string; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending); overload;
     constructor Create(aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending); overload;
     constructor Create(aFieldnames : TFieldNamesArray; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending); overload;
     property FieldNames : TFieldNamesArray read fFieldnames write fFieldnames;
@@ -127,14 +128,18 @@ type
     function Delete(aEntity : TEntity) : Boolean; overload;
     function Delete(const aWhere : string) : Boolean; overload;
     //LINQ queries
+    {$IFDEF VALUE_FORMATPARAMS}
+    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of TValue) : IEntityLinqQuery<T>; overload;
+    {$ELSE}
     function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const) : IEntityLinqQuery<T>; overload;
+    {$ENDIF}
     function Where(const aWhereClause: string) : IEntityLinqQuery<T>; overload;
     function SelectFirst : T;
     function SelectLast : T;
     function Select : IDBSetResult<T>; overload;
     function Select(const aFieldNames : string) : IDBSetResult<T>; overload;
     function SelectTop(aNumber : Integer) : IDBSetResult<T>;
-    function Sum(const aFieldName : string) : Int64;
+    function Sum(const aFieldname : string) : Int64;
     function Count : Int64;
     function Update(const aFieldNames : string; const aFieldValues : array of const) : Boolean; overload;
     function Delete : Boolean; overload;
@@ -422,6 +427,12 @@ begin
   fIndexOrder := aIndexOrder;
 end;
 
+constructor &Index.Create(const aFieldname1, aFieldname2 : string; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending);
+begin
+  fFieldNames := [aFieldname1,aFieldname2];
+  fIndexOrder := aIndexOrder;
+end;
+
 constructor &Index.Create(aFieldnames : TFieldNamesArray; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending);
 begin
   fFieldnames := aFieldnames;
@@ -527,9 +538,9 @@ begin
   Result := IDBSetResult<T>(NewLinQ.SelectTop(aNumber));
 end;
 
-function TDBSet<T>.Sum(const aFieldName: string): Int64;
+function TDBSet<T>.Sum(const aFieldname: string): Int64;
 begin
-  Result := NewLinQ.Sum(aFieldName);
+  Result := NewLinQ.Sum(aFieldname);
 end;
 
 function TDBSet<T>.Update(const aFieldNames: string; const aFieldValues: array of const): Boolean;
@@ -547,7 +558,11 @@ begin
   Result := NewQuery.Update(aEntity);
 end;
 
+{$IFDEF VALUE_FORMATPARAMS}
+function TDBSet<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of TValue): IEntityLinqQuery<T>;
+{$ELSE}
 function TDBSet<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>;
+{$ENDIF}
 begin
   Result := NewLinQ.Where(aFormatSQLWhere,aValuesSQLWhere);
 end;

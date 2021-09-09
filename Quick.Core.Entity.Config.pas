@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Entity.Config
   Description : Core Entity DataBase Config
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 08/11/2019
+  Modified    : 21/08/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -92,6 +92,38 @@ type
   public
     class function GetBuilder : IDBContextOptionsBuilder;
   end;
+
+  IDBConnectionOptions = interface(IDBConnectionSettings)
+    function GetDBEngine: TDatabaseEngine;
+    property DBEngine : TDataBaseEngine read GetDBEngine;
+    property Server : string read GetServer write SetServer;
+    property Database : string read GetDatabase write SetDataBase;
+    property UserName : string read GetUserName write SetUserName;
+    property Password : string read GetPassword write SetPassword;
+    function IsCustomConnectionString : Boolean;
+    procedure FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
+    function GetCustomConnectionString : string;
+    procedure UseMSSQL;
+    procedure UseSQLite;
+    procedure UseMySQL;
+    procedure UseMSAccess;
+    procedure UseRestServer;
+  end;
+
+  TDBConnectionOptions = class(TDBConnectionSettings,IDBConnectionOptions)
+  private
+    fDBEngine : TDatabaseEngine;
+    function GetDBEngine: TDatabaseEngine;
+  public
+    property DBEngine : TDatabaseEngine read GetDBEngine;
+    procedure UseMSSQL;
+    procedure UseSQLite;
+    procedure UseMySQL;
+    procedure UseMSAccess;
+    procedure UseRestServer;
+  end;
+
+  TDBConnectionConfigureProc = reference to procedure(aOptions : IDBConnectionOptions);
 
   EEntityConnectionStringNotFound = class(Exception);
 
@@ -195,6 +227,43 @@ begin
   Result := Self;
   fOptions.DBProvider := TDBProvider.dbSQLite;
   fOptions.DBEngine := TDatabaseEngine.deRestServer;
+end;
+
+{ TDBConnnectionOptions }
+
+function TDBConnectionOptions.GetDBEngine: TDatabaseEngine;
+begin
+  Result := fDBEngine;
+end;
+
+procedure TDBConnectionOptions.UseMSAccess;
+begin
+  Provider := TDBProvider.dbMSAccess2007;
+  fDBEngine := TDatabaseEngine.deFireDAC;
+end;
+
+procedure TDBConnectionOptions.UseMSSQL;
+begin
+  Provider := TDBProvider.dbMSSQL;
+  fDBEngine := TDatabaseEngine.deADO;
+end;
+
+procedure TDBConnectionOptions.UseMySQL;
+begin
+  Provider := TDBProvider.dbMySQL;
+  fDBEngine := TDatabaseEngine.deADO;
+end;
+
+procedure TDBConnectionOptions.UseRestServer;
+begin
+  Provider := TDBProvider.dbSQLite;
+  fDBEngine := TDatabaseEngine.deRestServer;
+end;
+
+procedure TDBConnectionOptions.UseSQLite;
+begin
+  Provider := TDBProvider.dbSQLite;
+  fDBEngine := TDatabaseEngine.deFireDAC;
 end;
 
 end.

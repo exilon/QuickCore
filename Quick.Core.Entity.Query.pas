@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Entity.Query
   Description : Core Entity Query
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 11/09/2020
+  Modified    : 29/08/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -55,7 +55,11 @@ type
 
   TEntityQuery<T : class, constructor>  = class(TInterfacedObject,IEntityQuery<T>,IEntityLinqQuery<T>)
   private
+    {$IFDEF VALUE_FORMATPARAMS}
+    function FormatParams(const aWhereClause : string; aWhereParams : array of TValue) : string;
+    {$ELSE}
     function FormatParams(const aWhereClause : string; aWhereParams : array of const) : string;
+    {$ENDIF}
   protected
     fWhereClause : string;
     fOrderClause : string;
@@ -66,6 +70,7 @@ type
     fQueryGenerator : IEntityQueryGenerator;
     fHasResults : Boolean;
     fFirstIteration : Boolean;
+    function BoolToSQLString(aBoolean : Boolean) : string; virtual;
     function MoveNext : Boolean; virtual; abstract;
     function GetCurrent : T; virtual; abstract;
     function GetFieldValue(const aName : string) : Variant; virtual; abstract;
@@ -90,7 +95,11 @@ type
     function Delete(aEntity : TEntity) : Boolean; overload; virtual;
     function Delete(const aWhere : string) : Boolean; overload; virtual;
     //LINQ queries
-    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const) : IEntityLinqQuery<T>; overload;
+    {$IFDEF VALUE_FORMATPARAMS}
+    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of TValue): IEntityLinqQuery<T>; overload;
+    {$ELSE}
+    function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>; overload;
+    {$ENDIF}
     function Where(const aWhereClause : string) : IEntityLinqQuery<T>; overload;
     function SelectFirst : T; virtual;
     function SelectLast : T; virtual;
@@ -363,10 +372,11 @@ var
   IsFilterSelect : Boolean;
   skip : Boolean;
 begin
-  {$IFDEF DEBUG_ENTITY}
-    TDebugger.TimeIt(Self,'FillRecordFromDB',aEntity.ClassName);
-  {$ENDIF}
   try
+    {$IFDEF DEBUG_ENTITY}
+    if aEntity <> nil then TDebugger.TimeIt(Self,'FillRecordFromDB',aEntity.ClassName);
+    {$ENDIF}
+
     if aEntity = nil then aEntity := T.Create;
     Result := aEntity;
 
@@ -589,7 +599,11 @@ begin
       primarykey := aEntity.FieldByName(fModel.PrimaryKey.Name);
 //    if fQueryGenerator.Name <> 'MSSQL' then
 //    begin
+      {$IFDEF VALUE_FORMATPARAMS}
+      if (VarIsEmpty(primarykey)) or (Where(Format('%s = ?',[fModel.PrimaryKey.Name]),[TValue.FromVariant(primarykey)]).Count = 0) then
+      {$ELSE}
       if (VarIsEmpty(primarykey)) or (Where(Format('%s = ?',[fModel.PrimaryKey.Name]),[primarykey]).Count = 0) then
+      {$ENDIF}
       begin
         Result := Add(aEntity);
       end
@@ -617,6 +631,13 @@ begin
   end;
 end;
 
+
+function TEntityQuery<T>.BoolToSQLString(aBoolean : Boolean) : string;
+const
+  boolstrs: array [boolean] of String = ('0', '1');
+begin
+  Result := boolstrs[Ord(aBoolean) <> 0];
+end;
 
 function TEntityQuery<T>.Delete(aEntity : TEntity): Boolean;
 begin
@@ -664,6 +685,80 @@ begin
   end;
 end;
 
+{$IFDEF VALUE_FORMATPARAMS}
+function TEntityQuery<T>.FormatParams(const aWhereClause : string; aWhereParams : array of TValue) : string;
+var
+  i : Integer;
+  value : string;
+  vari : variant;
+begin
+  Result := aWhereClause;
+  if aWhereClause = '' then
+  begin
+    Result := '1 = 1';
+    Exit;
+  end;
+  for i := 0 to aWhereClause.CountChar('?') - 1 do
+  begin
+    case aWhereParams[i].Kind of
+      tkInteger : value := aWhereParams[i].AsInteger.ToString;
+      tkInt64 : value := aWhereParams[i].AsInt64.ToString;
+      tkEnumeration :
+        begin
+          if (aWhereParams[i].TypeInfo = System.TypeInfo(Boolean)) then
+          begin
+            {$IFDEF DELPHIRX10_UP}
+            value := BoolToSQLString(aWhereParams[i].AsBoolean);
+            {$ELSE}
+            if aWhereParams[i].AsBoolean then value := BoolToSQLString(True)
+              else value := BoolToSQLString(False)
+            {$ENDIF}
+          end
+          else
+          begin
+            //if fUseEnumNames then Result := TJSONString.Create(aValue.ToString)
+            //  else Result := GetEnumValue(aWhereParams[i].TypeInfo,aWhereParams[i].AsString);
+            value := aWhereParams[i].AsInteger.ToString;
+          end;
+        end;
+      tkString, tkLString, tkWString, tkUString : value := fQueryGenerator.QuotedStr(aWhereParams[i].AsString);
+      tkChar, tkWChar : value := fQueryGenerator.QuotedStr(aWhereParams[i].AsString);
+      tkFloat :
+        begin
+          if aWhereParams[i].TypeInfo = TypeInfo(TDateTime) then
+          begin
+            if aWhereParams[i].AsExtended <> 0.0 then value := fQueryGenerator.DateTimeToDBField(aWhereParams[i].AsExtended);
+          end
+          else if aWhereParams[i].TypeInfo = TypeInfo(TDate) then
+          begin
+            if aWhereParams[i].AsExtended <> 0.0 then value := DateToStr(aWhereParams[i].AsExtended);
+          end
+          else if aWhereParams[i].TypeInfo = TypeInfo(TTime) then
+          begin
+            value := TimeToStr(aWhereParams[i].AsExtended);
+          end
+          else
+          begin
+            value := aWhereParams[i].AsExtended.ToString;
+            value := StringReplace(value,',','.',[]);
+          end;
+        end;
+      tkVariant :
+      begin
+        vari := aWhereParams[i].AsVariant;
+        case VarType(vari) of
+          varInteger,varInt64 : value := IntToStr(vari);
+          varDouble : value := FloatToStr(vari);
+          varDate : value := fQueryGenerator.DateTimeToDBField(vari);
+          else value := string(vari);
+        end;
+      end
+    else value := fQueryGenerator.QuotedStr(string(aWhereParams[i].AsString));
+    end;
+    Result := StringReplace(Result,'?',value,[]);
+  end;
+end;
+{$ELSE}
 function TEntityQuery<T>.FormatParams(const aWhereClause: string; aWhereParams: array of const): string;
 var
   i : Integer;
@@ -681,8 +776,12 @@ begin
     case aWhereParams[i].VType of
       vtInteger : value := IntToStr(aWhereParams[i].VInteger);
       vtInt64 : value := IntToStr(aWhereParams[i].VInt64^);
-      vtExtended : value := FloatToStr(aWhereParams[i].VExtended^);
-      vtBoolean : value := BoolToStr(aWhereParams[i].VBoolean);
+      vtExtended :
+        begin
+          value := FloatToStr(aWhereParams[i].VExtended^);
+          value := StringReplace(value,',','.',[]);
+        end;
+      vtBoolean : value := BoolToSQLString(aWhereParams[i].VBoolean);
       vtWideString : value := fQueryGenerator.QuotedStr(string(aWhereParams[i].VWideString^));
       {$IFNDEF NEXTGEN}
       vtAnsiString : value := fQueryGenerator.QuotedStr(AnsiString(aWhereParams[i].VAnsiString));
@@ -697,7 +796,7 @@ begin
         case VarType(vari) of
           varInteger,varInt64 : value := IntToStr(vari);
           varDouble : value := FloatToStr(vari);
-          varDate : value := DateTimeToSQL(vari);
+          varDate : value := fQueryGenerator.DateTimeToDBField(vari);
           else value := string(vari);
         end;
       end
@@ -706,6 +805,7 @@ begin
     Result := StringReplace(Result,'?',value,[]);
   end;
 end;
+{$ENDIF}
 
 function TEntityQuery<T>.OrderBy(const aFieldValues: string): IEntityLinqQuery<T>;
 begin
@@ -860,7 +960,11 @@ begin
   fWhereClause := aWhereClause;
 end;
 
+{$IFDEF VALUE_FORMATPARAMS}
+function TEntityQuery<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of TValue): IEntityLinqQuery<T>;
+{$ELSE}
 function TEntityQuery<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>;
+{$ENDIF}
 begin
   Result := Self;
   fWhereClause := FormatParams(aFormatSQLWhere,aValuesSQLWhere);
