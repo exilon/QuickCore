@@ -409,7 +409,7 @@ begin
   if Assigned(fOptionsService) then
   begin
     canSave := False;
-    for i := 0 to fOptionsService.Count do
+    for i := 0 to fOptionsService.Count-1 do
     begin
       if not fOptionsService.Items[i].HideOptions then
       begin
