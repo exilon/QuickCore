@@ -52,13 +52,91 @@ type
     function Value : T;
   end;
 
+  CommandDescription = Quick.Parameters.CommandDescription;
+  ParamCommand = Quick.Parameters.ParamCommand;
+  ParamName = Quick.Parameters.ParamName;
+  ParamRequired = Quick.Parameters.ParamRequired;
+  ParamValueSeparator = Quick.Parameters.ParamValueSeparator;
+  ParamSwitchChar = Quick.Parameters.ParamSwitchChar;
+  ParamHelp = Quick.Parameters.ParamHelp;
+  ParamValueIsNextParam = Quick.Parameters.ParamValueIsNextParam;
+
+  TParameters = Quick.Parameters.TParameters;
+
+  {$IFDEF MSWINDOWS}
+  TServiceParameters = class(TParameters)
+  private
+    fSilent: Boolean;
+    fInstall: Boolean;
+    fRemove: Boolean;
+    fInstance: string;
+    fConsole: Boolean;
+  published
+    [ParamName('console')]
+    [ParamHelp('Force run as console.')]
+    property Console : Boolean read fConsole write fConsole;
+
+    [ParamName('install')]
+    [ParamHelp('Install service.')]
+    property Install : Boolean read fInstall write fInstall;
+
+    [ParamName('remove')]
+    [ParamHelp('Remove service.')]
+    property Remove : Boolean read fRemove write fRemove;
+
+    [ParamName('instance')]
+    [ParamValueIsNextParam]
+    [ParamHelp('Define instance name of service.','intance')]
+    property Instance : string read fInstance write fInstance;
+
+    [ParamHelp('Silent mode.')]
+    property Silent : Boolean read fSilent write fSilent;
+  end;
+  {$ELSE}
+  TServiceParameters = class(TParameters)
+  private
+    fSilent: Boolean;
+    fInstall: Boolean;
+    fRemove: Boolean;
+    fInstance: string;
+    fConsole: Boolean;
+    fDetach : Boolean;
+  published
+    [ParamName('console')]
+    [ParamHelp('Force run as console.')]
+    property Console : Boolean read fConsole write fConsole;
+
+    [ParamName('install')]
+    [ParamHelp('Install daemon.')]
+    property Install : Boolean read fInstall write fInstall;
+
+    [ParamName('remove')]
+    [ParamHelp('Remove daemon.')]
+    property Remove : Boolean read fRemove write fRemove;
+
+    [ParamName('instance')]
+    [ParamValueIsNextParam]
+    [ParamHelp('Define instance name of daemon.','intance')]
+    property Instance : string read fInstance write fInstance;
+
+    [ParamHelp('Silent mode.')]
+    [ParamName('silent')]
+    property Silent : Boolean read fSilent write fSilent;
+
+    [ParamHelp('Run in background.')]
+    [ParamName('detach','d')]
+    property Detach : Boolean read fDetach write fDetach;
+  end;
+  {$ENDIF}
+
 implementation
 
 { TCommandline<T> }
 
 constructor TCommandline<T>.Create;
 begin
-  fValue := T.Create;
+  fValue := T.Create(True);
+  //if fValue.Help then fValue.ShowHelp;
 end;
 
 destructor TCommandline<T>.Destroy;
