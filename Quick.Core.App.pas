@@ -42,9 +42,10 @@ type
   private
     fServiceCollection : TServiceCollection;
   public
-    constructor Create(aStartupClass : TStartupClass);
+    constructor Create(aStartupClass : TStartupClass); virtual;
     destructor Destroy; override;
     procedure Start; virtual;
+    procedure Stop; virtual;
   end;
 
 implementation
@@ -72,6 +73,11 @@ begin
 end;
 
 procedure TCoreApp.Start;
+begin
+
+end;
+
+procedure TCoreApp.Stop;
 begin
 
 end;
