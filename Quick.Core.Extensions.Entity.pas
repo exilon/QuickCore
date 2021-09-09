@@ -43,8 +43,11 @@ uses
   Quick.Core.Entity.Config;
 
 type
+  TDBContextOptionsProc<T : TDbContextOptions> = reference to procedure(aOptions : T);
+
   TEntityServiceExtension = class(TServiceCollectionExtension)
-    class function AddDBContext<T : TDBContext>(aDBContextOptions : TDbContextOptions): TServiceCollection;
+    class function AddDBContext<T : TDBContext>(aDBContextOptions : TDbContextOptions): TServiceCollection; overload;
+    class function AddDBContext<T : TDBContext>(aConfigureProc : TDBConnectionConfigureProc) : TServiceCollection; overload;
   end;
 
 implementation
@@ -78,6 +81,34 @@ begin
       TDBContext(Result).Database := TEntityDatabaseFactory.GetInstance(aDBContextOptions.DBEngine);
       opConnStrings := ServiceCollection.AppServices.Options.GetSection<TConnectionStringSettings>;
       TDBContext(Result).Connection.FromConnectionString(Integer(aDBContextOptions.DBProvider),opConnStrings.GetConnection(aDBContextOptions.ConnectionStringName));
+      TDBContext(Result).Connect;
+      //aDBContextOptions.Free;
+    end);
+end;
+
+class function TEntityServiceExtension.AddDBContext<T>(aConfigureProc : TDBConnectionConfigureProc) : TServiceCollection;
+var
+  dboptions : IDBConnectionOptions;
+begin
+  Result := ServiceCollection;
+  dbOptions := TDBConnectionOptions.Create;
+  aConfigureProc(dbOptions);
+
+  Result.AddSingleton<T>('',function : T
+    var
+      opConnStrings : TConnectionStringSettings;
+    begin
+      Result := (PTypeInfo(TypeInfo(T)).TypeData.ClassType.Create) as T;
+      TDBContext(Result).Database := TEntityDatabaseFactory.GetInstance(dbOptions.DBEngine);
+      if dboptions.IsCustomConnectionString then
+      begin
+        opConnStrings := ServiceCollection.AppServices.Options.GetSection<TConnectionStringSettings>;
+        TDBContext(Result).Connection.FromConnectionString(Integer(dbOptions.Provider),dbOptions.GetCustomConnectionString);
+      end
+      else
+      begin
+        TDBContext(Result).Connection.FromConnection(dboptions);
+      end;
       TDBContext(Result).Connect;
       //aDBContextOptions.Free;
     end);

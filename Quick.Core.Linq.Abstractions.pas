@@ -36,6 +36,9 @@ interface
 uses
   System.SysUtils,
   Quick.Value,
+  {$IFDEF VALUE_FORMATPARAMS}
+  System.Rtti,
+  {$ENDIF}
   Quick.Collections;
 
 type
@@ -44,7 +47,11 @@ type
 
   ILinq<T> = interface
   ['{18131A32-C79F-4D6D-9FF0-C0A019E28B02}']
+    {$IFDEF VALUE_FORMATPARAMS}
+    function Where(const aWhereClause : string; aWhereValues : array of TValue) : ILinq<T>; overload;
+    {$ELSE}
     function Where(const aWhereClause : string; aWhereValues : array of const) : ILinq<T>; overload;
+    {$ENDIF}
     function Where(const aWhereClause: string): ILinq<T>; overload;
     function Where(aPredicate : TPredicate<T>) : ILinq<T>; overload;
     function OrderBy(const aFieldNames : string) : ILinq<T>;

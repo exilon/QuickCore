@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2021 Kike Pérez
 
   Unit        : Quick.Core.Identity.Store.Entity
   Description : Core Identity Store Database
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 12/03/2020
-  Modified    : 24/03/2020
+  Modified    : 29/08/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -35,6 +35,9 @@ interface
 
 uses
   System.SysUtils,
+  {$IFDEF VALUE_FORMATPARAMS}
+  System.Rtti,
+  {$ENDIF}
   Quick.Commons,
   Quick.Collections,
   Quick.Value,
@@ -52,7 +55,11 @@ type
     fLinq : IEntityLinqQuery<T>;
   public
     constructor Create(aLinq : IEntityLinqQuery<T>);
+    {$IFDEF VALUE_FORMATPARAMS}
+    function Where(const aWhereClause : string; aWhereValues : array of TValue) : ILinq<T>; overload;
+    {$ELSE}
     function Where(const aWhereClause : string; aWhereValues : array of const) : ILinq<T>; overload;
+    {$ENDIF}
     function Where(const aWhereClause: string): ILinq<T>; overload;
     function Where(aPredicate : TPredicate<T>) : ILinq<T>; overload;
     function OrderBy(const aFieldNames : string) : ILinq<T>;
@@ -224,7 +231,11 @@ begin
   fLinq.Where(aWhereClause);
 end;
 
+{$IFDEF VALUE_FORMATPARAMS}
+function TEntityStoreLinq<T>.Where(const aWhereClause: string; aWhereValues: array of TValue): ILinq<T>;
+{$ELSE}
 function TEntityStoreLinq<T>.Where(const aWhereClause: string; aWhereValues: array of const): ILinq<T>;
+{$ENDIF}
 begin
   Result := Self;
   fLinq.Where(aWhereClause,aWhereValues);
