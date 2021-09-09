@@ -56,8 +56,11 @@ uses
   {$ENDIF}
   Quick.Logger.Provider.Telegram,
   Quick.Logger.Provider.Slack,
+  Quick.Logger.Provider.SysLog,
   {$IFDEF DEBUG}
-  Quick.Logger.ExceptionHook,
+    {$IFDEF DEBUG_HANDLEDEXCEPTIONS}
+    Quick.Logger.ExceptionHook,
+    {$ENDIF}
   {$ENDIF}
   Quick.Logger.UnhandledExceptionHook;
 
@@ -156,7 +159,7 @@ type
   private
     fShowEventColors : Boolean;
     fShowTimeStamp : Boolean;
-    fEventTypeColors : TEventTypeColors;
+    //fEventTypeColors : TEventTypeColors;
     fShowEventTypes : Boolean;
     fUnderlineHeaderEventType : Boolean;
   published
@@ -254,6 +257,17 @@ type
     property WebHookURL : string read fWebHookURL write fWebHookURL;
   end;
 
+  TSysLogLoggerOptions = class(TLoggerOptions)
+  private
+    fHost : string;
+    fPort : Integer;
+    fFacility : TSyslogFacility;
+  published
+    property Host : string read fHost write fHost;
+    property Port : Integer read fPort write fPort;
+    property Facility : TSyslogFacility read fFacility write fFacility;
+  end;
+
   {$IFDEF MSWINDOWS}
   TADODBLoggerOptions = class(TLoggerOptions)
   private
@@ -316,6 +330,7 @@ type
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
     {$ENDIF}
+    function AddSysLog(aConfigureProc: TLoggerOptionsProc<TSysLogLoggerOptions> = nil): ILoggerBuilder;
     function Build : ILogger;
   end;
 
@@ -351,6 +366,7 @@ type
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
     {$ENDIF}
+    function AddSysLog(aConfigureProc: TLoggerOptionsProc<TSysLogLoggerOptions> = nil): ILoggerBuilder;
     function Build : ILogger;
   public
     destructor Destroy; override;
@@ -769,6 +785,28 @@ begin
   if not fUseOptionsFile then options.Free;
 end;
 
+function TLoggerBuilder.AddSysLog(aConfigureProc: TLoggerOptionsProc<TSysLogLoggerOptions> = nil): ILoggerBuilder;
+var
+  options : TSysLogLoggerOptions;
+  loggerSyslog : TLogSysLogProvider;
+begin
+  Result := Self;
+  if (fUseOptionsFile) and (fOptionContainer <> nil) then
+  begin
+    if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TSysLogLoggerOptions,'SysLog')) then Exit;
+    options := fOptionContainer.AddSection(TSysLogLoggerOptions,'SysLog') as TSysLogLoggerOptions;
+  end
+  else options := TSysLogLoggerOptions.Create;
+
+  loggerSyslog := TLogSysLogProvider.Create;
+  loggerSyslog.Name := options.Name;
+  TObjMapper.Map(loggerSyslog,options);
+  if Assigned(aConfigureProc) then aConfigureProc(options);
+  TObjMapper.Map(options,loggerSyslog);
+  AddProvider(loggerSyslog);
+  if not fUseOptionsFile then options.Free;
+end;
+
 {$IFDEF MSWINDOWS}
 function TLoggerBuilder.AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
 var
@@ -803,7 +841,10 @@ begin
   {$IFDEF MSWINDOWS}
   else if provname = 'eventlog' then fOptionContainer.AddSection<TEventLogLoggerOptions>('EventLog')
   else if provname = 'adodb' then fOptionContainer.AddSection<TADODBLoggerOptions>('ADODB')
+  {$ELSE}
+  else if (provname = 'eventlog') or (provname = 'adodb') then Exit
   {$ENDIF}
+  else if provname = 'syslog' then fOptionContainer.AddSection<TSysLogLoggerOptions>('SysLog')
   else raise Exception.CreateFmt('Logger provider "%S" is not a valid provider!',[aName]);
 end;
 
@@ -904,6 +945,7 @@ begin
   else if provname = 'eventlog' then Result := TLogEventLogProvider.Create
   else if provname = 'adodb' then Result := TLogADODBProvider.Create
   {$ENDIF}
+  else if provname = 'syslog' then Result := TLogSysLogProvider.Create
   else raise Exception.CreateFmt('Logger provider "%S" is not a valid provider!',[aName]);
 end;
 
