@@ -39,9 +39,12 @@ uses
   {$ENDIF}
   System.SysUtils,
   System.Generics.Collections,
+  Quick.Console,
   RTTI,
   Quick.Commons,
+  Quick.Core.Extensions.Hosting,
   Quick.Core.Logging.Abstractions,
+  Quick.Core.Extensions.Service.Abstractions,
   Quick.HttpServer,
   Quick.Core.DependencyInjection,
   Quick.Core.Security.Authentication,
@@ -73,6 +76,10 @@ type
 
   TStartupMvc = class;
 
+  TStatupMvcClass = class of TStartupMvc;
+
+  TMVCServerStatus = (mvsStarting, mvsStarted, mvsStopping, mvsStopped);
+
   TMVCServer = class(TInterfacedObject,IMVCServer)
   private
     fHttpServer : IHttpServer;
@@ -85,10 +92,13 @@ type
     fIsInitialized : Boolean;
     fPathBase : string;
     fWebRoot : string;
+    fStartupClass : TStatupMvcClass;
+    fStatus : TMVCServerStatus;
     procedure Initialize;
     procedure GetAttributeRouting;
     procedure GenerateRequestPipeline;
     function Logger : ILogger;
+    procedure ConfigureStartupServices;
   protected
     fHttpControllers : TList<THttpControllerClass>;
     fViewEngine : IViewEngine;
@@ -97,6 +107,7 @@ type
     constructor Create(aHttpServer : IHttpServer); overload; virtual;
     constructor Create(const aHost : string; aPort : Integer; aSSLEnabled : Boolean); overload; virtual;
     destructor Destroy; override;
+    property Status : TMVCServerStatus read fStatus write fStatus;
     function MapRoute(const aName : string; aController : THttpControllerClass; const aURL : string) : TMVCServer;
     function AddController(aHttpController : THttpControllerClass) : TMVCServer;
     function AddControllers : TMVCServer;
@@ -152,6 +163,8 @@ implementation
 
 constructor TMVCServer.Create(aHttpServer: IHttpServer);
 begin
+  fStatus := TMVCServerStatus.mvsStopped;
+  fStartupClass := nil;
   fIsInitialized := False;
   fServices :=  TServiceCollection.Create;
   fAppServices := fServices.AppServices;
@@ -164,6 +177,15 @@ begin
   fWebRoot := './wwwroot/';
   fHost := fHttpServer.Host;
   fPort := fHttpServer.Port;
+end;
+
+procedure TMVCServer.ConfigureStartupServices;
+begin
+  if fStartupClass = nil then Exit;
+
+  fStartupClass.ConfigureServices(fServices);
+  fStartupClass.Configure(Self);
+  fServices.Build;
 end;
 
 constructor TMVCServer.Create(const aHost : string; aPort : Integer; aSSLEnabled : Boolean);
@@ -187,7 +209,7 @@ end;
 
 destructor TMVCServer.Destroy;
 begin
-  fHttpServer.Stop;
+  Stop;
   fHttpControllers.Free;
   fHttpRouting.Free;
   fMiddlewares.Free;
@@ -224,6 +246,7 @@ end;
 
 procedure TMVCServer.Initialize;
 begin
+  ConfigureStartupServices;
   //generate request middleware pipeline
   GenerateRequestPipeline;
   Logger.Debug('Request Pipeline ready');
@@ -269,16 +292,60 @@ begin
 end;
 
 procedure TMVCServer.Start;
+var
+  hostservice : IHostService;
+  hostcore : IHostCore;
 begin
+  if fStatus = TMVCServerStatus.mvsStopping then Exit;
+  if (Services.IsRegistered<IHostService>) then hostservice := Services.Resolve<IHostService>
+    else hostservice := nil;
+  if fStatus = TMVCServerStatus.mvsStopped then
+  begin
+    fStatus := TMVCServerStatus.mvsStarting;
+    if hostservice <> nil then
+    begin
+      if hostservice.IsRunningAsService then
+      begin
+        //if not fIsInitialized then Initialize;
+        //Logger.Info('Running as a service');
+        hostservice.Start;
+        Exit;
+      end
+      else
+      begin
+        if hostservice.CheckParams then Exit;
+      end;
+    end
+    else
+    begin
+      hostcore := THostCore.Create;
+      hostcore.OnStart := Start;
+      hostcore.OnStop := Stop;
+      hostcore.Start;
+      Exit;
+    end;
+  end;
+  //run from ihost or ihostservice
   if not fIsInitialized then Initialize;
   fHttpServer.Start;
+  fStatus := mvsStarted;
   Logger.Info('%s listening on %s:%d',[fServices.Environment.ApplicationName,fHost,fPort]);
+  if (hostservice = nil) or ((hostservice <> nil) and (not hostservice.IsRunningAsService)) then
+  begin
+    Logger.Info('< Wait for ENTER key pressed >');
+    ConsoleWaitForEnterKey;
+  end;
+  Logger.Debug('TMVCServer.Start=Exited!');
+  //Free;
 end;
 
 procedure TMVCServer.Stop;
 begin
+  if (fStatus = TMVCServerStatus.mvsStopping) or (fStatus = TMVCServerStatus.mvsStopped) then Exit;
+
   Logger.Info('%s stopping...',[fServices.Environment.ApplicationName]);
   fHttpServer.Stop;
+  fStatus := TMVCServerStatus.mvsStopped;
   Logger.Info('%s stopped',[fServices.Environment.ApplicationName]);
 end;
 
@@ -397,9 +464,7 @@ end;
 
 function TMVCServer.UseStartup<T>: TMVCServer;
 begin
-  T.ConfigureServices(fServices);
-  T.Configure(Self);
-  fServices.Build;
+  fStartupClass := T;
 end;
 
 function TMVCServer.UseStaticFiles: TMVCServer;
