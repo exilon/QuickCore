@@ -5,9 +5,9 @@
   Unit        : Quick.Core.Entity.Engine.FireDAC
   Description : Core Entity FireDAC Provider
   Author      : Kike Pérez
-  Version     : 1.1
+  Version     : 1.2
   Created     : 15/07/2020
-  Modified    : 12/08/2021
+  Modified    : 04/10/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -135,9 +135,20 @@ constructor TFireDACEntityDataBase.Create;
 begin
   inherited;
   fFireDACConnection := TFDConnection.Create(nil);
+  fFireDACConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  fFireDACConnection.UpdateOptions.LockWait := True;
+  fFireDACConnection.ResourceOptions.AutoReconnect := True;
+  //fFireDACConnection.UpdateOptions.UpdateMode := Data.DB.TUpdateMode.upWhereAll;
+  //fFireDACConnection.UpdateOptions.LockWait := True;
+  //fFireDACConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  //fFireDACConnection.UpdateOptions.LockPoint := FireDAC.Stan.Option.TFDLockPoint.lpImmediate;
+  //fFireDACConnection.UpdateOptions.AssignedValues := [FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockMode,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockPoint,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockWait];
   fInternalQuery := TFDQuery.Create(nil);
   fInternalQuery.ResourceOptions.SilentMode := True;
   fInternalQuery.FetchOptions.Mode := FireDAC.Stan.Option.TFDFetchMode.fmAll;
+  fInternalQuery.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  fInternalQuery.UpdateOptions.LockWait := True;
+  //fInternalQuery.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmnone;
 end;
 
 constructor TFireDACEntityDataBase.CreateFromConnection(aConnection: TFDConnection; aOwnsConnection : Boolean);
@@ -209,7 +220,8 @@ var
 begin
   if Connection.IsCustomConnectionString then
   begin
-    Result := Format('DriverID=%s;%s;Pooled=True;',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString]);
+    //SharedCache=False;LockingMode=Normal;Synchronous=Normal;
+    Result := Format('DriverID=%s;%s;Pooled=True;SharedCache=False;LockingMode=Normal;Synchronous=Normal;',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString]);
     for pair in Connection.GetCustomConnectionString.Split([';']) do
     begin
       value := pair.Substring(pair.IndexOf('=')+1);
@@ -350,11 +362,22 @@ begin
   inherited;
   fFDConnection := TFDConnection.Create(nil);
   fFDConnection.ConnectionDefName := TFireDACEntityDataBase(aEntityDataBase).GetDefName;
+  fFDConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  fFDConnection.UpdateOptions.LockWait := True;
+  fFDConnection.ResourceOptions.AutoReconnect := True;
+  //fFireDACConnection.UpdateOptions.UpdateMode := Data.DB.TUpdateMode.upWhereAll;
+  //fFDConnection.UpdateOptions.LockWait := True;
+  //fFDConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  //fFDConnection.UpdateOptions.LockPoint := FireDAC.Stan.Option.TFDLockPoint.lpImmediate;
+  //fFireDACConnection.UpdateOptions.AssignedValues := [FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockMode,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockPoint,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockWait];
   fQuery := TFDQuery.Create(nil);
   fQuery.Connection := fFDConnection; //TFireDACEntityDataBase(aEntityDataBase).fFireDACConnection;
   fConnection := aEntityDataBase.Connection;
   fQuery.ResourceOptions.SilentMode := True;
   fQuery.FetchOptions.Mode := FireDAC.Stan.Option.TFDFetchMode.fmAll;
+  fQuery.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
+  fQuery.UpdateOptions.LockWait := True;
+  //fQuery.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmnone;
 end;
 
 destructor TFireDACEntityQuery<T>.Destroy;
