@@ -183,9 +183,17 @@ procedure TMVCServer.ConfigureStartupServices;
 begin
   if fStartupClass = nil then Exit;
 
-  fStartupClass.ConfigureServices(fServices);
-  fStartupClass.Configure(Self);
-  fServices.Build;
+  try
+    fStartupClass.ConfigureServices(fServices);
+    fStartupClass.Configure(Self);
+    fServices.Build;
+  except
+    on E : Exception do
+    begin
+      if fServices.AppServices.Logger <> nil then fServices.AppServices.Logger.Critical(e.Message);
+      raise e;
+    end;
+  end;
 end;
 
 constructor TMVCServer.Create(const aHost : string; aPort : Integer; aSSLEnabled : Boolean);
