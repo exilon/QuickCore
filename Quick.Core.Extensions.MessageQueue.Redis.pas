@@ -118,8 +118,10 @@ type
     destructor Destroy; override;
     function Push(const aMessage : T) : TMSQWaitResult; override;
     function Pop(out oMessage : T) : TMSQWaitResult; override;
-    function Remove(const aMessage : T) : Boolean; override;
-    function Failed(const aMessage : T) : Boolean; override;
+    function Remove(const aMessage : T) : Boolean; overload; override;
+    function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; override;
+    function Failed(const aMessage : T) : Boolean; overload; override;
+    function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; override;
   end;
 
   TMessageQueueServiceExtension = class(TServiceCollectionExtension)
@@ -343,6 +345,25 @@ begin
   if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,msg);
 end;
 
+function TRedisMessageQueue<T>.Remove(const aCurrentMessage, aProcessedMessage: T): Boolean;
+var
+  curmsg : string;
+  procmsg : string;
+begin
+  if not fOptions.ReliableMessageQueue.Enabled then Exit(True);
+  if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Failed: CurrentMessage cannot be null!');
+  if aProcessedMessage = nil then raise Exception.Create('RedisMSQ.Failed: ProcessedMessage cannot be null!');
+
+  curmsg := Serialize(aCurrentMessage);
+  procmsg := Serialize(aProcessedMessage);
+  //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
+  Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,curmsg);
+  {$IFDEF DEBUG_MSQ}
+  if not Result then TDebugger.Trace(Self,Format('RemoveDoneMSQ: "%s" cannot be deleted',[curmsg]));
+  {$ENDIF}
+  if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,procmsg);
+end;
+
 function TRedisMessageQueue<T>.Failed(const aMessage: T): Boolean;
 var
   msg : string;
@@ -362,6 +383,30 @@ begin
     fPushRedisPool.Get.Item.redisZADD(fFailedKey,msg,DateTimeToUnix(Now));
   end
   else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,msg);
+end;
+
+function TRedisMessageQueue<T>.Failed(const aCurrentMessage, aProcessedMessage: T): Boolean;
+var
+  curmsg : string;
+  failmsg : string;
+begin
+  if fOptions.ReliableMessageQueue.Enabled then
+  begin
+    if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Failed: CurrentMessage cannot be null!');
+    if aProcessedMessage = nil then raise Exception.Create('RedisMSQ.Failed: ProcessedMessage cannot be null!');
+    curmsg := Serialize(aCurrentMessage);
+    failmsg := Serialize(aProcessedMessage);
+    //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
+    Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,curmsg);
+    {$IFDEF DEBUG_MSQ}
+    if not Result then TDebugger.Trace(Self,Format('RemoveFailedMSQ: "%s" cannot be deleted',[msg]));
+    {$ENDIF}
+  end;
+  if fOptions.ReliableMessageQueue.Enabled then
+  begin
+    fPushRedisPool.Get.Item.redisZADD(fFailedKey,failmsg,DateTimeToUnix(Now));
+  end
+  else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,failmsg);
 end;
 
 { TQueueServiceExtension }
