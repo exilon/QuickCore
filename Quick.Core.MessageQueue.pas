@@ -56,12 +56,12 @@ type
     destructor Destroy; override;
     function Push(const aMessage : T) : TMSQWaitResult; virtual; abstract;
     function Pop(out oMessage : T) : TMSQWaitResult; virtual; abstract;
-    function Remove(const aMessage : T) : Boolean; virtual; abstract;
-    function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; virtual; abstract;
-    function Remove(const aCurrentMessage : T; aBeforeSaveToDones : TProc<T>) : Boolean; virtual; abstract;
-    function Failed(const aMessage : T) : Boolean; virtual; abstract;
-    function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; virtual; abstract;
-    function Failed(const aCurrentMessage : T; aBeforeSaveToFaileds : TProc<T>) : Boolean; virtual; abstract;
+    function Remove(const aMessage : T) : Boolean; overload; virtual; abstract;
+    function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; virtual; abstract;
+    function Remove(const aCurrentMessage : T; aBeforeSaveToDones : TProc<T>) : Boolean; overload; virtual; abstract;
+    function Failed(const aMessage : T) : Boolean; overload; virtual; abstract;
+    function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; virtual; abstract;
+    function Failed(const aCurrentMessage : T; aBeforeSaveToFaileds : TProc<T>) : Boolean; overload; virtual; abstract;
     procedure Clear; virtual; abstract;
     function QueueSize : Integer; virtual; abstract;
     function TotalItemsPushed: Cardinal; virtual; abstract;
