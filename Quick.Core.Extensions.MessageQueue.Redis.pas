@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 02/03/2021
+  Modified    : 18/10/2021
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -118,10 +118,12 @@ type
     destructor Destroy; override;
     function Push(const aMessage : T) : TMSQWaitResult; override;
     function Pop(out oMessage : T) : TMSQWaitResult; override;
-    function Remove(const aMessage : T) : Boolean; overload; override;
-    function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; override;
-    function Failed(const aMessage : T) : Boolean; overload; override;
-    function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; override;
+    function Remove(const aMessage : T) : Boolean; override;
+    function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; override;
+    function Remove(const aCurrentMessage : T; aBeforeSaveToDones : TProc<T>) : Boolean; override;
+    function Failed(const aMessage : T) : Boolean; override;
+    function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; override;
+    function Failed(const aCurrentMessage : T; aBeforeSaveToFaileds : TProc<T>) : Boolean; override;
   end;
 
   TMessageQueueServiceExtension = class(TServiceCollectionExtension)
@@ -329,20 +331,28 @@ begin
   end;
 end;
 
-function TRedisMessageQueue<T>.Remove(const aMessage: T): Boolean;
+function TRedisMessageQueue<T>.Remove(const aCurrentMessage: T; aBeforeSaveToDones: TProc<T>): Boolean;
 var
   msg : string;
 begin
   if not fOptions.ReliableMessageQueue.Enabled then Exit(True);
-  if aMessage = nil then raise Exception.Create('RedisMSQ.Remove: Message cannot be null!');
+  if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Remove: Message cannot be null!');
 
-  msg := Serialize(aMessage);
+  msg := Serialize(aCurrentMessage);
   //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
   Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,msg);
   {$IFDEF DEBUG_MSQ}
   if not Result then TDebugger.Trace(Self,Format('RemoveDoneMSQ: "%s" cannot be deleted',[msg]));
   {$ENDIF}
-  if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,msg);
+  if fOptions.RetainDoneMessages then
+  begin
+    if Assigned(aBeforeSaveToDones) then
+    begin
+      aBeforeSaveToDones(aCurrentMessage);
+      msg := Serialize(aCurrentMessage);
+    end;
+    Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,msg);
+  end;
 end;
 
 function TRedisMessageQueue<T>.Remove(const aCurrentMessage, aProcessedMessage: T): Boolean;
@@ -364,19 +374,29 @@ begin
   if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,procmsg);
 end;
 
-function TRedisMessageQueue<T>.Failed(const aMessage: T): Boolean;
+function TRedisMessageQueue<T>.Remove(const aMessage: T): Boolean;
+begin
+  Result := Remove(aMessage,nil);
+end;
+
+function TRedisMessageQueue<T>.Failed(const aCurrentMessage: T; aBeforeSaveToFaileds: TProc<T>): Boolean;
 var
   msg : string;
 begin
   if fOptions.ReliableMessageQueue.Enabled then
   begin
-    if aMessage = nil then raise Exception.Create('RedisMSQ.Failed: Message cannot be null!');
-    msg := Serialize(aMessage);
+    if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Failed: Message cannot be null!');
+    msg := Serialize(aCurrentMessage);
     //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
     Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,msg);
     {$IFDEF DEBUG_MSQ}
     if not Result then TDebugger.Trace(Self,Format('RemoveFailedMSQ: "%s" cannot be deleted',[msg]));
     {$ENDIF}
+  end;
+  if Assigned(aBeforeSaveToFaileds) then
+  begin
+    aBeforeSaveToFaileds(aCurrentMessage);
+    msg := Serialize(aCurrentMessage);
   end;
   if fOptions.ReliableMessageQueue.Enabled then
   begin
@@ -407,6 +427,12 @@ begin
     fPushRedisPool.Get.Item.redisZADD(fFailedKey,failmsg,DateTimeToUnix(Now));
   end
   else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,failmsg);
+end;
+
+
+function TRedisMessageQueue<T>.Failed(const aMessage: T): Boolean;
+begin
+  Result := Failed(aMessage,nil);
 end;
 
 { TQueueServiceExtension }

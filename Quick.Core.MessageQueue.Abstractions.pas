@@ -45,8 +45,10 @@ type
     function Pop(out oMessage : T) : TMSQWaitResult;
     function Remove(const aMessage : T) : Boolean; overload;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload;
+    function Remove(const aCurrentMessage : T; aBeforeSaveToDones : TProc<T>) : Boolean; overload;
     function Failed(const aMessage : T) : Boolean; overload;
     function Failed(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload;
+    function Failed(const aCurrentMessage : T; aBeforeSaveToFaileds : TProc<T>) : Boolean; overload;
   end;
 
 implementation
