@@ -79,6 +79,7 @@ type
     fReadTimeout: Integer;
     fRealiableMessageQueue: TRealiableMessageQueue;
     fRetainDoneMessages : Boolean;
+    fRetainMaxDones : Integer;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -95,6 +96,7 @@ type
     property MaxConsumersPool : Integer read fMaxConsumersPool write fMaxConsumersPool;
     property ReliableMessageQueue : TRealiableMessageQueue read fRealiableMessageQueue write fRealiableMessageQueue;
     property RetainDoneMessages : Boolean read fRetainDoneMessages write fRetainDoneMessages;
+    property RetainMaxDones : Integer read fRetainMaxDones write fRetainMaxDones;
   end;
 
   TRedisMessageQueue<T : class, constructor> = class(TMessageQueue<T>)
@@ -352,6 +354,7 @@ begin
       msg := Serialize(aCurrentMessage);
     end;
     Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,msg);
+    if fOptions.RetainMaxDones > 0 then fPushRedisPool.Get.Item.RedisLTRIM(fDoneKey,0,fOptions.RetainMaxDones);
   end;
 end;
 
@@ -371,7 +374,11 @@ begin
   {$IFDEF DEBUG_MSQ}
   if not Result then TDebugger.Trace(Self,Format('RemoveDoneMSQ: "%s" cannot be deleted',[curmsg]));
   {$ENDIF}
-  if fOptions.RetainDoneMessages then Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,procmsg);
+  if fOptions.RetainDoneMessages then
+  begin
+    Result := fPushRedisPool.Get.Item.RedisLPUSH(fDoneKey,procmsg);
+    if fOptions.RetainMaxDones > 0 then fPushRedisPool.Get.Item.RedisLTRIM(fDoneKey,0,fOptions.RetainMaxDones);
+  end;
 end;
 
 function TRedisMessageQueue<T>.Remove(const aMessage: T): Boolean;
@@ -466,6 +473,7 @@ begin
   fRealiableMessageQueue.DetermineAsHangedAfterSec := 60;
   fRealiableMessageQueue.Enabled := False;
   fRetainDoneMessages := False;
+  fRetainMaxDones := 0;
 end;
 
 destructor TRedisMessageQueueOptions.Destroy;
