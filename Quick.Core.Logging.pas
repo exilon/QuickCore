@@ -45,8 +45,12 @@ uses
   Quick.AutoMapper,
   Quick.Core.Logging.Abstractions,
   Quick.Logger,
+  {$IFDEF ANDROID}
+  System.IOUtils,
+  {$ELSE}
   Quick.Console,
   Quick.Logger.Provider.Console,
+  {$ENDIF}
   Quick.Logger.Provider.Files,
   Quick.Logger.Provider.Redis,
   Quick.Logger.Provider.Rest,
@@ -295,6 +299,7 @@ type
     function Enable : T;
   end;
 
+  {$IFNDEF ANDROID}
   ILoggerConsoleBuilder = interface
   ['{705773EA-FFE2-4A93-AB54-AACC9AB96BE1}']
     function ShowEventColors(aValue : Boolean) : ILoggerConsoleBuilder;
@@ -316,11 +321,14 @@ type
   public
     class function GetBuilder : ILoggerConsoleBuilder;
   end;
+  {$ENDIF}
 
   ILoggerBuilder = interface
   ['{4EF49E04-9C4E-47AD-88C6-6D65D5427741}']
+    {$IFNDEF ANDROID}
     function AddConsole(aOptions : TConsoleLoggerOptions) : ILoggerBuilder; overload;
     function AddConsole(aConfigureProc : TLoggerOptionsProc<TConsoleLoggerOptions>) : ILoggerBuilder; overload;
+    {$ENDIF}
     function AddFile(aConfigureProc: TLoggerOptionsProc<TFileLoggerOptions>) : ILoggerBuilder;
     function AddRedis(aConfigureProc : TLoggerOptionsProc<TRedisLoggerOptions>) : ILoggerBuilder;
     function AddRest(aOptions : TLoggerOptionsProc<TRestLoggerOptions>) : ILoggerBuilder;
@@ -355,8 +363,10 @@ type
     function GetEnvironment : string;
   protected
     fLogger : TQuickLogger;
+    {$IFNDEF ANDROID}
     function AddConsole(aOptions : TConsoleLoggerOptions) : ILoggerBuilder; overload;
     function AddConsole(aConfigureProc : TLoggerOptionsProc<TConsoleLoggerOptions>) : ILoggerBuilder; overload;
+    {$ENDIF}
     function AddFile(aConfigureProc: TLoggerOptionsProc<TFileLoggerOptions>): ILoggerBuilder;
     function AddRedis(aConfigureProc : TLoggerOptionsProc<TRedisLoggerOptions>) : ILoggerBuilder;
     function AddRest(aConfigureProc : TLoggerOptionsProc<TRestLoggerOptions>) : ILoggerBuilder;
@@ -513,6 +523,7 @@ end;
 
 { TLoggerConsoleProviderBuilder }
 
+{$IFNDEF ANDROID}
 class function TLoggerConsoleBuilder.GetBuilder: ILoggerConsoleBuilder;
 begin
   Result := TLoggerConsoleBuilder.Create;
@@ -547,6 +558,7 @@ function TLoggerConsoleBuilder.UnderlineHeaderEventType(aValue: Boolean): ILogge
 begin
 
 end;
+{$ENDIF}
 
 { TLoggerBuilder }
 
@@ -643,6 +655,7 @@ begin
   //loggerConsole.Enabled := True;
 end;
 
+{$IFNDEF ANDROID}
 function TLoggerBuilder.AddConsole(aConfigureProc: TLoggerOptionsProc<TConsoleLoggerOptions>): ILoggerBuilder;
 var
   options : TConsoleLoggerOptions;
@@ -670,6 +683,7 @@ function TLoggerBuilder.AddConsole(aOptions: TConsoleLoggerOptions): ILoggerBuil
 begin
   fOptionContainer.AddOption(aOptions);
 end;
+{$ENDIF}
 
 function TLoggerBuilder.AddFile(aConfigureProc: TLoggerOptionsProc<TFileLoggerOptions>): ILoggerBuilder;
 var
@@ -690,6 +704,9 @@ begin
   aConfigureProc(options);
   TObjMapper.Map(options,loggerFile);
   AddProvider(loggerFile);
+  {$IFDEF ANDROID}
+  options.FileName := TPath.GetDocumentsPath + PathDelim + TPath.GetFileNameWithoutExtension(path.EXEPATH) + '.log';
+  {$ENDIF}
   if not fUseOptionsFile then options.Free;
 end;
 
@@ -863,12 +880,22 @@ begin
 
   if aOptionsFormat = TLoggerOptionsFormat.ofJSON then
   begin
-      filename := path.EXEPATH + PathDelim + opfilename + environment + '.json';
+    {$IFNDEF ANDROID}
+    if opfilename.Contains(PathDelim) then filename := opfilename
+      else filename := path.EXEPATH + PathDelim + opfilename + environment + '.json';
+    {$ELSE}
+    fileName := TPath.GetDocumentsPath + PathDelim + opfilename + environment + '.json';
+    {$ENDIF}
     iserializer := TJsonOptionsSerializer.Create;
   end
   else if aOptionsFormat = TLoggerOptionsFormat.ofYAML then
   begin
-    filename := path.EXEPATH + PathDelim + opfilename + environment + '.yml';
+    {$IFNDEF ANDROID}
+    if opfilename.Contains(PathDelim) then filename := opfilename
+      else filename := path.EXEPATH + PathDelim + opfilename + environment + '.yml';
+    {$ELSE}
+    fileName := TPath.GetDocumentsPath + PathDelim + opfilename + environment + '.yml';
+    {$ENDIF}
     iserializer := TYamlOptionsSerializer.Create;
   end
   else raise ELoggerConfigError.Create('Logger Options Serializer not recognized!');
@@ -935,8 +962,9 @@ var
   provname : string;
 begin
   provname := aName.ToLower;
+  {$IFNDEF ANDROID}
   if provname = 'console' then Result := TLogConsoleProvider.Create
-  else if provname = 'file' then Result := TLogFileProvider.Create
+  else {$ENDIF} if provname = 'file' then Result := TLogFileProvider.Create
   else if provname = 'redis' then Result := TLogRedisProvider.Create
   else if provname = 'rest' then Result := TLogRestProvider.Create
   else if provname = 'telegram' then Result := TLogTelegramProvider.Create
