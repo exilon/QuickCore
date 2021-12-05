@@ -36,14 +36,14 @@ interface
 uses
   System.SysUtils,
   Windows,
+  Quick.Console,
   {$IFNDEF FPC}
     WinSvc,
   {$ENDIF}
   Registry,
   Quick.Commons,
   Quick.Core.Commandline,
-  Quick.Core.Extensions.Service.Abstractions,
-  Quick.Console;
+  Quick.Core.Extensions.Service.Abstractions;
 
 const
   DEF_SERVICENAME = 'QuickCoreService';

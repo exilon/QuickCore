@@ -47,8 +47,7 @@ uses
   Quick.Commons,
   Quick.Core.Logging.Abstractions,
   Quick.Core.Commandline,
-  Quick.Core.Extensions.Service.Abstractions,
-  Quick.Console;
+  Quick.Core.Extensions.Service.Abstractions;
 
 const
   DEF_SERVICENAME = 'QuickCoreService';
