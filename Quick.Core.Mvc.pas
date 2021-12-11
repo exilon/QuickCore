@@ -39,9 +39,9 @@ uses
   {$ENDIF}
   System.SysUtils,
   System.Generics.Collections,
-  Quick.Console,
   RTTI,
   Quick.Commons,
+  Quick.Console,
   Quick.Core.Extensions.Hosting,
   Quick.Core.Logging.Abstractions,
   Quick.Core.Extensions.Service.Abstractions,

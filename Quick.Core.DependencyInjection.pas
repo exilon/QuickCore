@@ -64,7 +64,7 @@ type
   ['{B62812E4-D28F-4EDD-8D2D-7F17044ABB09}']
     function ConfigureServices(aRegisterProc : TRegisterServicesProc) : TServiceCollection;
     function AddOptions(aOptionsFileFormat : TOptionsFileFormat = ofJSON; aReloadOnChange : Boolean = True; const aOptionsFileName: string = ''): TServiceCollection; overload;
-    function AddOptions(aSerializer : IOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection; overload;
+    function AddOptions(aSerializer : IFileOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection; overload;
     function AddLogging(aLoggerService : ILogger) : TServiceCollection;
     function AddDebugger : TServiceCollection;
     procedure Build;
@@ -127,7 +127,7 @@ type
     function AddScoped<TImplementation: class>(const aName : string = ''): TServiceCollection; overload;
     function AddScoped<TImplementation: class>(const aName : string; aDelegator: TActivatorDelegate<TImplementation>): TServiceCollection; overload;
     function AddOptions(aOptionsFileFormat : TOptionsFileFormat = ofJSON; aReloadOnChange : Boolean = True; const aOptionsFileName: string = ''): TServiceCollection; overload;
-    function AddOptions(aSerializer : IOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection; overload;
+    function AddOptions(aSerializer : IFileOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection; overload;
     function AddTypedFactory<TFactoryInterface : IInterface; TFactoryType : class, constructor>(const aName : string = '') : TServiceCollection;
     function AddSimpleFactory<TInterface : IInterface; TImplementation : class, constructor>(const aName : string = '') : TServiceCollection;
     function AddLogging(aLoggerService: ILogger): TServiceCollection;
@@ -283,21 +283,21 @@ end;
 
 function TServiceCollection.AddOptions(aOptionsFileFormat : TOptionsFileFormat = ofJSON; aReloadOnChange : Boolean = True; const aOptionsFileName: string = ''): TServiceCollection;
 var
-  serializer : TOptionsSerializer;
+  serializer : IFileOptionsSerializer;
 begin
   case aOptionsFileFormat of
-    TOptionsFileFormat.ofJSON : serializer := TJsonOptionsSerializer.Create;
-    TOptionsFileFormat.ofYAML : serializer := TYamlOptionsSerializer.Create;
+    TOptionsFileFormat.ofJSON : serializer := TJsonOptionsSerializer.Create(aOptionsFileName);
+    TOptionsFileFormat.ofYAML : serializer := TYamlOptionsSerializer.Create(aOptionsFileName);
     else raise EServiceConfigError.Create('Options Serializer not recognized!');
   end;
   Result := AddOptions(serializer,aReloadOnChange,aOptionsFileName);
 end;
 
-function TServiceCollection.AddOptions(aSerializer : IOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection;
+function TServiceCollection.AddOptions(aSerializer : IFileOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection;
 var
   filename : string;
   fnalternative : string;
-  iserializer : IOptionsSerializer;
+  iserializer : IFileOptionsSerializer;
   env : string;
 begin
   Result := Self;
@@ -331,10 +331,14 @@ begin
     end
     else raise EServiceConfigError.Create('Options Serializer not recognized!');
   end;
-  if aSerializer <> nil then iserializer := aSerializer
-    else iserializer := TJsonOptionsSerializer.Create;
+  if aSerializer <> nil then
+  begin
+    iserializer := aSerializer;
+    iserializer.Filename := filename;
+  end
+  else iserializer := TJsonOptionsSerializer.Create(filename);
   if IsDebug then Logger.Debug('Loading settings from "%s"',[filename]);
-  fOptionsService := TOptionsContainer.Create(filename,iserializer,aReloadOnChange);
+  fOptionsService := TFileOptionsContainer.Create(iserializer,aReloadOnChange);
 end;
 
 function TServiceCollection.AddSingleton<TInterface, TImplementation>(const aName : string = ''): TServiceCollection;

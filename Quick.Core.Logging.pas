@@ -868,7 +868,7 @@ end;
 procedure TLoggerBuilder.AddOptions(aOptionsFormat : TLoggerOptionsFormat);
 var
   filename : string;
-  iserializer : IOptionsSerializer;
+  iserializer : IFileOptionsSerializer;
   environment : string;
   opfilename : string;
 begin
@@ -886,7 +886,7 @@ begin
     {$ELSE}
     fileName := TPath.GetDocumentsPath + PathDelim + opfilename + environment + '.json';
     {$ENDIF}
-    iserializer := TJsonOptionsSerializer.Create;
+    iserializer := TJsonOptionsSerializer.Create(filename);
   end
   else if aOptionsFormat = TLoggerOptionsFormat.ofYAML then
   begin
@@ -896,11 +896,11 @@ begin
     {$ELSE}
     fileName := TPath.GetDocumentsPath + PathDelim + opfilename + environment + '.yml';
     {$ENDIF}
-    iserializer := TYamlOptionsSerializer.Create;
+    iserializer := TYamlOptionsSerializer.Create(filename);
   end
   else raise ELoggerConfigError.Create('Logger Options Serializer not recognized!');
 
-  fOptionContainer := TOptionsContainer.Create(filename,iserializer,False);
+  fOptionContainer := TFileOptionsContainer.Create(iserializer,False);
   if FileExists(filename) then
   begin
     {$IFDEF DEBUG_LOGGING}
