@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Mvc.ActionInvoker
   Description : Core Http Mvc Routing
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 12/10/2019
-  Modified    : 16/04/2020
+  Modified    : 11/01/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -39,6 +39,7 @@ uses
   {$ENDIF}
   System.SysUtils,
   RTTI,
+  System.TypInfo,
   Quick.Value,
   Quick.Arrays,
   Quick.HttpServer.Types,
@@ -112,6 +113,7 @@ begin
         tkFloat : value := flexvalue.AsExtended;
         tkClass : value := aContext.HttpContext.RequestServices.Serializer.Json.ToObject(rParam.ParamType.Handle.TypeData.ClassType,flexvalue.AsString);
         //tkRecord : value := aContext.HttpContext.RequestServices.Serializer.Json.ToValue(flexvalue.AsString);
+        tkEnumeration : TValue.Make(GetEnumValue(rparam.ParamType.Handle,flexvalue.AsString),rparam.ParamType.Handle, value);
         else value := flexvalue.AsString;
       end;
     end;
