@@ -247,6 +247,7 @@ type
     function QuotedStr(const aValue : string) : string;
     function DBFieldToGUID(const aValue : string) : TGUID;
     function GUIDToDBField(aGuid : TGUID) : string;
+    procedure UseISO8601DateTime;
   end;
 
   IEntityLinqQuery<T : class> = interface
@@ -297,12 +298,22 @@ type
   end;
 
   TEntityQueryGenerator = class(TInterfacedObject)
+  protected
+    fISO8601DateTime : Boolean;
+  public
     function QuotedStr(const aValue: string): string; virtual;
+    procedure UseISO8601DateTime;
   end;
 
   TEntity = class
   public
+    {$IFDEF VALUE_FORMATPARAMS}
+    function FieldByName(const aFieldName: string): TValue;
+    {$ELSE}
     function FieldByName(const aFieldName : string) : Variant;
+    {$ENDIF}
+    function FieldValueByName(const aFieldName : string) : string;
+    function FieldValueIsEmpty(const aFieldName : string) : Boolean;
   end;
 
   TCreationDate = type TDateTime;
@@ -388,22 +399,47 @@ begin
     Result := Value = '';
 end;
 
+{$IFDEF VALUE_FORMATPARAMS}
+function TEntity.FieldByName(const aFieldName: string): TValue;
+begin
+  Result := TRTTI.GetPropertyValue(Self,aFieldName);
+  if Result.Kind = tkRecord then
+  begin
+    if Result.IsType<TGUID> then Result := GetSubString(GUIDToString(Result.AsType<TGUID>),'{','}')
+      else Result := Result.ToString;
+  end;
+end;
+{$ELSE}
 function TEntity.FieldByName(const aFieldName: string): Variant;
-//begin
-//  Result := TRTTI.GetPropertyValue(Self,aFieldName).AsVariant;
-//end;
-
-//function TEntity.FieldAsText(const aFieldName: string): string;
 var
   value : TValue;
 begin
   value := TRTTI.GetPropertyValue(Self,aFieldName);
   if value.Kind = tkRecord then
   begin
-    if value.IsType<TGUID> then Result := QuotedStr(GUIDToString(value.AsType<TGUID>))
+    if value.IsType<TGUID> then Result := GetSubString(GUIDToString(value.AsType<TGUID>),'{','}')
       else Result := value.ToString;
   end
   else Result := value.AsVariant;
+end;
+{$ENDIF}
+
+function TEntity.FieldValueByName(const aFieldName: string): string;
+var
+  value : TValue;
+begin
+  value := TRTTI.GetPropertyValue(Self,aFieldName);
+  if value.Kind = tkRecord then
+  begin
+    if value.IsType<TGUID> then Result := GetSubString(GUIDToString(value.AsType<TGUID>),'{','}')
+      else Result := value.ToString;
+  end
+  else Result := value.ToString;
+end;
+
+function TEntity.FieldValueIsEmpty(const aFieldName: string): Boolean;
+begin
+  Result := TRTTI.GetPropertyValue(Self,aFieldName).IsEmpty;
 end;
 
 { TEntityIndexes }
@@ -844,6 +880,11 @@ end;
 function TEntityQueryGenerator.QuotedStr(const aValue: string): string;
 begin
   Result := '''' + aValue + '''';
+end;
+
+procedure TEntityQueryGenerator.UseISO8601DateTime;
+begin
+  fISO8601DateTime := True;
 end;
 
 { TDBField }

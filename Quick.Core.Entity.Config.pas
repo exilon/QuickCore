@@ -7,7 +7,7 @@
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 21/08/2021
+  Modified    : 11/01/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -52,11 +52,13 @@ type
     fDBProvider : TDBProvider;
     fDBEngine : TDatabaseEngine;
     fConnectionStringName: string;
+    fISO8601DateTime : Boolean;
   public
     constructor Create; override;
     property ConnectionStringName : string read fConnectionStringName write fConnectionStringName;
     property DBProvider : TDBProvider read fDBProvider write fDBProvider;
     property DBEngine : TDatabaseEngine read fDBEngine write fDBEngine;
+    property ISO8601DateTime : Boolean read fISO8601DateTime write fISO8601DateTime;
   end;
 
   TConnectionStringSettings = class(TOptions)
@@ -77,6 +79,7 @@ type
     function UseMySQL : IDBContextOptionsBuilder;
     function UseMSAccess : IDBContextOptionsBuilder;
     function UseRestServer : IDBContextOptionsBuilder;
+    function UseISO8601DateTime : IDBContextOptionsBuilder;
     function ConnectionStringName(const aName : string): IDBContextOptionsBuilder;
     function Options : TDbContextOptions;
   end;
@@ -88,6 +91,7 @@ type
     function UseMySQL : IDBContextOptionsBuilder;
     function UseMSAccess : IDBContextOptionsBuilder;
     function UseRestServer : IDBContextOptionsBuilder;
+    function UseISO8601DateTime : IDBContextOptionsBuilder;
     function ConnectionStringName(const aName : string): IDBContextOptionsBuilder;
   public
     class function GetBuilder : IDBContextOptionsBuilder;
@@ -108,6 +112,7 @@ type
     procedure UseMySQL;
     procedure UseMSAccess;
     procedure UseRestServer;
+    procedure UseISO8601DateTime;
   end;
 
   TDBConnectionOptions = class(TDBConnectionSettings,IDBConnectionOptions)
@@ -115,12 +120,14 @@ type
     fDBEngine : TDatabaseEngine;
     function GetDBEngine: TDatabaseEngine;
   public
+    constructor Create;
     property DBEngine : TDatabaseEngine read GetDBEngine;
     procedure UseMSSQL;
     procedure UseSQLite;
     procedure UseMySQL;
     procedure UseMSAccess;
     procedure UseRestServer;
+    procedure UseISO8601DateTime;
   end;
 
   TDBConnectionConfigureProc = reference to procedure(aOptions : IDBConnectionOptions);
@@ -179,6 +186,7 @@ constructor TDbContextOptions.Create;
 begin
   fDBProvider := TDBProvider.dbSQLite;
   fDBEngine := TDatabaseEngine.deFireDAC;
+  fISO8601DateTime := False;
 end;
 
 { TDBContextOptionsBuilder }
@@ -215,6 +223,12 @@ begin
   fOptions.DBEngine := TDatabaseEngine.deFireDAC;
 end;
 
+function TDBContextOptionsBuilder.UseISO8601DateTime: IDBContextOptionsBuilder;
+begin
+  Result := Self;
+  fOptions.ISO8601DateTime := True;
+end;
+
 function TDBContextOptionsBuilder.UseMSAccess: IDBContextOptionsBuilder;
 begin
   Result := Self;
@@ -231,9 +245,21 @@ end;
 
 { TDBConnnectionOptions }
 
+constructor TDBConnectionOptions.Create;
+begin
+  ISO8601DateTime := False;
+  Provider := TDBProvider.dbSQLite;
+  fDBEngine := TDatabaseEngine.deFireDAC;
+end;
+
 function TDBConnectionOptions.GetDBEngine: TDatabaseEngine;
 begin
   Result := fDBEngine;
+end;
+
+procedure TDBConnectionOptions.UseISO8601DateTime;
+begin
+  ISO8601DateTime := True;
 end;
 
 procedure TDBConnectionOptions.UseMSAccess;

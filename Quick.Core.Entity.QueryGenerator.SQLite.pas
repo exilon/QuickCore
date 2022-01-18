@@ -273,12 +273,21 @@ end;
 
 function TSQLiteQueryGenerator.DateTimeToDBField(aDateTime: TDateTime): string;
 begin
-  Result := FormatDateTime('YYYY-MM-DD hh:nn:ss',aDateTime);
+  if fISO8601DateTime then Result := FormatDateTime('YYYY-MM-DD"T"HH:NN:SS',aDateTime)
+   else Result := FormatDateTime('YYYY-MM-DD hh:nn:ss',aDateTime);
 end;
 
 function TSQLiteQueryGenerator.DBFieldToDateTime(const aValue: string): TDateTime;
+var
+ fmtdate : TFormatSettings;
 begin
-  Result := StrToDateTime(aValue,fFormatSettings);
+  if fISO8601DateTime then
+  begin
+    fmtdate := fFormatSettings;
+    fmtdate.LongDateFormat := 'YYYY-MM-DDThh:nn:ss';
+    Result := StrToDateTime(aValue,fmtdate);
+  end
+  else Result := StrToDateTime(aValue,fFormatSettings);
 end;
 
 function TSQLiteQueryGenerator.Delete(const aTableName, aWhere: string) : string;

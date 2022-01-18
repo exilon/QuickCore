@@ -126,6 +126,8 @@ begin
   fWhereClause := '1=1';
   fSelectedFields := [];
   fQueryGenerator := aQueryGenerator;
+  if fEntityDataBase.Connection.ISO8601DateTime then fQueryGenerator.UseISO8601DateTime;
+  //fQueryGenerator.UseISO8601DateTime;
   fHasResults := False;
 end;
 
@@ -589,18 +591,22 @@ function TEntityQuery<T>.AddOrUpdate(aEntity: TEntity): Boolean;
 var
   sqlfields : TStringList;
   sqlvalues : TStringList;
+  {$IFDEF VALUE_FORMATPARAMS}
+  primarykey : TValue;
+  {$ELSE}
   primarykey : Variant;
+  {$ENDIF}
 begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'AddOrUpdate',aEntity.ClassName);
   {$ENDIF}
   Result := False;
   try
-      primarykey := aEntity.FieldByName(fModel.PrimaryKey.Name);
 //    if fQueryGenerator.Name <> 'MSSQL' then
 //    begin
+      primarykey := aEntity.FieldByName(fModel.PrimaryKey.Name);
       {$IFDEF VALUE_FORMATPARAMS}
-      if (VarIsEmpty(primarykey)) or (Where(Format('%s = ?',[fModel.PrimaryKey.Name]),[TValue.FromVariant(primarykey)]).Count = 0) then
+      if (primarykey.IsEmpty) or (Where(Format('%s = ?',[fModel.PrimaryKey.Name]),[primarykey]).Count = 0) then
       {$ELSE}
       if (VarIsEmpty(primarykey)) or (Where(Format('%s = ?',[fModel.PrimaryKey.Name]),[primarykey]).Count = 0) then
       {$ENDIF}
@@ -640,12 +646,16 @@ begin
 end;
 
 function TEntityQuery<T>.Delete(aEntity : TEntity): Boolean;
+var
+  whereid : string;
 begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Delete',aEntity.ClassName);
   {$ENDIF}
   try
-    Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName,Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)])));
+    //Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName,Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)])));
+    whereid := Format('%s=?',[fModel.PrimaryKey.Name]);
+    Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName,FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name)])));
   except
     on E : Exception do raise EEntityDeleteError.CreateFmt('Delete error: %s',[e.message]);
   end;
@@ -923,11 +933,14 @@ end;
 function TEntityQuery<T>.Update(aEntity: TEntity): Boolean;
 var
   query : string;
+  whereid : string;
 begin
   try
     if aEntity is TEntityTS then TEntityTS(aEntity).ModifiedDate := Now();
+    whereid := Format('%s=?',[fModel.PrimaryKey.Name]);
     query := fQueryGenerator.Update(fModel.TableName,GetFieldsPairs(aEntity),
-                           Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)]));
+                           //Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)]));
+                           FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name)]));
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Update',query);
     {$ENDIF}

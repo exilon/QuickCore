@@ -51,6 +51,8 @@ type
     function GetDatabase : string;
     function GetUserName : string;
     function GetPassword : string;
+    function GetISO8601DateTime: Boolean;
+    procedure SetISO8601DateTime(const Value: Boolean);
     procedure SetDatabase(const Value: string);
     procedure SetPassword(const Value: string);
     procedure SetServer(const Value: string);
@@ -60,6 +62,7 @@ type
     property Database : string read GetDatabase;
     property UserName : string read GetUserName;
     property Password : string read GetPassword;
+    property ISO8601DateTime : Boolean read GetISO8601DateTime;
     function IsCustomConnectionString : Boolean;
     procedure FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
     function GetCustomConnectionString : string;
@@ -72,6 +75,7 @@ type
     fDatabase : string;
     fUserName : string;
     fPassword : string;
+    fISO8601DateTime : Boolean;
     fCustomConnectionString : string;
     fIsCustomConnectionString : Boolean;
     function GetProvider : TDBProvider; virtual;
@@ -83,6 +87,8 @@ type
     procedure SetPassword(const Value: string);
     procedure SetServer(const Value: string);
     procedure SetUserName(const Value: string);
+    function GetISO8601DateTime: Boolean;
+    procedure SetISO8601DateTime(const Value: Boolean);
   public
     constructor Create;
     property Provider : TDBProvider read GetProvider write fDBProvider;
@@ -90,6 +96,7 @@ type
     property Database : string read GetDatabase write SetDatabase;
     property UserName : string read GetUserName write SetUserName;
     property Password : string read GetPassword write SetPassword;
+    property ISO8601DateTime : Boolean read GetISO8601DateTime write SetISO8601DateTime;
     function IsCustomConnectionString : Boolean;
     procedure FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
     procedure FromConnection(aDBConnection : IDBConnectionSettings);
@@ -368,6 +375,7 @@ begin
   fDatabase := aDBConnection.Database;
   fUserName := aDBConnection.UserName;
   fPassword := aDBConnection.Password;
+  fISO8601DateTime := aDBConnection.ISO8601DateTime;
 end;
 
 procedure TDBConnectionSettings.FromConnectionString(aDBProviderID : Integer; const aConnectionString: string);
@@ -396,6 +404,11 @@ begin
   Result := fDatabase;
 end;
 
+function TDBConnectionSettings.GetISO8601DateTime: Boolean;
+begin
+  Result := fISO8601DateTime;
+end;
+
 function TDBConnectionSettings.GetProvider: TDBProvider;
 begin
   Result := fDBProvider;
@@ -419,6 +432,11 @@ end;
 procedure TDBConnectionSettings.SetDatabase(const Value: string);
 begin
   fDatabase := Value;
+end;
+
+procedure TDBConnectionSettings.SetISO8601DateTime(const Value: Boolean);
+begin
+  fISO8601DateTime := Value;
 end;
 
 procedure TDBConnectionSettings.SetPassword(const Value: string);

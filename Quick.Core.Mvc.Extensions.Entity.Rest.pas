@@ -319,7 +319,7 @@ begin
   entity := dbset.Model.Table.Create;
   try
     Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
-    if VarIsEmpty(entity.FieldByName(dbset.Model.PrimaryKey.Name)) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
+    if entity.FieldValueIsEmpty(dbset.Model.PrimaryKey.Name) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
 
     if dbset.AddOrUpdate(entity) then Result := Ok
       else RaiseEntityNotFound('Cannot add or update register to database!');
@@ -340,7 +340,7 @@ begin
   entity := dbset.Model.Table.Create;
   try
     Self.HttpContext.RequestServices.Serializer.Json.ToObject(entity,value);
-    if VarIsEmpty(entity.FieldByName(dbset.Model.PrimaryKey.Name)) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
+    if entity.FieldValueIsEmpty(dbset.Model.PrimaryKey.Name) then HttpContext.RaiseHttpErrorBadRequest(nil,'not defined Primary Key!');
 
     if dbset.Update(entity) then Result := Ok
       else RaiseEntityNotFound('Cannot update register to database!');

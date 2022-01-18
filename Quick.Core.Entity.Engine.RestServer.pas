@@ -651,12 +651,12 @@ begin
     else if aAction = TEntityRequestAction.raAddOrUpdate then
     begin
       response := fHttpClient.Put(Format('%s/api/%s/AOU/%s',
-                            [Connection.Host,fModel.TableName,aValue.FieldByName(fModel.PrimaryKey.Name)]),content);
+                            [Connection.Host,fModel.TableName,aValue.FieldValueByName(fModel.PrimaryKey.Name)]),content);
     end
     else if aAction = TEntityRequestAction.raUpdate then
     begin
       response := fHttpClient.Put(Format('%s/api/%s/%s',
-                            [Connection.Host,fModel.TableName,aValue.FieldByName(fModel.PrimaryKey.Name)]),content);
+                            [Connection.Host,fModel.TableName,aValue.FieldValueByName(fModel.PrimaryKey.Name)]),content);
     end
     else raise EEntityRestRequestError.Create('Entity Method not allowed here');
     {$IFDEF DEBUG_ENTITY}

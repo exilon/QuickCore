@@ -81,9 +81,18 @@ var
 begin
   querytext := TStringList.Create;
   try
+    querytext.Add('BEGIN TRY');
     querytext.Add(Format('INSERT INTO [%s]',[aTableName]));
     querytext.Add(Format('(%s)',[aFieldNames]));
     querytext.Add(Format('VALUES(%s)',[aFieldValues]));
+    querytext.Add('END TRY');
+    querytext.Add('BEGIN CATCH');
+        querytext.Add(Format('SET IDENTITY_INSERT [%s] ON',[aTableName]));
+        querytext.Add(Format('INSERT INTO [%s]',[aTableName]));
+        querytext.Add(Format('(%s)',[aFieldNames]));
+        querytext.Add(Format('VALUES(%s)',[aFieldValues]));
+        querytext.Add(Format('SET IDENTITY_INSERT [%s] OFF',[aTableName]));
+    querytext.Add('END CATCH');
     Result := querytext.Text;
   finally
     querytext.Free;
