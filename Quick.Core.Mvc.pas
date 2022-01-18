@@ -94,6 +94,7 @@ type
     fWebRoot : string;
     fStartupClass : TStatupMvcClass;
     fStatus : TMVCServerStatus;
+    fAfterStart : TProc;
     procedure Initialize;
     procedure GetAttributeRouting;
     procedure GenerateRequestPipeline;
@@ -108,6 +109,7 @@ type
     constructor Create(const aHost : string; aPort : Integer; aSSLEnabled : Boolean); overload; virtual;
     destructor Destroy; override;
     property Status : TMVCServerStatus read fStatus write fStatus;
+    property AfterStart : TProc read fAfterStart write fAfterStart;
     function MapRoute(const aName : string; aController : THttpControllerClass; const aURL : string) : TMVCServer;
     function AddController(aHttpController : THttpControllerClass) : TMVCServer;
     function AddControllers : TMVCServer;
@@ -338,6 +340,7 @@ begin
   fHttpServer.Start;
   fStatus := mvsStarted;
   Logger.Info('%s listening on %s:%d',[fServices.Environment.ApplicationName,fHost,fPort]);
+  if Assigned(fAfterStart) then fAfterStart;
   if (hostservice = nil) or ((hostservice <> nil) and (not hostservice.IsRunningAsService)) then
   begin
     Logger.Info('< Wait for ENTER key pressed >');
