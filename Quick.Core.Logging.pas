@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Logging
   Description : Core Logging
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 16/06/2020
+  Modified    : 12/01/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -60,6 +60,7 @@ uses
   {$ENDIF}
   Quick.Logger.Provider.Telegram,
   Quick.Logger.Provider.Slack,
+  Quick.Logger.Provider.Email,
   Quick.Logger.Provider.SysLog,
   {$IFDEF DEBUG}
     {$IFDEF DEBUG_HANDLEDEXCEPTIONS}
@@ -98,6 +99,8 @@ type
     procedure &Except(const aMsg, aException, aStackTrace : string); overload;
     procedure &Except(const aMsg : string; aValues: array of const; const aException, aStackTrace: string); overload;
   end;
+
+  TSendLimitTimeRange = Quick.Logger.TSendLimitTimeRange;
 
   TLogSendLimit = class
   private
@@ -261,6 +264,17 @@ type
     property WebHookURL : string read fWebHookURL write fWebHookURL;
   end;
 
+  TEmailLoggerOptions = class(TLoggerOptions)
+  private
+    fEmailFrom : string;
+    fEmailTo : string;
+    fSubject : string;
+  published
+    property EmailFrom : string read fEmailFrom write fEmailFrom;
+    property EmailTo : string read fEmailTo write fEmailTo;
+    property Subject : string read fSubject write fSubject;
+  end;
+
   TSysLogLoggerOptions = class(TLoggerOptions)
   private
     fHost : string;
@@ -334,6 +348,7 @@ type
     function AddRest(aOptions : TLoggerOptionsProc<TRestLoggerOptions>) : ILoggerBuilder;
     function AddTelegram(aConfigureProc: TLoggerOptionsProc<TTelegramLoggerOptions>): ILoggerBuilder;
     function AddSlack(aConfigureProc: TLoggerOptionsProc<TSlackLoggerOptions>): ILoggerBuilder;
+    function AddEmail(aConfigureProc : TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
     {$IFDEF MSWINDOWS}
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
@@ -372,6 +387,7 @@ type
     function AddRest(aConfigureProc : TLoggerOptionsProc<TRestLoggerOptions>) : ILoggerBuilder;
     function AddTelegram(aConfigureProc: TLoggerOptionsProc<TTelegramLoggerOptions>): ILoggerBuilder;
     function AddSlack(aConfigureProc: TLoggerOptionsProc<TSlackLoggerOptions>): ILoggerBuilder;
+    function AddEmail(aConfigureProc: TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
     {$IFDEF MSWINDOWS}
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
@@ -618,7 +634,6 @@ var
   sectionName : string;
 begin
   if not fUseOptionsFile then Exit;
-
   for iprovider in fLogger.Providers do iprovider.Stop;
   fLogger.Providers.Clear;
   //get options in file
@@ -802,6 +817,24 @@ begin
   if not fUseOptionsFile then options.Free;
 end;
 
+function TLoggerBuilder.AddEmail(aConfigureProc: TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
+var
+  options : TEmailLoggerOptions;
+  loggerEmail : TLogEmailProvider;
+begin
+  Result := Self;
+  if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TEmailLoggerOptions,'Email')) then Exit;
+
+  options := fOptionContainer.AddSection(TEmailLoggerOptions,'Email') as TEmailLoggerOptions;
+  loggerEmail := TLogEmailProvider.Create;
+  loggerEmail.Name := options.Name;
+  TObjMapper.Map(loggerEmail,options);
+  aConfigureProc(options);
+  TObjMapper.Map(options,loggerEmail);
+  AddProvider(loggerEmail);
+  if not fUseOptionsFile then options.Free;
+end;
+
 function TLoggerBuilder.AddSysLog(aConfigureProc: TLoggerOptionsProc<TSysLogLoggerOptions> = nil): ILoggerBuilder;
 var
   options : TSysLogLoggerOptions;
@@ -855,6 +888,7 @@ begin
   else if provname = 'rest' then fOptionContainer.AddSection<TRestLoggerOptions>('Rest')
   else if provname = 'telegram' then fOptionContainer.AddSection<TTelegramLoggerOptions>('Telegram')
   else if provname = 'slack' then fOptionContainer.AddSection<TSlackLoggerOptions>('Slack')
+  else if provname = 'email' then fOptionContainer.AddSection<TEmailLoggerOptions>('Email')
   {$IFDEF MSWINDOWS}
   else if provname = 'eventlog' then fOptionContainer.AddSection<TEventLogLoggerOptions>('EventLog')
   else if provname = 'adodb' then fOptionContainer.AddSection<TADODBLoggerOptions>('ADODB')
@@ -969,6 +1003,7 @@ begin
   else if provname = 'rest' then Result := TLogRestProvider.Create
   else if provname = 'telegram' then Result := TLogTelegramProvider.Create
   else if provname = 'slack' then Result := TLogSlackProvider.Create
+  else if provname = 'email' then Result := TLogEmailProvider.Create
   {$IFDEF MSWINDOWS}
   else if provname = 'eventlog' then Result := TLogEventLogProvider.Create
   else if provname = 'adodb' then Result := TLogADODBProvider.Create
