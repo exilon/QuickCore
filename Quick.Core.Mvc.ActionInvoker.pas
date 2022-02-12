@@ -43,6 +43,7 @@ uses
   Quick.Value,
   Quick.Arrays,
   Quick.HttpServer.Types,
+  Quick.HttpServer,
   Quick.Core.Mvc.Context,
   Quick.Core.Mvc.ActionResult,
   Quick.Core.Mvc.ViewFeatures;
@@ -57,6 +58,9 @@ type
   EActionInvokerAlreadyFreeParam = class(Exception);
 
 implementation
+
+uses
+  Quick.HttpServer.Request;
 
 { TActionInvoker }
 

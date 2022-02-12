@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Entity.Engine.RestServer
   Description : Core Entity RestServer Provider
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 11/09/2020
+  Modified    : 18/01/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -96,7 +96,6 @@ type
     fRestServerConnection : TRestServerConnection;
     fInternalQuery : TRestServerQuery<TEntity>;
     fDBProvider : TDBProvider;
-    function GetDriverID(aDBProvider : TDBProvider) : string;
     function DoConnect(const aUser, aPassword : string): Boolean;
   protected
     function CreateConnectionString: string; override;
@@ -113,6 +112,7 @@ type
     procedure Disconnect; override;
     function GetTableNames : TArray<string>; override;
     function GetFieldNames(const aTableName : string) : TArray<string>; override;
+    function GetDriverID(aDBProvider : TDBProvider) : string;
     function IsConnected : Boolean; override;
     function From<T : class, constructor> : IEntityLinqQuery<T>;
     function Clone : TEntityDatabase; override;
@@ -154,6 +154,11 @@ type
 
 implementation
 
+uses
+  System.Net.URLClient,
+  System.Rtti,
+  System.NetConsts;
+
 { TRestServerEntityDataBase }
 
 constructor TRestServerEntityDataBase.Create;
@@ -192,7 +197,6 @@ begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Connect','');
   {$ENDIF}
-  Result := False;
   CreateConnectionString;
   fRestServerConnection.Host := Connection.Server;
   fRestServerConnection.User := Connection.UserName;
@@ -238,7 +242,6 @@ var
   request : TEntityConnectRequest;
   response : string;
 begin
-  Result := False;
   request := TEntityConnectRequest.Create;
   try
     request.User := aUser;
@@ -271,11 +274,13 @@ end;
 function TRestServerEntityDataBase.ExistsColumn(aModel: TEntityModel; const aFieldName: string): Boolean;
 begin
   //Not needed: Theses operations were made on server part
+  Result := True;
 end;
 
 function TRestServerEntityDataBase.ExistsTable(aModel: TEntityModel): Boolean;
 begin
   //Not needed: Theses operations were made on server part
+  Result := True;
 end;
 
 function TRestServerEntityDataBase.From<T>: IEntityLinqQuery<T>;

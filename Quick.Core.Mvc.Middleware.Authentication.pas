@@ -54,7 +54,6 @@ type
   private
     fAuthenticationService : IAuthenticationService;
     fAuthOptions : TAuthenticationOptions;
-    function ValidateAuthentication(aContext: THttpContextBase) : Boolean;
   public
     constructor Create(aNext: TRequestDelegate; aAuthenticationService : IAuthenticationService; aOptions : TAuthenticationOptions);
     destructor Destroy; override;
@@ -98,11 +97,6 @@ begin
   end;
 
   Next(aContext);
-end;
-
-function TAuthenticationMiddleware.ValidateAuthentication(aContext: THttpContextBase) : Boolean;
-begin
-
 end;
 
 

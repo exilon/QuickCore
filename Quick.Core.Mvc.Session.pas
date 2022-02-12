@@ -155,6 +155,7 @@ function TDistributedSession.GetFloat(const aKey: string): Extended;
 var
   value : string;
 begin
+  Result := 0.0;
   if fDictionary.TryGetValue(aKey,value) then Result := value.ToExtended;
 end;
 
@@ -167,6 +168,7 @@ function TDistributedSession.GetInteger(const aKey: string): Int64;
 var
   value : string;
 begin
+  Result := 0;
   if fDictionary.TryGetValue(aKey,value) then Result := value.ToInt64;
 end;
 

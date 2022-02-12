@@ -203,8 +203,10 @@ begin
 end;
 
 function TCoreService.UseSystemd(aOptions: TConfigureOptionsProc<TSystemdCoreServiceOptions>): TCoreService;
+{$IFNDEF MSWINDOWS}
 var
   options : TSystemdCoreServiceOptions;
+{$ENDIF}
 begin
   Result := Self;
   {$IFNDEF MSWINDOWS}

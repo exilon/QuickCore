@@ -46,7 +46,7 @@ type
     fSupportedCultures : TList<string>;
     fAddIfNotFound : Boolean;
   public
-    constructor Create;
+    constructor Create; override;
     destructor Destroy; override;
   published
     procedure AddCulture(const aCulture : string);

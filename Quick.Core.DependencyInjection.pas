@@ -296,7 +296,6 @@ end;
 function TServiceCollection.AddOptions(aSerializer : IFileOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection;
 var
   filename : string;
-  fnalternative : string;
   iserializer : IFileOptionsSerializer;
   env : string;
 begin

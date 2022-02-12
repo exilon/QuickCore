@@ -168,9 +168,9 @@ type
     property Connection : TDBConnectionSettings read GetDBConnection write SetDBConnection;
     property Models : TEntityModels read GetModels;
     property Indexes : TEntityIndexes read GetIndexes write SetIndexes;
-    function CreateQuery(aModel : TEntityModel) : IEntityQuery<TEntity>; virtual; abstract;
-    function GetTableNames : TArray<string>; virtual; abstract;
-    function GetFieldNames(const aTableName : string) : TArray<string>; virtual; abstract;
+    function CreateQuery(aModel : TEntityModel) : IEntityQuery<TEntity>; virtual;
+    function GetTableNames : TArray<string>; virtual;
+    function GetFieldNames(const aTableName : string) : TArray<string>; virtual;
     function GetDBSet(const aTableName : string) : TDBSet<TEntity>;
     function Connect : Boolean; virtual;
     function IsConnected : Boolean; virtual; abstract;
@@ -180,6 +180,7 @@ type
     function Delete(aEntity : TEntity) : Boolean; overload; virtual;
   end;
 
+  {$M+}
   TIdentityUser<TKey> = class
   private
     fId : TKey;
@@ -198,7 +199,9 @@ type
     [StringLength(100)]
     property PasswordHash : string read fPasswordHash write fPasswordHash;
   end;
+  {$M-}
 
+  {$M+}
   TIdentityRole<TKey> = class
   private
     fId : TKey;
@@ -209,6 +212,7 @@ type
     [StringLength(100)]
     property Name : string read fName write fName;
   end;
+  {$M-}
 
   TIdentityDbContext<TUser, TRole : class, constructor> = class(TDBContext)
   private
@@ -217,6 +221,7 @@ type
   public
     property Users : TDBSet<TUser> read fUsers write fUsers;
     property Roles : TDBSet<TRole> read fRoles write fRoles;
+    function IsConnected : Boolean; override;
   end;
 
 implementation
@@ -386,6 +391,21 @@ begin
     end;
   end;
   if numFields = 0 then raise EEntityModelError.CreateFmt('No valid fields found in Entity "%s"!',[aEntityClass.ClassName]);
+end;
+
+function TDBContext.GetFieldNames(const aTableName: string): TArray<string>;
+begin
+  Result := fDatabase.GetFieldNames(aTableName);
+end;
+
+function TDBContext.CreateQuery(aModel: TEntityModel): IEntityQuery<TEntity>;
+begin
+  Result := fDatabase.CreateQuery(aModel);
+end;
+
+function TDBContext.GetTableNames: TArray<string>;
+begin
+  Result := fDatabase.GetTableNames;
 end;
 
 function TDBContext.Add(aEntity: TEntity): Boolean;
@@ -565,6 +585,13 @@ function TDBSet<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: a
 {$ENDIF}
 begin
   Result := NewLinQ.Where(aFormatSQLWhere,aValuesSQLWhere);
+end;
+
+{ TIdentityDbContext<TUser, TRole> }
+
+function TIdentityDbContext<TUser, TRole>.IsConnected: Boolean;
+begin
+  Result := fDatabase.IsConnected;
 end;
 
 end.

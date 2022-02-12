@@ -49,7 +49,9 @@ uses
   Quick.Core.Security.Authentication;
 
 type
+  {$M+}
   TApiKey = class;
+  {$M-}
 
   IApiKeyStore = interface
   ['{246E56E1-4E74-4980-A6D9-7F0764F4D462}']

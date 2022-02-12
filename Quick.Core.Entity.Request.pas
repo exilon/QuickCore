@@ -39,6 +39,7 @@ uses
 type
   TEntityRequestAction = (raSelect, raAdd, raUpdate, raAddOrUpdate, raDelete, raCount);
 
+  {$M+}
   TEntityConnectRequest = class
   private
     fUser : string;
@@ -47,7 +48,9 @@ type
     property User : string read fUser write fUser;
     property Password : string read fPassword write fPassword;
   end;
+  {$M-}
 
+  {$M+}
   TEntityRequest = class abstract
   private
     fTable : string;
@@ -58,6 +61,7 @@ type
     property Action : TEntityRequestAction read fAction write fAction;
     property WhereClause : string read fWhereClause write fWhereClause;
   end;
+  {$M-}
 
   TEntitySelectRequest = class(TEntityRequest)
   private

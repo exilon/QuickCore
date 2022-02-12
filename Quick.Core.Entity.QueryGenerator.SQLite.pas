@@ -104,7 +104,11 @@ end;
 
 constructor TSQLiteQueryGenerator.Create;
 begin
+  {$IFDEF DELPHIRX103_UP}
+  fFormatSettings := TFormatSettings.Create;
+  {$ELSE}
   GetLocaleFormatSettings(0,fFormatSettings);
+  {$ENDIF}
   fFormatSettings.ShortDateFormat := 'YYYY-MM-DD';
   fFormatSettings.ShortTimeFormat := 'hh:nn:ss';
   fFormatSettings.DateSeparator := '-';

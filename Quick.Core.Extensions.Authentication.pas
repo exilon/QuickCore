@@ -85,7 +85,7 @@ end;
 class function TAuthenticationServiceExtension.AddAuthentication(aConfigureOptions : TConfigureOptionsProc<TAuthenticationOptions> = nil) : TServiceCollection;
 var
   authOptions : TAuthenticationOptions;
-  handlerlist : IList<IAuthenticationHandler>;
+  //handlerlist : IList<IAuthenticationHandler>;
 begin
   Result := ServiceCollection;
   //register Authentication Options

@@ -45,7 +45,7 @@ type
   protected
     fNext : TRequestDelegate;
   public
-    constructor Create(aNext : TRequestDelegate); virtual;
+    constructor Create(aNext : TRequestDelegate);
     procedure SetNextInvoker(aNext : TRequestDelegate);
     procedure Next(aContext : THttpContextBase);
     procedure Invoke(aContext : THttpContextBase); virtual;

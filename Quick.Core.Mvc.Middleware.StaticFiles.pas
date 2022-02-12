@@ -49,7 +49,6 @@ type
   private
     function CanHandleExtension(const aFilename : string) : Boolean;
   public
-    constructor Create(aNext : TRequestDelegate); override;
     destructor Destroy; override;
     procedure Invoke(aContext : THttpContextBase); override;
   end;
@@ -62,12 +61,6 @@ function TStaticFilesMiddleware.CanHandleExtension(const aFilename: string): Boo
 begin
   //check extensionless
   Result := not ExtractFileExt(aFilename).IsEmpty;
-end;
-
-constructor TStaticFilesMiddleware.Create(aNext: TRequestDelegate);
-begin
-  inherited;
-
 end;
 
 destructor TStaticFilesMiddleware.Destroy;

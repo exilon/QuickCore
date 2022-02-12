@@ -96,7 +96,9 @@ type
   EEntityProviderError = class(Exception);
   EEntityRestRequestError = class(Exception);
 
+  {$M+}
   TEntity = class;
+  {$M-}
 
   TEntityArray = array of TEntity;
 
@@ -372,10 +374,10 @@ begin
       vtAnsiString : Result := StringReplace(Result,'?',string(aSQLParams[i].VAnsiString),[]);
       vtWideString : Result := StringReplace(Result,'?',string(aSQLParams[i].VWideString^),[]);
       {$IFNDEF NEXTGEN}
-      vtString : Result := StringReplace(Result,'?',aSQLParams[i].VString^,[]);
+      vtString : Result := StringReplace(Result,'?',string(aSQLParams[i].VString^),[]);
       {$ENDIF}
-      vtChar : Result := StringReplace(Result,'?',aSQLParams[i].VChar,[]);
-      vtPChar : Result := StringReplace(Result,'?',aSQLParams[i].VPChar,[]);
+      vtChar : Result := StringReplace(Result,'?',string(aSQLParams[i].VChar),[]);
+      vtPChar : Result := StringReplace(Result,'?',string(aSQLParams[i].VPChar),[]);
     else Result := StringReplace(Result,'?', QuotedStr(string(aSQLParams[i].VUnicodeString)),[]);
     end;
   end;

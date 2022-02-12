@@ -328,7 +328,6 @@ const
   cSCMError = 'Error trying to open SC Manager (you need admin permissions?)';
 var
   servicetype : Cardinal;
-  starttype : Cardinal;
   svcloadgroup : PChar;
   svcdependencies : PChar;
   svcusername : PChar;
@@ -404,8 +403,6 @@ begin
 end;
 
 function TWindowsHostService.CheckParams : Boolean;
-var
-  svcname : string;
 begin
   Result := False;
   fParameters.Description := Description;

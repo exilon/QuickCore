@@ -102,6 +102,7 @@ type
 
   TSendLimitTimeRange = Quick.Logger.TSendLimitTimeRange;
 
+  {$M+}
   TLogSendLimit = class
   private
     fTimeRange : TSendLimitTimeRange;
@@ -112,7 +113,9 @@ type
     property LimitEventTypes : TLogLevel read fLimitEventTypes write fLimitEventTypes;
     property MaxSent : Integer read fMaxSent write fMaxSent;
   end;
+  {$M-}
 
+  {$M+}
   TJsonOutputOptions = class
   private
     fUseUTCTime : Boolean;
@@ -121,6 +124,7 @@ type
     property UseUTCTime : Boolean read fUseUTCTime write fUseUTCTime;
     property TimeStampName : string read fTimeStampName write fTimeStampName;
   end;
+  {$M-}
 
   TEventType = Quick.Logger.TEventType;
 
@@ -266,13 +270,14 @@ type
 
   TEmailLoggerOptions = class(TLoggerOptions)
   private
-    fEmailFrom : string;
-    fEmailTo : string;
-    fSubject : string;
+    fSMTPConfig: TSMTPConfig;
+    fMailConfig: TMailConfig;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
   published
-    property EmailFrom : string read fEmailFrom write fEmailFrom;
-    property EmailTo : string read fEmailTo write fEmailTo;
-    property Subject : string read fSubject write fSubject;
+    property SMTP : TSMTPConfig read fSMTPConfig write fSMTPConfig;
+    property Mail : TMailConfig read fMailConfig write fMailConfig;
   end;
 
   TSysLogLoggerOptions = class(TLoggerOptions)
@@ -362,7 +367,7 @@ type
   TLoggerBuilder = class(TInterfacedObject,ILoggerBuilder)
   type
     TLoggerProviderFactory = class
-      class function NewInstance(const aName : string) : TLogProviderBase;
+      class function NewLoggerInstance(const aName : string) : TLogProviderBase;
     end;
   private
     fUseOptionsFile : Boolean;
@@ -649,7 +654,7 @@ begin
   for i := 0 to fOptionContainer.Count - 1 do
   begin
     oplogger := fOptionContainer.Items[i] as TLoggerOptions;
-    logprovider := TLoggerProviderFactory.NewInstance(oplogger.Name);
+    logprovider := TLoggerProviderFactory.NewLoggerInstance(oplogger.Name);
     TObjMapper.Map(oplogger,logprovider);
     fLogger.Providers.Add(logprovider);
     {$IFDEF DEBUG_LOGGING}
@@ -991,7 +996,7 @@ end;
 
 { TLoggerBuilder.TLoggerProviderFactory }
 
-class function TLoggerBuilder.TLoggerProviderFactory.NewInstance(const aName: string): TLogProviderBase;
+class function TLoggerBuilder.TLoggerProviderFactory.NewLoggerInstance(const aName: string): TLogProviderBase;
 var
   provname : string;
 begin
@@ -1027,6 +1032,22 @@ begin
   inherited;
 end;
 {$ENDIF}
+
+{ TEmailLoggerOptions }
+
+constructor TEmailLoggerOptions.Create;
+begin
+  inherited;
+  fSMTPConfig := TSMTPConfig.Create;
+  fMailConfig := TMailConfig.Create;
+end;
+
+destructor TEmailLoggerOptions.Destroy;
+begin
+  fSMTPConfig.Free;
+  fMailConfig.Free;
+  inherited;
+end;
 
 end.
 

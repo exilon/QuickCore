@@ -349,10 +349,10 @@ begin
       vtBoolean : value := BoolToStr(aFieldValues[i].VBoolean);
       vtWideString : value := DbQuotedStr(string(aFieldValues[i].VWideString^));
       {$IFNDEF NEXTGEN}
-      vtAnsiString : value := DbQuotedStr(AnsiString(aFieldValues[i].VAnsiString));
-      vtString : value := DbQuotedStr(aFieldValues[i].VString^);
+      vtAnsiString : value := DbQuotedStr(string(AnsiString(aFieldValues[i].VAnsiString)));
+      vtString : value := DbQuotedStr(string(aFieldValues[i].VString^));
       {$ENDIF}
-      vtChar : value := DbQuotedStr(aFieldValues[i].VChar);
+      vtChar : value := DbQuotedStr(string(aFieldValues[i].VChar));
       vtPChar : value := string(aFieldValues[i].VPChar).QuotedString;
     else value := DbQuotedStr(string(aFieldValues[i].VUnicodeString));
     end;

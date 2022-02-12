@@ -116,8 +116,6 @@ type
     fIndexes : TEntityIndexes;
     fOnQueryError: TQueryErrorEvent;
     fOnConnectionFailure: TConnectionFailureEvent;
-    procedure ExecuteSQLQuery(const aQueryText : string);
-    procedure OpenSQLQuery(const aQueryText: string);
     function CheckIsConnectionError(aException : Exception) : Boolean;
   protected
     property OwnsConnection : Boolean read fOwnsConnection write fOwnsConnection;
@@ -152,6 +150,8 @@ type
     function Update(aEntity : TEntity) : Boolean; virtual;
     function Delete(aEntity : TEntity) : Boolean; overload; virtual;
     function Clone : TEntityDatabase; virtual; abstract;
+    procedure ExecuteSQLQuery(const aQueryText : string);
+    procedure OpenSQLQuery(const aQueryText: string);
   end;
 
 implementation

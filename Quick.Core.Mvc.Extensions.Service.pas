@@ -173,8 +173,10 @@ begin
 end;
 
 function TMVCCoreServiceExtension.UseSystemd(aOptions: TConfigureOptionsProc<TSystemdCoreServiceOptions>): TMVCServer;
+{$IFNDEF MSWINDOWS}
 var
   options : TSystemdCoreServiceOptions;
+{$ENDIF}
 begin
   Result := Self;
   {$IFNDEF MSWINDOWS}

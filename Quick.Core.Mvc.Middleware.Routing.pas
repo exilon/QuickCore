@@ -187,6 +187,7 @@ var
   globalroute : string;
 begin
   globalroute := '.';
+  nroute := nil;
   routes := THttpRoutes.Create(True);
   //get global attributes
   rtype := ctx.GetType(aControllerClass);

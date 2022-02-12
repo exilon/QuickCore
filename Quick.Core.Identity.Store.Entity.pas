@@ -78,7 +78,7 @@ type
   private
     fDBContext : TIdentityDbContext<TUser,TRole>;
     function NewLinQ<T : class, constructor>: IEntityLinqQuery<T>;
-    function NewQuery<T : class, constructor>: IEntityQuery<T>;
+    //function NewQuery<T : class, constructor>: IEntityQuery<T>;
   public
     constructor Create(aDataBase : TEntityDatabase);
     function GetUserById(aId : TFlexValue) : TUser;
@@ -109,10 +109,10 @@ begin
   Result := TEntityDatabaseFactory.GetQueryInstance<T>(fDBContext.Database,fDBContext.Database.Models.Get(TEntityClass(T)));
 end;
 
-function TEntityIdentityStore<TUser, TRole>.NewQuery<T>: IEntityQuery<T>;
-begin
-  Result := TEntityDatabaseFactory.GetQueryInstance<T>(fDBContext.Database,fDBContext.Database.Models.Get(TEntityClass(T)));
-end;
+//function TEntityIdentityStore<TUser, TRole>.NewQuery<T>: IEntityQuery<T>;
+//begin
+//  Result := TEntityDatabaseFactory.GetQueryInstance<T>(fDBContext.Database,fDBContext.Database.Models.Get(TEntityClass(T)));
+//end;
 
 procedure TEntityIdentityStore<TUser, TRole>.AddRole(aRole: TRole);
 begin

@@ -56,6 +56,7 @@ type
 
   TExecuteEvent = procedure(aRequestContext : TRequestContext) of object;
 
+  {$M+}
   THttpController = class(TController,IHttpController)
   private
     fHttpContext : THttpContextBase;
@@ -97,6 +98,7 @@ type
     //property OnAuthorization
     procedure Execute(aRequestContext : TRequestContext; aViewEngine : IViewEngine); virtual;
   end;
+  {$M-}
 
   THttpControllerClass = class of THttpController;
 

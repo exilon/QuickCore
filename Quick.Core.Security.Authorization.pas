@@ -147,8 +147,8 @@ type
   end;
 
   TAssertionRequirement = class(TAuthorizationHandler<TAssertionRequirement>,IAuthorizationRequirement)
-  private
-    fHandler : TFunc<TAuthorizationHandlerContext,Boolean>;
+  //private
+  //  fHandler : TFunc<TAuthorizationHandlerContext,Boolean>;
   public
     constructor Create(aHandler : TFunc<TAuthorizationHandlerContext,Boolean>);
     function HandleRequirement(aContext : TAuthorizationHandlerContext; aRequirement : TAssertionRequirement) : Boolean; override;
@@ -512,7 +512,7 @@ end;
 
 function TAssertionRequirement.HandleRequirement(aContext : TAuthorizationHandlerContext; aRequirement : TAssertionRequirement) : Boolean;
 begin
-
+  raise ENotImplemented.Create('Not implemented yet!');
 end;
 
 { TDefaultAuthorizationPolicyProvider }
