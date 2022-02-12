@@ -1,4 +1,4 @@
-﻿# Quick Core
+﻿![alt text](docs/QuickCore.png "QuickCore") 
 
 Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance and scalable desktop, mobile and web applications easily.
 
@@ -14,6 +14,15 @@ Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance an
 * **UserManagement**:
 * **Caching:**: Cache string or objects to retrieve fast later.
 * **MVC Web:** Create own Api or MVC server to serve own site.
+
+## Give it a star
+Please "star" this project in GitHub! It costs nothing but helps to reference the code.
+![alt text](docs/githubstartme.jpg "Give it a star")
+
+## Support
+If you find this project useful, please consider making a donation.
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=BKLKPNEYKSBKL)
 
 
 **Main units description:**
