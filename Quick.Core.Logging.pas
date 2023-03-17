@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2022 Kike Pérez
+  Copyright (c) 2016-2023 Kike Pérez
 
   Unit        : Quick.Core.Logging
   Description : Core Logging
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 12/01/2022
+  Modified    : 01/03/2023
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -62,6 +62,7 @@ uses
   Quick.Logger.Provider.Slack,
   Quick.Logger.Provider.Email,
   Quick.Logger.Provider.SysLog,
+  Quick.Logger.Provider.ElasticSearch,
   {$IFDEF DEBUG}
     {$IFDEF DEBUG_HANDLEDEXCEPTIONS}
     Quick.Logger.ExceptionHook,
@@ -291,6 +292,20 @@ type
     property Facility : TSyslogFacility read fFacility write fFacility;
   end;
 
+  TElasticSearchLoggerOptions = class(TLoggerOptions)
+  private
+    fURL: string;
+    fIndexName: string;
+    fDocType : string;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+  published
+    property URL : string read fURL write fURL;
+    property IndexName : string read fIndexName write fIndexName;
+    property DocType : string read fDocType write fDocType;
+  end;
+
   {$IFDEF MSWINDOWS}
   TADODBLoggerOptions = class(TLoggerOptions)
   private
@@ -354,6 +369,7 @@ type
     function AddTelegram(aConfigureProc: TLoggerOptionsProc<TTelegramLoggerOptions>): ILoggerBuilder;
     function AddSlack(aConfigureProc: TLoggerOptionsProc<TSlackLoggerOptions>): ILoggerBuilder;
     function AddEmail(aConfigureProc : TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
+    function AddElasticSearch(aConfigureProc : TLoggerOptionsProc<TElasticSearchLoggerOptions>): ILoggerBuilder;
     {$IFDEF MSWINDOWS}
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
@@ -393,6 +409,7 @@ type
     function AddTelegram(aConfigureProc: TLoggerOptionsProc<TTelegramLoggerOptions>): ILoggerBuilder;
     function AddSlack(aConfigureProc: TLoggerOptionsProc<TSlackLoggerOptions>): ILoggerBuilder;
     function AddEmail(aConfigureProc: TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
+    function AddElasticSearch(aConfigureProc : TLoggerOptionsProc<TElasticSearchLoggerOptions>): ILoggerBuilder;
     {$IFDEF MSWINDOWS}
     function AddEventLog(aConfigureProc: TLoggerOptionsProc<TEventLogLoggerOptions>): ILoggerBuilder;
     function AddADODB(aConfigureProc: TLoggerOptionsProc<TADODBLoggerOptions>): ILoggerBuilder;
@@ -822,6 +839,24 @@ begin
   if not fUseOptionsFile then options.Free;
 end;
 
+function TLoggerBuilder.AddElasticSearch(aConfigureProc: TLoggerOptionsProc<TElasticSearchLoggerOptions>): ILoggerBuilder;
+var
+  options : TElasticSearchLoggerOptions;
+  loggerElastic : TLogElasticSearchProvider;
+begin
+  Result := Self;
+  if (fOptionContainer.IsLoaded) and (fOptionContainer.ExistsSection(TElasticSearchLoggerOptions,'ElasticSearch')) then Exit;
+
+  options := fOptionContainer.AddSection(TElasticSearchLoggerOptions,'ElasticSearch') as TElasticSearchLoggerOptions;
+  loggerElastic := TLogElasticSearchProvider.Create;
+  loggerElastic.Name := options.Name;
+  TObjMapper.Map(loggerElastic,options);
+  aConfigureProc(options);
+  TObjMapper.Map(options,loggerElastic);
+  AddProvider(loggerElastic);
+  if not fUseOptionsFile then options.Free;
+end;
+
 function TLoggerBuilder.AddEmail(aConfigureProc: TLoggerOptionsProc<TEmailLoggerOptions>): ILoggerBuilder;
 var
   options : TEmailLoggerOptions;
@@ -894,6 +929,7 @@ begin
   else if provname = 'telegram' then fOptionContainer.AddSection<TTelegramLoggerOptions>('Telegram')
   else if provname = 'slack' then fOptionContainer.AddSection<TSlackLoggerOptions>('Slack')
   else if provname = 'email' then fOptionContainer.AddSection<TEmailLoggerOptions>('Email')
+  else if provname = 'elasticsearch' then fOptionContainer.AddSection<TElasticSearchLoggerOptions>('ElasticSearch')
   {$IFDEF MSWINDOWS}
   else if provname = 'eventlog' then fOptionContainer.AddSection<TEventLogLoggerOptions>('EventLog')
   else if provname = 'adodb' then fOptionContainer.AddSection<TADODBLoggerOptions>('ADODB')
@@ -1009,6 +1045,8 @@ begin
   else if provname = 'telegram' then Result := TLogTelegramProvider.Create
   else if provname = 'slack' then Result := TLogSlackProvider.Create
   else if provname = 'email' then Result := TLogEmailProvider.Create
+  else if provname = 'elasticsearch' then Result := TLogElasticSearchProvider.Create
+
   {$IFDEF MSWINDOWS}
   else if provname = 'eventlog' then Result := TLogEventLogProvider.Create
   else if provname = 'adodb' then Result := TLogADODBProvider.Create
@@ -1046,6 +1084,22 @@ destructor TEmailLoggerOptions.Destroy;
 begin
   fSMTPConfig.Free;
   fMailConfig.Free;
+  inherited;
+end;
+
+{ TElasticSearchLoggerOptions }
+
+constructor TElasticSearchLoggerOptions.Create;
+begin
+  inherited;
+  fURL := 'http://127.0.0.1:9200';
+  fIndexName := 'logger';
+  fDocType := 'doc';
+end;
+
+destructor TElasticSearchLoggerOptions.Destroy;
+begin
+
   inherited;
 end;
 

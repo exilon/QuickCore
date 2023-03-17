@@ -42,9 +42,10 @@ uses
   Posix.Unistd,
   Posix.Signal,
   Posix.Fcntl,
-  Posix.SysLog,
+  //Posix.SysLog,
   System.SyncObjs,
   Quick.Commons,
+  Quick.Console,
   Quick.Core.Logging.Abstractions,
   Quick.Core.Commandline,
   Quick.Core.Extensions.Service.Abstractions;
@@ -110,13 +111,24 @@ const
   EXIT_FAILURE = 1;
   EXIT_SUCCESS = 0;
 
+type
+  TSysLogLevel = (LOG_NOTICE, LOG_ERR);
+
+procedure syslog(level : TSysLogLevel;  const msg : string);
+begin
+  case level of
+    LOG_NOTICE: Writeln('[NOTICE] ' + msg);
+    LOG_ERR: Writeln('[ERROR] ' + msg);
+  end;
+end;
+
 constructor TLinuxHostService.Create;
 var
   i : Integer;
   parm : string;
   parameters : string;
 begin
-  openlog(nil, LOG_PID or LOG_NDELAY, LOG_DAEMON);
+  //openlog(nil, LOG_PID or LOG_NDELAY, LOG_DAEMON);
   fParameters := TServiceParameters.Create(False);
   ServiceName := DEF_SERVICENAME;
   fDisplayName := DEF_DISPLAYNAME;
@@ -175,7 +187,7 @@ begin
   OnExecute := nil;
   if Assigned(fParameters) then fParameters.Free;
   fParameters := nil;
-  closelog();
+  //closelog();
   inherited;
 end;
 
@@ -209,7 +221,17 @@ var
   fid : Integer;
 begin
   fStatus := TSvcStatus.ssStartPending;
-
+  //initialize as console
+  if not IsRunningAsService then
+  begin
+    //umask(027);
+    if Assigned(OnInitialize) then OnInitialize;
+    if Assigned(OnStart) then OnStart;
+    if Assigned(OnExecute) then OnExecute;
+    fStatus := TSvcStatus.ssRunning;
+    if WaitForKeyOnExit then ConsoleWaitForEnterKey;
+    Exit;
+  end;
 
   // If the parent process is the init process then the current process is already a daemon
   // Remarks: this check here
@@ -435,6 +457,10 @@ end;
 function TLinuxHostService.IsRunningAsService : Boolean;
 begin
   Result := (fParameters.Detach) and (not ConsoleParamPresent) and (not InstallParamsPresent);
+  {$IFDEF DEBUG}
+  if Result then  writeln('Running detached...')
+   else Writeln('Running interactive...');
+  {$ENDIF}
 end;
 
 function TLinuxHostService.IsRunningAsConsole : Boolean;
