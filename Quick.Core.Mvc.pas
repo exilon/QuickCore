@@ -187,13 +187,13 @@ begin
 
   try
     fStartupClass.ConfigureServices(fServices);
-    fStartupClass.Configure(Self);
     fServices.Build;
+    fStartupClass.Configure(Self);
   except
     on E : Exception do
     begin
       if fServices.AppServices.Logger <> nil then fServices.AppServices.Logger.Critical(e.Message);
-      raise e;
+      raise Exception.CreateFmt('Configure Services error: %s',[e.Message]);
     end;
   end;
 end;
@@ -290,6 +290,7 @@ begin
     context.WebRoot := fWebRoot;
     context.RequestServices := TServiceProvider.Create(fServices);
     //middleware request pipeline flow
+    if fMiddlewares.Count = 0 then raise Exception.Create('Not Middlewares defined');
     fMiddlewares[0].Invoke(context);
   finally
     context.Free;

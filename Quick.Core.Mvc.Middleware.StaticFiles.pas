@@ -74,10 +74,14 @@ var
   filename : string;
 begin
   inherited;
-  //check file exists
+
   filename := aContext.WebRoot + aContext.Request.URL;
+  if filename.Contains('?') then filename.Substring(0,filename.IndexOf('?')-1);
+
+  //check if can handle extension
   if CanHandleExtension(filename) then
   begin
+    //check file exists
     if FileExists(filename) then
     begin
       aContext.Response.Content := TFileStream.Create(filename,fmShareDenyWrite);

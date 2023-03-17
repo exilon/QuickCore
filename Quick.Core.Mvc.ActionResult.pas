@@ -178,6 +178,8 @@ var
   view : IView;
   streamPage : TMemoryStream;
 begin
+  if fViewEngine = nil then raise Exception.Create('Not MVC Engine defined');
+
   view := fViewEngine.FindView(aContext,fViewName);
   streamPage := TStringStream.Create;
   viewContext := TViewContext.Create(aContext,fViewData,nil,streampage);
