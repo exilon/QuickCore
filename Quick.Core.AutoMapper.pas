@@ -287,7 +287,11 @@ begin
         obj := tgtprop.GetValue(aTgtObj).AsObject;
         if obj = nil then
         begin
-          if TRTTI.PropertyExists(aSrcObj.ClassInfo,tgtprop.Name) then obj := GetObjectProp(aSrcObj,tgtprop.Name).ClassType.Create// TObject.Create;
+          if (TRTTI.PropertyExists(aSrcObj.ClassInfo,tgtprop.Name))
+            and (TRTTI.PropertyExists(aTgtObj.ClassInfo,tgtprop.Name)) then
+          begin
+            obj := GetObjectProp(aSrcObj,tgtprop.Name).ClassType.Create// TObject.Create;
+          end
           else
           begin
             if (Assigned(aProfileMap)) and (aProfileMap.fIgnoreAllNonExisting) then Continue;
