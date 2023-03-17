@@ -37,6 +37,9 @@ uses
   {$IFDEF DEBUG}
     Quick.Debug.Utils,
   {$ENDIF}
+  {$IFDEF ANDROID}
+  System.IOUtils,
+  {$ENDIF}
   System.SysUtils,
   RTTI,
   System.TypInfo,
@@ -296,6 +299,7 @@ end;
 function TServiceCollection.AddOptions(aSerializer : IFileOptionsSerializer; aReloadOnChange : Boolean; const aOptionsFileName : string = '') : TServiceCollection;
 var
   filename : string;
+  fullfilename : string;
   iserializer : IFileOptionsSerializer;
   env : string;
 begin
@@ -307,25 +311,31 @@ begin
     env := '.' + env;
   end;
 
-  if not aOptionsFileName.IsEmpty then filename := aOptionsFileName
+  if not aOptionsFileName.IsEmpty then fullfilename := aOptionsFileName
   else
   begin
+    {$IFDEF ANDROID}
+    filename := TPath.GetDocumentsPath + PathDelim + 'appSettings';
+    {$ELSE}
+    filename := path.EXEPATH + PathDelim + 'appSettings';
+    {$ENDIF}
+
     if aSerializer is TJsonOptionsSerializer then
     begin
-      filename := path.EXEPATH + PathDelim + 'appSettings' + env + '.json';
-      if not FileExists(filename) then
+      fullfilename := filename + env + '.json';
+      if not FileExists(fullfilename) then
       begin
-        Logger.Warn('Config file not found: "%s"',[filename]);
-        filename := path.EXEPATH + PathDelim + 'appSettings.json';
+        Logger.Warn('Config file not found: "%s"',[fullfilename]);
+        fullfilename := filename + '.json';
       end;
     end
     else if aSerializer is TYamlOptionsSerializer then
     begin
-      filename := path.EXEPATH + PathDelim + 'appSettings' + env + '.yml';
-      if not FileExists(filename) then
+      fullfilename := filename + env + '.yml';
+      if not FileExists(fullfilename) then
       begin
-        Logger.Warn('Config file not found: "%s"',[filename]);
-        filename := path.EXEPATH + PathDelim + 'appSettings.yml';
+        Logger.Warn('Config file not found: "%s"',[fullfilename]);
+        fullfilename := filename + '.yml';
       end;
     end
     else raise EServiceConfigError.Create('Options Serializer not recognized!');
@@ -333,10 +343,10 @@ begin
   if aSerializer <> nil then
   begin
     iserializer := aSerializer;
-    iserializer.Filename := filename;
+    iserializer.Filename := fullfilename;
   end
-  else iserializer := TJsonOptionsSerializer.Create(filename);
-  if IsDebug then Logger.Debug('Loading settings from "%s"',[filename]);
+  else iserializer := TJsonOptionsSerializer.Create(fullfilename);
+  if IsDebug then Logger.Debug('Loading settings from "%s"',[fullfilename]);
   fOptionsService := TFileOptionsContainer.Create(iserializer,aReloadOnChange);
 end;
 
