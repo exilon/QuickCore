@@ -405,11 +405,11 @@ end;
 function TEntity.FieldByName(const aFieldName: string): TValue;
 begin
   Result := TRTTI.GetPropertyValue(Self,aFieldName);
-  if Result.Kind = tkRecord then
-  begin
-    if Result.IsType<TGUID> then Result := GetSubString(GUIDToString(Result.AsType<TGUID>),'{','}')
-      else Result := Result.ToString;
-  end;
+//  if Result.Kind = tkRecord then
+//  begin
+//    if Result.IsType<TGUID> then Result := GetSubString(GUIDToString(Result.AsType<TGUID>),'{','}')
+//      else Result := Result.ToString;
+//  end;
 end;
 {$ELSE}
 function TEntity.FieldByName(const aFieldName: string): Variant;

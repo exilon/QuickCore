@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Entity.Query
   Description : Core Entity Query
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 29/08/2021
+  Modified    : 20/02/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -752,6 +752,13 @@ begin
             value := aWhereParams[i].AsExtended.ToString;
             value := StringReplace(value,',','.',[]);
           end;
+        end;
+      tkRecord :
+        begin
+          if aWhereParams[i].TypeInfo = System.TypeInfo(TGUID) then
+          begin
+            value := QuotedStr(fQueryGenerator.GUIDToDBField(aWhereParams[i].AsType<TGUID>));
+          end
         end;
       tkVariant :
       begin

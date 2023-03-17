@@ -301,7 +301,9 @@ end;
 
 function TSQLiteQueryGenerator.DBFieldToGUID(const aValue: string): TGUID;
 begin
-  Result := StringToGUID(aValue);
+  //Result := StringToGUID(aValue);
+  if aValue.Contains('{') then Result := StringToGUID(aValue)
+    else  Result := StringToGUID('{' + aValue + '}');
 end;
 
 function TSQLiteQueryGenerator.GUIDToDBField(aGuid: TGUID): string;

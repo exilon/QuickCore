@@ -221,7 +221,7 @@ begin
   if Connection.IsCustomConnectionString then
   begin
     //SharedCache=False;LockingMode=Normal;Synchronous=Normal;
-    Result := Format('DriverID=%s;%s;Pooled=True;SharedCache=False;LockingMode=Normal;Synchronous=Normal;',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString]);
+    Result := Format('DriverID=%s;%s;Pooled=True;SharedCache=False;LockingMode=Normal;Synchronous=Normal;MARS=Yes',[GetDriverID(Connection.Provider),Connection.GetCustomConnectionString]);
     for pair in Connection.GetCustomConnectionString.Split([';']) do
     begin
       value := pair.Substring(pair.IndexOf('=')+1);

@@ -315,7 +315,7 @@ end;
 function TMSSQLQueryGenerator.DBFieldToGUID(const aValue: string): TGUID;
 begin
   if aValue.Contains('{') then Result := StringToGUID(aValue)
-    else  Result := StringToGUID('{' + aValue + '{');
+    else  Result := StringToGUID('{' + aValue + '}');
 end;
 
 function TMSSQLQueryGenerator.GUIDToDBField(aGuid: TGUID): string;

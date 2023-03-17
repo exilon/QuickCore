@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Entity.Engine.ADO
   Description : Core Entity ADO Provider
   Author      : Kike Pérez
   Version     : 1.1
   Created     : 22/11/2019
-  Modified    : 09/06/2020
+  Modified    : 19/05/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -86,6 +86,7 @@ type
   TADOEntityQuery<T : class, constructor> = class(TEntityQuery<T>)
   private
     fConnection : TDBConnectionSettings;
+    fADOConnection : TADOConnection;
     fQuery : TADOQuery;
   protected
     function GetCurrent : T; override;
@@ -164,7 +165,7 @@ begin
     if Connection.Server = '' then dbconn := 'Data Source=' + Connection.Database
       else dbconn := Format('Database=%s;Data Source=%s',[Connection.Database,Connection.Server]);
 
-    Result := Format('Provider=%s;Persist Security Info=False;User ID=%s;Password=%s;%s',[
+    Result := Format('Provider=%s;Persist Security Info=False;User ID=%s;Password=%s;%s;MARS Connection = True;',[
                               GetDBProviderName(Connection.Provider),
                               Connection.UserName,
                               Connection.Password,
@@ -311,14 +312,22 @@ end;
 constructor TADOEntityQuery<T>.Create(aEntityDataBase : TEntityDatabase; aModel : TEntityModel; aQueryGenerator : IEntityQueryGenerator);
 begin
   inherited;
+  CoInitialize(nil);
+  fADOConnection := TADOConnection.Create(nil);
+  fADOConnection.ConnectionString := TADOEntityDataBase(aEntityDataBase).CreateConnectionString;
+  fADOConnection.Connected := True;
   fQuery := TADOQuery.Create(nil);
-  fQuery.Connection := TADOEntityDataBase(aEntityDataBase).fADOConnection;
+  //fQuery.Connection := TADOEntityDataBase(aEntityDataBase).fADOConnection;
+  fQuery.Connection := fADOConnection;
   fConnection := aEntityDataBase.Connection;
 end;
 
 destructor TADOEntityQuery<T>.Destroy;
 begin
   if Assigned(fQuery) then fQuery.Free;
+  if Assigned(fADOConnection) then fADOConnection.Free;
+
+  CoUninitialize;
   inherited;
 end;
 

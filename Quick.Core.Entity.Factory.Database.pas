@@ -63,6 +63,8 @@ begin
   case aDatabaseEngine of
     {$IFDEF MSWINDOWS}
     deADO : Result := TADOEntityDataBase.Create;
+    {$ELSE}
+    deADO : raise EEntityDatabaseFactoryError.Create('ADO only supported in MsWindows');
     {$ENDIF}
     deFireDAC : Result := TFireDACEntityDataBase.Create;
     deRestServer : Result := TRestServerEntityDataBase.Create;

@@ -207,7 +207,7 @@ begin
         Disconnect;
         Connect;
       end;
-      raise E;
+      raise;
     end;
   end;
 end;
@@ -229,7 +229,7 @@ begin
         Disconnect;
         Connect;
       end;
-      raise E;
+      raise;
     end;
   end;
 end;
