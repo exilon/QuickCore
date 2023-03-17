@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Serialization.Abstractions
   Description : Core Serialization Abstractions
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 22/02/2020
-  Modified    : 11/09/2020
+  Modified    : 17/05/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -35,7 +35,8 @@ interface
 
 uses
   System.SysUtils,
-  System.Rtti;
+  System.Rtti,
+  Quick.Serializer.Intf;
 
 type
 
@@ -51,6 +52,7 @@ type
     function ToObject(aType : TClass; const aSerialized: string) : TObject; overload;
     function ToObject(aObject : TObject; const aSerialized: string) : TObject; overload;
     //function ToArray<T>(const aYaml : string) : TArray<T>;
+    function Options : TSerializerOptions;
   end;
 
 implementation

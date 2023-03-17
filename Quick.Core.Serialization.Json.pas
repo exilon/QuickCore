@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2022 Kike Pérez
 
   Unit        : Quick.Core.Serializer.Json
   Description : Core Json Serializer
   Author      : Kike Pérez
   Version     : 1.8
   Created     : 12/10/2019
-  Modified    : 18/06/2020
+  Modified    : 17/05/2022
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -57,6 +57,7 @@ type
     function ToObject(aObject : TObject; const aJson: string) : TObject; overload;
     function ToArray<T>(const aJson : string) : TArray<T>;
     function ToValue(const aJson : string) : TValue;
+    function Options : TSerializerOptions;
   end;
 
 implementation
@@ -66,6 +67,7 @@ implementation
 constructor TJsonSerializer.Create;
 begin
   fSerializer := Quick.Json.Serializer.TJsonSerializer.Create(TSerializeLevel.slPublicProperty,True);
+  fSerializer.UseGUIDLowerCase := True;
 end;
 
 destructor TJsonSerializer.Destroy;
@@ -102,6 +104,11 @@ end;
 function TJsonSerializer.FromValue(aValue: TValue; aIndent: Boolean): string;
 begin
   Result := fSerializer.ValueToJson(aValue,aIndent);
+end;
+
+function TJsonSerializer.Options: TSerializerOptions;
+begin
+  Result := fSerializer.Options;
 end;
 
 procedure TJsonSerializer.SetSerializationLevel(const Value: TSerializationLevel);
