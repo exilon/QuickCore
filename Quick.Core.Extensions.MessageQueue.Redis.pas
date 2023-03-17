@@ -149,6 +149,7 @@ begin
         aRedis.MaxSize := 0;
         aRedis.ConnectionTimeout := aConnectionTimemout;
         aRedis.ReadTimeout := aReadTimeout;
+        aRedis.RaiseErrorIfCommandFails := True;
         aRedis.Connect;
       end);
 end;
@@ -365,10 +366,9 @@ var
 begin
   if not fOptions.ReliableMessageQueue.Enabled then Exit(True);
   if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Failed: CurrentMessage cannot be null!');
-  if aProcessedMessage = nil then raise Exception.Create('RedisMSQ.Failed: ProcessedMessage cannot be null!');
-
   curmsg := Serialize(aCurrentMessage);
-  procmsg := Serialize(aProcessedMessage);
+  if aProcessedMessage = nil then procmsg := curmsg
+    else procmsg := Serialize(aProcessedMessage);
   //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
   Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,curmsg);
   {$IFDEF DEBUG_MSQ}
@@ -420,9 +420,9 @@ begin
   if fOptions.ReliableMessageQueue.Enabled then
   begin
     if aCurrentMessage = nil then raise Exception.Create('RedisMSQ.Failed: CurrentMessage cannot be null!');
-    if aProcessedMessage = nil then raise Exception.Create('RedisMSQ.Failed: ProcessedMessage cannot be null!');
     curmsg := Serialize(aCurrentMessage);
-    failmsg := Serialize(aProcessedMessage);
+    if aProcessedMessage = nil then failmsg := curmsg
+      else failmsg := Serialize(aProcessedMessage);
     //Result := fPushRedisPool.Get.Item.RedisLREM(key,msg,-1);
     Result := fPushRedisPool.Get.Item.redisZREM(fWorkingKey,curmsg);
     {$IFDEF DEBUG_MSQ}
