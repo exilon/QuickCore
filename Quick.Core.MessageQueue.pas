@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2023 Kike Pérez
 
   Unit        : Quick.Core.MessageQueue
   Description : Core MessageQueue
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 10/07/2020
+  Modified    : 12/06/2023
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -54,7 +54,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function Push(const aMessage : T) : TMSQWaitResult; virtual; abstract;
+    function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; virtual; abstract;
     function Pop(out oMessage : T) : TMSQWaitResult; virtual; abstract;
     function Remove(const aMessage : T) : Boolean; overload; virtual; abstract;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; virtual; abstract;

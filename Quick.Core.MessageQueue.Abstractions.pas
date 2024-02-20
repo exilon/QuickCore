@@ -41,7 +41,7 @@ type
 
   IMessageQueue<T> = interface
   ['{0E859677-5431-4D2E-9E3F-F288AECDA75E}']
-    function Push(const aMessage : T) : TMSQWaitResult;
+    function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; overload;
     function Pop(out oMessage : T) : TMSQWaitResult;
     function Remove(const aMessage : T) : Boolean; overload;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload;

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2023 Kike Pérez
 
   Unit        : Quick.Core.Extensions.MessageQueue.Redis
   Description : Core Redis MessageQueue Extension
   Author      : Kike Pérez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 18/10/2021
+  Modified    : 12/06/2023
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -118,7 +118,7 @@ type
   public
     constructor Create(aOptions : IOptions<TRedisMessageQueueOptions>; aLogger : ILogger);
     destructor Destroy; override;
-    function Push(const aMessage : T) : TMSQWaitResult; override;
+    function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; override;
     function Pop(out oMessage : T) : TMSQWaitResult; override;
     function Remove(const aMessage : T) : Boolean; override;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; override;
@@ -299,10 +299,15 @@ begin
   end;
 end;
 
-function TRedisMessageQueue<T>.Push(const aMessage: T) : TMSQWaitResult;
+function TRedisMessageQueue<T>.Push(const aMessage: T; aMaxPriority : Boolean) : TMSQWaitResult;
+var
+  done : Boolean;
 begin
   try
-    if fPushRedisPool.Get.Item.RedisLPUSH(fOptions.Key,Serialize(aMessage)) then Result := TMSQWaitResult.wrOk
+    if aMaxPriority then done := fPushRedisPool.Get.Item.RedisRPUSH(fOptions.Key,Serialize(aMessage))
+      else done := fPushRedisPool.Get.Item.RedisLPUSH(fOptions.Key,Serialize(aMessage));
+
+    if done then Result := TMSQWaitResult.wrOk
       else Result := TMSQWaitResult.wrTimeout;
   except
     Result := TMSQWaitResult.wrError;
