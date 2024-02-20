@@ -1,6 +1,6 @@
 ﻿![alt text](docs/QuickCore.png "QuickCore") 
 
-Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance and scalable desktop, mobile and web applications easily.
+Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance and scalable desktop, mobile and web applications easily. Delphi 10 to 12 Athens supported.
 
 **Areas of functionality:**
 ----------

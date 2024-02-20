@@ -1,7 +1,7 @@
 ﻿{
     This file is part of QuickCore: https://github.com/exilon/QuickCore
 
-    QuickCore. Copyright (C) 2020 Kike Pérez
+    QuickCore. Copyright (C) 2024 Kike Pérez
       Exilon - https://www.exilon.es
 
      ***************************************************************************
@@ -135,6 +135,13 @@
     {$if CompilerVersion >= 35.0} //Delphi RX11 Alexandria
       {$define DELPHIRX11_UP}
 	    {$define DELPHIALEXANDRIA_UP}
+      {$if defined(ANDROID) OR defined(IOS)}
+        {$define NEXTGEN} //compatibility with older delphis
+      {$endif}
+    {$ifend}
+    {$if CompilerVersion >= 36.0} //Delphi RX12 Athens
+      {$define DELPHIRX12_UP}
+	    {$define DELPHIATHENS_UP}
       {$if defined(ANDROID) OR defined(IOS)}
         {$define NEXTGEN} //compatibility with older delphis
       {$endif}
