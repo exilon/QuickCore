@@ -19,6 +19,10 @@ Delphi Framework (Windows/Linux/Android/MACOSX/IOS) to build high-performance an
 Please "star" this project in GitHub! It costs nothing but helps to reference the code.
 ![alt text](docs/githubstartme.jpg "Give it a star")
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=exilon/quickcore&type=Date)](https://star-history.com/#exilon/quickcore&Date)
+
 ## Support
 If you find this project useful, please consider making a donation.
 
