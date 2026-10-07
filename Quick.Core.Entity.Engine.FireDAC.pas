@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Engine.FireDAC
   Description : Core Entity FireDAC Provider
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.2
   Created     : 15/07/2020
-  Modified    : 04/10/2021
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -100,11 +100,13 @@ type
     function IsConnected : Boolean; override;
     function From<T : class, constructor> : IEntityLinqQuery<T>;
     function Clone : TEntityDatabase; override;
+    function GetConnection : TFDConnection;
   end;
 
   TFireDACEntityQuery<T : class, constructor> = class(TEntityQuery<T>)
   private
     fFDConnection : TFDConnection;
+    fOwnsConnection : Boolean;
     fConnection : TDBConnectionSettings;
     fQuery : TFDQuery;
   protected
@@ -162,9 +164,18 @@ end;
 
 destructor TFireDACEntityDataBase.Destroy;
 begin
-  if Assigned(fInternalQuery) then fInternalQuery.Free;
-  if fFireDACConnection.Connected then fFireDACConnection.Connected := False;
-  if OwnsConnection then fFireDACConnection.Free;
+  if Assigned(fInternalQuery) then
+  begin
+    fInternalQuery.Close;
+    fInternalQuery.Free;
+  end;
+  if Assigned(fFireDACConnection) then
+  begin
+    if fFireDACConnection.Connected then fFireDACConnection.Connected := False;
+    // Release pooled connections so SQLite file is not locked after destroy
+    try FDManager.CloseConnectionDef(GetDefName); except end;
+    if OwnsConnection then fFireDACConnection.Free;
+  end;
   inherited;
 end;
 
@@ -350,6 +361,11 @@ begin
   Result := fFireDACConnection.Connected;
 end;
 
+function TFireDACEntityDataBase.GetConnection: TFDConnection;
+begin
+  Result := fFireDACConnection;
+end;
+
 { TFireDACEntityQuery<T> }
 
 function TFireDACEntityQuery<T>.CountResults: Integer;
@@ -360,18 +376,11 @@ end;
 constructor TFireDACEntityQuery<T>.Create(aEntityDataBase : TEntityDatabase; aModel : TEntityModel; aQueryGenerator : IEntityQueryGenerator);
 begin
   inherited;
-  fFDConnection := TFDConnection.Create(nil);
-  fFDConnection.ConnectionDefName := TFireDACEntityDataBase(aEntityDataBase).GetDefName;
-  fFDConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
-  fFDConnection.UpdateOptions.LockWait := True;
-  fFDConnection.ResourceOptions.AutoReconnect := True;
-  //fFireDACConnection.UpdateOptions.UpdateMode := Data.DB.TUpdateMode.upWhereAll;
-  //fFDConnection.UpdateOptions.LockWait := True;
-  //fFDConnection.UpdateOptions.LockMode := FireDAC.Stan.Option.TFDLockMode.lmPessimistic;
-  //fFDConnection.UpdateOptions.LockPoint := FireDAC.Stan.Option.TFDLockPoint.lpImmediate;
-  //fFireDACConnection.UpdateOptions.AssignedValues := [FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockMode,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockPoint,FireDAC.Stan.Option.TFDUpdateOptionValues.uvLockWait];
+  // Share the database connection so transactions are visible to all queries
+  fFDConnection := TFireDACEntityDataBase(aEntityDataBase).GetConnection;
+  fOwnsConnection := False;
   fQuery := TFDQuery.Create(nil);
-  fQuery.Connection := fFDConnection; //TFireDACEntityDataBase(aEntityDataBase).fFireDACConnection;
+  fQuery.Connection := fFDConnection;
   fConnection := aEntityDataBase.Connection;
   fQuery.ResourceOptions.SilentMode := True;
   fQuery.FetchOptions.Mode := FireDAC.Stan.Option.TFDFetchMode.fmAll;
@@ -383,7 +392,7 @@ end;
 destructor TFireDACEntityQuery<T>.Destroy;
 begin
   if Assigned(fQuery) then fQuery.Free;
-  if Assigned(fFDConnection) then
+  if fOwnsConnection and Assigned(fFDConnection) then
   begin
     fFDConnection.Close;
     fFDConnection.Free;

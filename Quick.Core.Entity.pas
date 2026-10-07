@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity
   Description : Core Entity DataBase
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 06/06/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -59,6 +59,18 @@ type
 
   TEntityTS = Quick.Core.Entity.DAO.TEntityTS;
 
+  TEntitySD   = Quick.Core.Entity.DAO.TEntitySD;
+
+  TEntityTSSD = Quick.Core.Entity.DAO.TEntityTSSD;
+
+  TEntityRV = Quick.Core.Entity.DAO.TEntityRV;
+
+  EOptimisticConcurrencyException = Quick.Core.Entity.DAO.EOptimisticConcurrencyException;
+
+  TEntityAudit = Quick.Core.Entity.DAO.TEntityAudit;
+
+  SoftDelete = Quick.Core.Entity.DAO.SoftDelete;
+
   TEntityDatabase = Quick.Core.Entity.Database.TEntityDataBase;
 
   TEntityModel = Quick.Core.Entity.DAO.TEntityModel;
@@ -109,7 +121,14 @@ type
     function Add(aEntity : TEntity) : Boolean;
     function Update(aEntity : TEntity) : Boolean;
     function Delete(aEntity : TEntity) : Boolean; overload;
+    procedure BeginTransaction;
+    procedure CommitTransaction;
+    procedure RollbackTransaction;
   end;
+
+  /// <summary>Callback passed to TDBContext.Seed. Receives the context so the
+  /// caller can call Add/AddOrUpdate to insert initial/reference data.</summary>
+  TSeedProc = reference to procedure(context : IDBContext);
 
   TDBSet<T : class, constructor> = record
   private
@@ -134,6 +153,8 @@ type
     function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const) : IEntityLinqQuery<T>; overload;
     {$ENDIF}
     function Where(const aWhereClause: string) : IEntityLinqQuery<T>; overload;
+    function Where(aPredicate : TPredicate<T>) : IEntityLinqQuery<T>; overload;
+    function Include(const aPropertyName : string) : IEntityLinqQuery<T>;
     function SelectFirst : T;
     function SelectLast : T;
     function Select : IDBSetResult<T>; overload;
@@ -152,6 +173,12 @@ type
     fDatabase : TEntityDatabase;
     fDBSets : TDictionary<string,TDBSet<TEntity>>;
     procedure GetEntityInfo(aCtx : TRttiContext; aEntityClass : TEntityClass);
+  protected
+    { Disable ref-count-driven destruction so TDBContext can be used both as
+      a raw object (managed by the owner) and as an IDBContext interface
+      without being freed when the last interface reference drops. }
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   protected
     function GetDBConnection : TDBConnectionSettings;
     procedure SetDBConnection(aValue : TDBConnectionSettings);
@@ -178,16 +205,25 @@ type
     function Add(aEntity : TEntity) : Boolean; virtual;
     function Update(aEntity : TEntity) : Boolean; virtual;
     function Delete(aEntity : TEntity) : Boolean; overload; virtual;
+    procedure BeginTransaction; virtual;
+    procedure CommitTransaction; virtual;
+    procedure RollbackTransaction; virtual;
+    procedure Seed(aSeedProc : TSeedProc); virtual;
   end;
 
   {$M+}
-  TIdentityUser<TKey> = class
+  TIdentityUser<TKey> = class(TEntity)
   private
-    fId : TKey;
-    fUserName : string;
-    fPasswordHash : string;
-    fOptions : TIdentityOptions;
-    fRoleId: TKey;
+    fId            : TKey;
+    fUserName      : string;
+    fPasswordHash  : string;
+    fOptions       : TIdentityOptions;
+    fRoleId        : TKey;
+    fSecurityStamp : string;
+    fEmail         : string;
+    fLockoutEnd    : TDateTime;
+    fLockoutEnabled: Boolean;
+    fAccessFailedCount : Integer;
   public
     property Options : TIdentityOptions read fOptions write fOptions;
   published
@@ -198,11 +234,18 @@ type
     property UserName : string read fUserName write fUserName;
     [StringLength(100)]
     property PasswordHash : string read fPasswordHash write fPasswordHash;
+    [StringLength(50)]
+    property Email : string read fEmail write fEmail;
+    [StringLength(40)]
+    property SecurityStamp : string read fSecurityStamp write fSecurityStamp;
+    property LockoutEnd : TDateTime read fLockoutEnd write fLockoutEnd;
+    property LockoutEnabled : Boolean read fLockoutEnabled write fLockoutEnabled;
+    property AccessFailedCount : Integer read fAccessFailedCount write fAccessFailedCount;
   end;
   {$M-}
 
   {$M+}
-  TIdentityRole<TKey> = class
+  TIdentityRole<TKey> = class(TEntity)
   private
     fId : TKey;
     fName : string;
@@ -227,6 +270,16 @@ type
 implementation
 
 { TDBContext }
+
+function TDBContext._AddRef: Integer;
+begin
+  Result := -1; // Disable ref-count-driven destruction
+end;
+
+function TDBContext._Release: Integer;
+begin
+  Result := -1; // Disable ref-count-driven destruction
+end;
 
 constructor TDBContext.Create;
 begin
@@ -439,6 +492,34 @@ begin
   Result := fDatabase.Delete(aEntity);
 end;
 
+procedure TDBContext.BeginTransaction;
+begin
+  fDatabase.BeginTransaction;
+end;
+
+procedure TDBContext.CommitTransaction;
+begin
+  fDatabase.CommitTransaction;
+end;
+
+procedure TDBContext.RollbackTransaction;
+begin
+  fDatabase.RollbackTransaction;
+end;
+
+procedure TDBContext.Seed(aSeedProc: TSeedProc);
+begin
+  if not Assigned(aSeedProc) then Exit;
+  BeginTransaction;
+  try
+    aSeedProc(Self);
+    CommitTransaction;
+  except
+    RollbackTransaction;
+    raise;
+  end;
+end;
+
 { Index }
 
 constructor &Index.Create(const aFieldname : string; aIndexOrder : TEntityIndexOrder = TEntityIndexOrder.orAscending);
@@ -571,6 +652,16 @@ end;
 function TDBSet<T>.Where(const aWhereClause: string): IEntityLinqQuery<T>;
 begin
   Result := NewLinQ.Where(aWhereClause);
+end;
+
+function TDBSet<T>.Where(aPredicate: TPredicate<T>): IEntityLinqQuery<T>;
+begin
+  Result := NewLinQ.Where(aPredicate);
+end;
+
+function TDBSet<T>.Include(const aPropertyName: string): IEntityLinqQuery<T>;
+begin
+  Result := NewLinQ.Include(aPropertyName);
 end;
 
 function TDBSet<T>.Update(aEntity: TEntity): Boolean;

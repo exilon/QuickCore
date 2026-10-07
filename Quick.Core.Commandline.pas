@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Commandline
   Description : Core Commandline
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 29/07/2020
   Modified    : 01/08/2020

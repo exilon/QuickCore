@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Authentication.Apikey
   Description : Core Extensions Authentication ApiKey
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 10/03/2020
-  Modified    : 20/05/2021
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -46,7 +46,8 @@ uses
   Quick.Core.Identity,
   Quick.Core.Identity.Store.Entity,
   Quick.Core.Security.Claims,
-  Quick.Core.Security.Authentication;
+  Quick.Core.Security.Authentication,
+  Quick.Core.Logging.Abstractions;
 
 type
   {$M+}
@@ -127,6 +128,7 @@ type
   protected
     procedure DoInitialize; override;
   public
+    constructor Create(aOptions : IOptions<TApiKeyOptions>; aLogger : ILogger);
     function Authenticate : TAuthenticateResult; override;
   end;
 
@@ -232,6 +234,11 @@ end;
 
 { TApiKeyAuthenticationHandler }
 
+constructor TApiKeyAuthenticationHandler.Create(aOptions: IOptions<TApiKeyOptions>; aLogger: ILogger);
+begin
+  inherited Create(aOptions, aLogger);
+end;
+
 function TApiKeyAuthenticationHandler.Authenticate: TAuthenticateResult;
 var
   reqApikey : string;
@@ -264,6 +271,7 @@ end;
 
 procedure TApiKeyAuthenticationHandler.DoInitialize;
 begin
+  if fOptions = nil then raise EApiKeyStore.Create('ApiKey options not configured. Ensure AddApiKey().UseIdentityStore(...) or UseMemoryStore(...) is called.');
   if fOptions.ApiKeyStore = nil then raise EApiKeyStore.Create('Not defined Apikey store!');
   fApiKeyStore := fOptions.ApiKeyStore;
 end;
@@ -337,6 +345,11 @@ begin
       aValue := TApiKey.Create(TIdentityUser<Int64>(user).UserName,'',aApiKey);
       role := fIdentityStore.GetRolebyId(TIdentityUser<Int64>(user).RoleId);
     end
+    else if TObject(user).ClassParent = TIdentityUser<TAutoID> then
+    begin
+      aValue := TApiKey.Create(TIdentityUser<TAutoID>(user).UserName,'',aApiKey);
+      role := fIdentityStore.GetRolebyId(TIdentityUser<TAutoID>(user).RoleId);
+    end
     else
     begin
       aValue := TApiKey.Create(TIdentityUser<string>(user).UserName,'',aApiKey);
@@ -347,6 +360,7 @@ begin
       begin
         if TObject(role).ClassParent = TIdentityRole<TGUID> then aValue.Role := TIdentityRole<TGUID>(role).Name
         else if TObject(role).ClassParent = TIdentityRole<Int64> then aValue.Role := TIdentityRole<Int64>(role).Name
+        else if TObject(role).ClassParent = TIdentityRole<TAutoID> then aValue.Role := TIdentityRole<TAutoID>(role).Name
           else aValue.Role := TIdentityRole<string>(role).Name;
       end;
     finally

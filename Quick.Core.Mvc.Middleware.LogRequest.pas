@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.LogRequest
   Description : Core Mvc Log Request Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 23/02/2021
   Modified    : 23/02/2021
@@ -73,15 +73,21 @@ begin
 end;
 
 procedure TLogRequestMiddleware.Invoke(aContext: THttpContextBase);
+var
+  logUrl : string;
+  qPos   : Integer;
 begin
   inherited;
   try
     Next(aContext);
   finally
+    logUrl := aContext.Request.URL;
+    qPos := logUrl.IndexOf('?');
+    if qPos >= 0 then logUrl := logUrl.Substring(0, qPos);
     fLogger.Info('%s %d %s %s %s %s %s %d', [aContext.Request.Host,
                                              aContext.Request.Port,
                                              aContext.Request.GetMethodAsString,
-                                             aContext.Request.URL,
+                                             logUrl,
                                              aContext.Request.UserAgent,
                                              aContext.Request.Referer,
                                              aContext.Request.ClientIP,

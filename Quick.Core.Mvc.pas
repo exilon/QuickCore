@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc
   Description : Core MVC Server
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 30/09/2019
-  Modified    : 23/02/2021
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -46,6 +46,8 @@ uses
   Quick.Core.Logging.Abstractions,
   Quick.Core.Extensions.Service.Abstractions,
   Quick.HttpServer,
+  Quick.HttpServer.Types,
+  Quick.Options,
   Quick.Core.DependencyInjection,
   Quick.Core.Security.Authentication,
   Quick.Core.Security.Authorization,
@@ -56,6 +58,7 @@ uses
   Quick.Core.Mvc.Middleware,
   Quick.Core.Mvc.Middleware.Cache,
   Quick.Core.Mvc.Middleware.Routing,
+  Quick.Core.Mvc.Routing,
   Quick.Core.Mvc.Middleware.StaticFiles,
   Quick.Core.Mvc.Middleware.Hsts,
   Quick.Core.Mvc.Middleware.HttpsRedirection,
@@ -63,8 +66,17 @@ uses
   Quick.Core.Mvc.Middleware.LogRequest,
   Quick.Core.Mvc.Middleware.Authentication,
   Quick.Core.Mvc.Middleware.Authorization,
+  Quick.Core.Mvc.Middleware.Compression,
+  Quick.Core.Mvc.Middleware.Cors,
+  Quick.Core.Mvc.Middleware.ExceptionHandler,
+  Quick.Core.Mvc.Middleware.RateLimit,
+  Quick.Core.Mvc.Middleware.Session,
+  Quick.Core.Mvc.Middleware.Swagger,
+  Quick.Core.Mvc.Session,
+  Quick.Core.Extensions.Hosting.BackgroundService,
   Quick.Core.Mvc.ViewFeatures,
-  Quick.Core.Mvc.ViewEngine.Mustache;
+  Quick.Core.Mvc.ViewEngine.Mustache,
+  Quick.Core.Mvc.ViewEngine.Liquid;
 
 type
   IMVCServer = interface
@@ -79,6 +91,22 @@ type
   TStatupMvcClass = class of TStartupMvc;
 
   TMVCServerStatus = (mvsStarting, mvsStarted, mvsStopping, mvsStopped);
+
+  { Minimal-API handler: receives the request context and returns a string
+    body.  Return '' to skip body writing (e.g. response already written). }
+  TMinimalEndpointHandler = reference to function(aContext: THttpContextBase): string;
+
+  TMinimalEndpoint = class
+  private
+    fRoute   : THttpRoute;
+    fHandler : TMinimalEndpointHandler;
+  public
+    constructor Create(const aURL: string; aMethods: TMethodVerbs;
+                       aHandler: TMinimalEndpointHandler);
+    destructor Destroy; override;
+    property Route   : THttpRoute           read fRoute;
+    property Handler : TMinimalEndpointHandler read fHandler;
+  end;
 
   TMVCServer = class(TInterfacedObject,IMVCServer)
   private
@@ -95,6 +123,8 @@ type
     fStartupClass : TStatupMvcClass;
     fStatus : TMVCServerStatus;
     fAfterStart : TProc;
+    fMinimalEndpoints : TObjectList<TMinimalEndpoint>;
+    fHttpsEnabled : Boolean;
     procedure Initialize;
     procedure GetAttributeRouting;
     procedure GenerateRequestPipeline;
@@ -125,16 +155,29 @@ type
     function UseMiddleware(aCustomMiddleware: TRequestDelegate): TMVCServer; overload;
     function Use(aDelegateFunction : TRequestDelegateFunc) : TMVCServer;
     function UseStaticFiles : TMVCServer;
-    function UseStaticFilesValidExtension(const aExtension: string): TMVCServer;
-    function UseStaticFilesValidExtensions(const aExtensions: string): TMVCServer;
     function UseRouting : TMVCServer;
     function UseAuthentication : TMVCServer;
     function UseAuthorization : TMVCServer;
+    function UseCors : TMVCServer;
+    function UseExceptionHandler(aOnException : TExceptionHandlerProc = nil) : TMVCServer;
+    function UseRateLimiting(aMaxRequests : Integer = 100; aWindowSecs : Integer = 60) : TMVCServer;
+    function UseResponseCompression : TMVCServer;
+    function UseApiVersioning : TMVCServer;
     function UseSession : TMVCServer;
+    function UseSwagger(const aTitle : string = 'API';
+                        const aVersion : string = '1.0.0';
+                        const aDescription : string = '') : TMVCServer;
     function UseMVC : TMVCServer;
     function UseMustachePages : TMVCServer;
+    function UseLiquidPages : TMVCServer;
     function UseLogRequest : TMVCServer; overload;
     function UseLogRequest(aLoggerService : ILogger) : TMVCServer; overload;
+    { Minimal API â€” register lightweight endpoints without controllers }
+    function MapGet(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+    function MapPost(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+    function MapPut(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+    function MapDelete(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+    function MapVerbs(const aURL: string; aMethods: TMethodVerbs; aHandler: TMinimalEndpointHandler): TMVCServer;
     //function Run(aDelegateFunction : TRequestDelegateFunc);
     procedure Start; virtual;
     procedure Stop; virtual;
@@ -177,10 +220,12 @@ begin
   fHttpServer := aHttpServer;
   fHttpServer.OnNewRequest := ProcessRequest;
   fMiddlewares := TObjectList<TRequestDelegate>.Create(True);
+  fMinimalEndpoints := TObjectList<TMinimalEndpoint>.Create(True);
   fPathBase := '/';
   fWebRoot := './wwwroot/';
   fHost := fHttpServer.Host;
   fPort := fHttpServer.Port;
+  fHttpsEnabled := False;
 end;
 
 procedure TMVCServer.ConfigureStartupServices;
@@ -211,6 +256,7 @@ begin
     if not Integer.TryParse(ParamStr(1),port) then port := aPort;
   end;
   Create(THttpServer.Create(aHost,port,aSSLEnabled));
+  fHttpsEnabled := aSSLEnabled;
 end;
 
 function TMVCServer.DefaultRoute(aDefaultController : THttpControllerClass; const aRouteURL: string): TMVCServer;
@@ -225,9 +271,57 @@ begin
   fHttpControllers.Free;
   fHttpRouting.Free;
   fMiddlewares.Free;
+  fMinimalEndpoints.Free;
   fServices.Free;
   fHttpServer := nil;
   inherited;
+end;
+
+{ TMinimalEndpoint }
+
+constructor TMinimalEndpoint.Create(const aURL: string; aMethods: TMethodVerbs;
+  aHandler: TMinimalEndpointHandler);
+begin
+  inherited Create;
+  fRoute := THttpRoute.Create;
+  fRoute.URL := aURL;
+  fRoute.HttpMethods := aMethods;
+  fHandler := aHandler;
+end;
+
+destructor TMinimalEndpoint.Destroy;
+begin
+  fRoute.Free;
+  inherited;
+end;
+
+{ TMVCServer.Map* helpers }
+
+function TMVCServer.MapVerbs(const aURL: string; aMethods: TMethodVerbs;
+  aHandler: TMinimalEndpointHandler): TMVCServer;
+begin
+  Result := Self;
+  fMinimalEndpoints.Add(TMinimalEndpoint.Create(aURL, aMethods, aHandler));
+end;
+
+function TMVCServer.MapGet(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+begin
+  Result := MapVerbs(aURL, [mGET], aHandler);
+end;
+
+function TMVCServer.MapPost(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+begin
+  Result := MapVerbs(aURL, [mPOST], aHandler);
+end;
+
+function TMVCServer.MapPut(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+begin
+  Result := MapVerbs(aURL, [mPUT], aHandler);
+end;
+
+function TMVCServer.MapDelete(const aURL: string; aHandler: TMinimalEndpointHandler): TMVCServer;
+begin
+  Result := MapVerbs(aURL, [mDELETE], aHandler);
 end;
 
 procedure TMVCServer.GenerateRequestPipeline;
@@ -282,11 +376,41 @@ end;
 
 procedure TMVCServer.ProcessRequest(aRequest: IHttpRequest; aResponse: IHttpResponse);
 var
-  context : THttpContextBase;
+  context  : THttpContextBase;
+  endpoint : TMinimalEndpoint;
+  body     : string;
 begin
   {$IFDEF DEBUG_ROUTING}
     TDebugger.Enter(Self,Format('ProcessRequest (%s)',[aRequest.URL])).TimeIt;
   {$ENDIF}
+
+  // --- Minimal API endpoints ---
+  for endpoint in fMinimalEndpoints do
+  begin
+    if endpoint.Route.HandlesRequest(aRequest) then
+    begin
+      context := THttpContextBase.Create(aRequest, aResponse);
+      try
+        context.WebRoot := fWebRoot;
+        context.RequestServices := TServiceProvider.Create(fServices);
+        body := endpoint.Handler(context);
+        context.Response.StatusCode := 200;
+        if not body.IsEmpty then
+        begin
+          if (body[1] = '{') or (body[1] = '[') then
+            context.Response.ContentType := 'application/json'
+          else
+            context.Response.ContentType := 'text/plain';
+          context.Response.ContentText := body;
+        end;
+      finally
+        context.Free;
+      end;
+      Exit;
+    end;
+  end;
+
+  // --- Regular middleware pipeline ---
   context := THttpContextBase.Create(aRequest,aResponse);
   try
     context.WebRoot := fWebRoot;
@@ -308,6 +432,11 @@ procedure TMVCServer.Start;
 var
   hostservice : IHostService;
   hostcore : IHostCore;
+  hostedMgr : IHostedServiceManager;
+  i : Integer;
+  hasSwagger : Boolean;
+  scheme : string;
+  displayHost : string;
 begin
   if fStatus = TMVCServerStatus.mvsStopping then Exit;
   if (Services.IsRegistered<IHostService>) then hostservice := Services.Resolve<IHostService>
@@ -340,9 +469,31 @@ begin
   end;
   //run from ihost or ihostservice
   if not fIsInitialized then Initialize;
+  // start any registered IHostedService instances
+  if fServices.IsRegistered<IHostedServiceManager> then
+  begin
+    hostedMgr := fServices.Resolve<IHostedServiceManager>;
+    hostedMgr.Initialize(fServices);
+    hostedMgr.StartAll;
+  end;
   fHttpServer.Start;
   fStatus := mvsStarted;
   Logger.Info('%s listening on %s:%d',[fServices.Environment.ApplicationName,fHost,fPort]);
+  hasSwagger := False;
+  for i := 0 to fMiddlewares.Count - 1 do
+    if fMiddlewares[i] is TSwaggerMiddleware then
+    begin
+      hasSwagger := True;
+      Break;
+    end;
+  if hasSwagger then
+  begin
+    if fHttpsEnabled then scheme := 'https' else scheme := 'http';
+    displayHost := fHost;
+    if (displayHost = '') or (displayHost = '0.0.0.0') or (displayHost = '*') then
+      displayHost := 'localhost';
+    Logger.Info('Swagger UI available at %s://%s:%d/swagger', [scheme, displayHost, fPort]);
+  end;
   if Assigned(fAfterStart) then fAfterStart;
   if (hostservice = nil) or ((hostservice <> nil) and (not hostservice.IsRunningAsService)) then
   begin
@@ -358,6 +509,9 @@ begin
   if (fStatus = TMVCServerStatus.mvsStopping) or (fStatus = TMVCServerStatus.mvsStopped) then Exit;
 
   Logger.Info('%s stopping...',[fServices.Environment.ApplicationName]);
+  // stop any registered IHostedService instances
+  if fServices.IsRegistered<IHostedServiceManager> then
+    fServices.Resolve<IHostedServiceManager>.StopAll;
   fHttpServer.Stop;
   fStatus := TMVCServerStatus.mvsStopped;
   Logger.Info('%s stopped',[fServices.Environment.ApplicationName]);
@@ -395,6 +549,55 @@ begin
   begin
     raise Exception.Create('Authorization dependency not found. Need to be added before!');
   end;
+end;
+
+function TMVCServer.UseCors : TMVCServer;
+var
+  corsOptions : IOptions<TCorsPolicyOptions>;
+begin
+  Result := Self;
+  if Self.Services.IsRegistered<IOptions<TCorsPolicyOptions>> then
+    corsOptions := Self.Services.Resolve<IOptions<TCorsPolicyOptions>>
+  else
+    corsOptions := nil;
+  Self.UseMiddleware(TCorsMiddleware.Create(nil, corsOptions));
+end;
+
+function TMVCServer.UseExceptionHandler(aOnException : TExceptionHandlerProc = nil) : TMVCServer;
+begin
+  Result := Self;
+  Self.UseMiddleware(TExceptionHandlerMiddleware.Create(nil, aOnException));
+end;
+
+function TMVCServer.UseRateLimiting(aMaxRequests : Integer = 100; aWindowSecs : Integer = 60) : TMVCServer;
+var
+  policy : TRateLimitPolicy;
+begin
+  Result := Self;
+  policy := TRateLimitPolicy.Create(aMaxRequests, aWindowSecs);
+  Self.UseMiddleware(TRateLimitMiddleware.Create(nil, policy));
+end;
+
+function TMVCServer.UseResponseCompression : TMVCServer;
+var
+  comprOpts : IOptions<TCompressionOptions>;
+begin
+  Result := Self;
+  if Self.Services.IsRegistered<IOptions<TCompressionOptions>> then
+    comprOpts := Self.Services.Resolve<IOptions<TCompressionOptions>>
+  else
+    comprOpts := nil;
+  Self.UseMiddleware(TCompressionMiddleware.Create(nil, comprOpts));
+end;
+
+function TMVCServer.UseApiVersioning : TMVCServer;
+begin
+  { API versioning is enforced through [ApiVersion] and [Route] attributes on
+    controllers. Calling this method opts the application into versioned routing,
+    which correctly merges multiple controllers that share the same URL prefix
+    (e.g. 'api'). No extra middleware is required for URL-segment versioning.
+    Extend this method for header-based or query-string-based versioning. }
+  Result := Self;
 end;
 
 function TMVCServer.UseCustomErrorPages(aUseDynamicPages: Boolean = False): TMVCServer;
@@ -441,6 +644,12 @@ begin
   fViewEngine := TMustacheViewEngine.Create;
 end;
 
+function TMVCServer.UseLiquidPages: TMVCServer;
+begin
+  Result := Self;
+  fViewEngine := TLiquidViewEngine.Create;
+end;
+
 function TMVCServer.Use(aDelegateFunction: TRequestDelegateFunc): TMVCServer;
 begin
   Result := Self;
@@ -472,46 +681,34 @@ begin
 end;
 
 function TMVCServer.UseSession: TMVCServer;
+var
+  store : ISessionStore;
 begin
   Result := Self;
+  store := TInMemorySessionStore.Create;
+  UseMiddleware(TSessionMiddleware.Create(nil, store));
+end;
+
+function TMVCServer.UseSwagger(const aTitle, aVersion, aDescription : string) : TMVCServer;
+var
+  info : TSwaggerInfo;
+begin
+  Result := Self;
+  info := TSwaggerInfo.Create(aTitle, aVersion, aDescription);
+  // Pass the protected fHttpControllers list to the middleware
+  UseMiddleware(TSwaggerMiddleware.Create(nil, fHttpControllers, info));
 end;
 
 function TMVCServer.UseStartup<T>: TMVCServer;
 begin
   fStartupClass := T;
+  Result := Self;
 end;
 
 function TMVCServer.UseStaticFiles: TMVCServer;
 begin
   Result := Self;
   fMiddlewares.Add(TStaticFilesMiddleware.Create(nil));
-end;
-
-function TMVCServer.UseStaticFilesValidExtension(const aExtension: string): TMVCServer;
-begin
-  Result := Self;
-  for var middleware in fMiddlewares do
-  begin
-    if middleware is TStaticFilesMiddleware then
-    begin
-      TStaticFilesMiddleware(middleware).AddValidExtension(aExtension);
-    end;
-  end;
-end;
-
-function TMVCServer.UseStaticFilesValidExtensions(const aExtensions: string): TMVCServer;
-begin
-  Result := Self;
-  for var middleware in fMiddlewares do
-  begin
-    if middleware is TStaticFilesMiddleware then
-    begin
-      for var extension in aExtensions.Split([',',';',':']) do
-      begin
-        TStaticFilesMiddleware(middleware).AddValidExtension(extension);
-      end;
-    end;
-  end;
 end;
 
 function TMVCServer.UseWebRoot(const aPath: string): TMVCServer;

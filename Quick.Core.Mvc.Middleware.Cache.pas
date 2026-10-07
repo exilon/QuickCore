@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.Cache
   Description : Core Mvc Cache Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 18/10/2019
   Modified    : 18/10/2019

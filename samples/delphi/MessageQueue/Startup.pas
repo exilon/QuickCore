@@ -61,9 +61,10 @@ class procedure TStartup.Configure(app : TMVCServer);
 begin
   app
   .AddControllers
-  .AddController(THomeController)
   .DefaultRoute(THomeController,'Home/Index')
   .UseWebRoot('.\wwwroot')
+  .UseSwagger('MessageQueue API', '1.0.0',
+    'QuickCore MessageQueue sample API.')
   .UseRouting
   .UseMVC;
 end;

@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Service
   Description : Core Service with Service Collection
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 01/07/2021
   Modified    : 23/07/2021

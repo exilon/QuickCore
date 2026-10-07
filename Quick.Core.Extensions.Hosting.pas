@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Hosting
   Description : Core Services Hosting environment
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 01/03/2021
   Modified    : 03/03/2021

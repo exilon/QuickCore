@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ viewdata.page_title }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+    nav  { background: #333; color: #fff; padding: 12px 24px; }
+    nav a { color: #fff; margin-right: 16px; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    .container { max-width: 900px; margin: 40px auto; background: #fff;
+                 padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    footer { text-align: center; padding: 16px; color: #888; font-size: .85em; }
+  </style>
+</head>
+<body>
+  {% include 'nav.liquid' %}
+  <div class="container">
+    {{{body}}}
+  </div>
+  {% include 'footer.liquid' %}
+</body>
+</html>

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.Routing
   Description : Core Mvc Routing Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/10/2019
-  Modified    : 16/11/2020
+  Modified    : 01/07/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -244,12 +244,21 @@ begin
     end;
   end;
   //add controller routes to main routing
-  try
-    fRoutes.Add(nroute.ControllerName,routes);
-  except
-    on E : Exception do
-    begin
-      raise ENotValidMvcRoute.CreateFmt('Error creating Mvc routing: %s',[e.Message]);
+  var existingRoutes : THttpRoutes;
+  if fRoutes.TryGetValue(nroute.ControllerName, existingRoutes) then
+  begin
+    // Merge into existing entry (e.g. two versioned controllers both key 'api')
+    routes.OwnsObjects := False;
+    for var r in routes do existingRoutes.Add(r);
+    routes.Free;
+  end
+  else
+  begin
+    try
+      fRoutes.Add(nroute.ControllerName, routes);
+    except
+      on E : Exception do
+        raise ENotValidMvcRoute.CreateFmt('Error creating Mvc routing: %s', [E.Message]);
     end;
   end;
 end;

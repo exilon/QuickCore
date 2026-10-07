@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2023 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.MessageQueue.Redis
   Description : Core Redis MessageQueue Extension
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 12/06/2023
+  Modified    : 12/07/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -164,6 +164,7 @@ end;
 constructor TRedisMessageQueue<T>.Create(aOptions: IOptions<TRedisMessageQueueOptions>; aLogger: ILogger);
 begin
   inherited Create;
+  fLogger := aLogger;
   fOptions := aOptions.Value;
   fWorkingKey := fOptions.Key + '.working';
   fFailedKey := fOptions.Key + '.failed';
@@ -263,8 +264,6 @@ var
   redis : TRedisClient;
   i : Integer;
   resarray : TArray<TRedisSortedItem>;
-  value : string;
-  ttl : Integer;
   limitTime : Int64;
 begin
   limitTime := DateTimeToUnix(IncSecond(Now(),fOptions.ReliableMessageQueue.RetryFailedMessageEverySec * -1));
@@ -335,7 +334,11 @@ begin
     end
     else Result := TMSQWaitResult.wrTimeout;
   except
-    Result := TMSQWaitResult.wrError;
+    on E : Exception do
+    begin
+      fLogger.Error('TRedisMessageQueue cannot get message from queue: %s',[e.Message]);
+      Result := TMSQWaitResult.wrError;
+    end;
   end;
 end;
 
@@ -412,7 +415,7 @@ begin
   end;
   if fOptions.ReliableMessageQueue.Enabled then
   begin
-    fPushRedisPool.Get.Item.redisZADD(fFailedKey,msg,DateTimeToUnix(Now));
+    Result := fPushRedisPool.Get.Item.redisZADD(fFailedKey,msg,DateTimeToUnix(Now));
   end
   else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,msg);
 end;
@@ -436,7 +439,7 @@ begin
   end;
   if fOptions.ReliableMessageQueue.Enabled then
   begin
-    fPushRedisPool.Get.Item.redisZADD(fFailedKey,failmsg,DateTimeToUnix(Now));
+    Result := fPushRedisPool.Get.Item.redisZADD(fFailedKey,failmsg,DateTimeToUnix(Now));
   end
   else Result := fPushRedisPool.Get.Item.RedisLPUSH(fFailedKey,failmsg);
 end;

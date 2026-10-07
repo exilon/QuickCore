@@ -1,0 +1,1257 @@
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 03-07-2020 21:39:10 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-07-2020 21:39:10  [DONE] Added controller "THomeController"
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 03-07-2020 21:39:39 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-07-2020 21:39:39  [DONE] Added controller "THomeController"
+03-07-2020 21:39:39  [WARN] Already added controller "THomeController"
+03-07-2020 21:39:39  [WARN] Error accessing WebRoot: Directory not found!
+03-07-2020 21:39:42  [EXCEPT] (EControlledException) : 401 : Unauthorized
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 01:21:02 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 01:21:02  [DONE] Added controller "THomeController"
+05-07-2020 01:21:02  [WARN] Already added controller "THomeController"
+05-07-2020 01:21:02  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 01:24:24 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 01:24:24  [DONE] Added controller "THomeController"
+05-07-2020 01:24:24  [WARN] Already added controller "THomeController"
+05-07-2020 01:24:24  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 01:26:00 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 01:26:00  [DONE] Added controller "THomeController"
+05-07-2020 01:26:00  [WARN] Already added controller "THomeController"
+05-07-2020 01:26:00  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 01:44:37 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 01:44:37  [DONE] Added controller "THomeController"
+05-07-2020 01:44:37  [WARN] Already added controller "THomeController"
+05-07-2020 01:44:37  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 01:44:53 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 01:44:53  [DONE] Added controller "THomeController"
+05-07-2020 01:44:53  [WARN] Already added controller "THomeController"
+05-07-2020 01:44:53  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 01:54:59  [EXCEPT] (EControlledException) : 401 : Unauthorized
+05-07-2020 01:55:16  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:33:56 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:33:56  [DONE] Added controller "THomeController"
+05-07-2020 16:33:56  [WARN] Already added controller "THomeController"
+05-07-2020 16:33:56  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 16:34:16  [EXCEPT] (EControlledException) : 401 : Unauthorized
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:34:43 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:34:44  [DONE] Added controller "THomeController"
+05-07-2020 16:34:44  [WARN] Already added controller "THomeController"
+05-07-2020 16:34:44  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:38:19 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:38:19  [DONE] Added controller "THomeController"
+05-07-2020 16:38:19  [WARN] Already added controller "THomeController"
+05-07-2020 16:38:19  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:39:21 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:39:21  [DONE] Added controller "THomeController"
+05-07-2020 16:39:21  [WARN] Already added controller "THomeController"
+05-07-2020 16:39:21  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:40:54 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:40:54  [DONE] Added controller "THomeController"
+05-07-2020 16:40:54  [WARN] Already added controller "THomeController"
+05-07-2020 16:40:54  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:42:12 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:42:12  [DONE] Added controller "THomeController"
+05-07-2020 16:42:12  [WARN] Already added controller "THomeController"
+05-07-2020 16:42:12  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:43:54 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:43:54  [DONE] Added controller "THomeController"
+05-07-2020 16:43:54  [WARN] Already added controller "THomeController"
+05-07-2020 16:43:54  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 16:45:46  [EXCEPT] (EControlledException) : 401 : Unauthorized
+05-07-2020 16:45:52  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:46:00 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:46:00  [DONE] Added controller "THomeController"
+05-07-2020 16:46:00  [WARN] Already added controller "THomeController"
+05-07-2020 16:46:00  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:47:11 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:47:11  [DONE] Added controller "THomeController"
+05-07-2020 16:47:11  [WARN] Already added controller "THomeController"
+05-07-2020 16:47:11  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 16:47:16  [EXCEPT] (EControlledException) : Raised from: TRoutingMiddleware (The page you requested was not found)
+05-07-2020 16:47:19  [EXCEPT] (EControlledException) : Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:47:42 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:47:42  [DONE] Added controller "THomeController"
+05-07-2020 16:47:42  [WARN] Already added controller "THomeController"
+05-07-2020 16:47:42  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 16:47:47  [EXCEPT] (EControlledException) : Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:48:00 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:48:00  [DONE] Added controller "THomeController"
+05-07-2020 16:48:00  [WARN] Already added controller "THomeController"
+05-07-2020 16:48:00  [WARN] Error accessing WebRoot: Directory not found!
+05-07-2020 16:48:02  [EXCEPT] (EControlledException) : Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 05-07-2020 16:48:35 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+05-07-2020 16:48:35  [DONE] Added controller "THomeController"
+05-07-2020 16:48:35  [WARN] Already added controller "THomeController"
+05-07-2020 16:48:35  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 09:26:05 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 09:26:05  [DONE] Added controller "THomeController"
+06-07-2020 09:26:05  [WARN] Already added controller "THomeController"
+06-07-2020 09:26:05  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 11:38:33 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 11:38:33  [DONE] Added controller "THomeController"
+06-07-2020 11:38:33  [WARN] Already added controller "THomeController"
+06-07-2020 11:38:33  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 12:53:09 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 12:53:10  [DONE] Added controller "THomeController"
+06-07-2020 12:53:10  [WARN] Already added controller "THomeController"
+06-07-2020 12:53:10  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 12:55:31 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 12:55:31  [DONE] Added controller "THomeController"
+06-07-2020 12:55:31  [WARN] Already added controller "THomeController"
+06-07-2020 12:55:31  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 12:56:34 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 12:56:34  [DONE] Added controller "THomeController"
+06-07-2020 12:56:34  [WARN] Already added controller "THomeController"
+06-07-2020 12:56:34  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 12:58:18 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 12:58:18  [DONE] Added controller "THomeController"
+06-07-2020 12:58:18  [WARN] Already added controller "THomeController"
+06-07-2020 12:58:18  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:22:42 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:22:42  [DONE] Added controller "THomeController"
+06-07-2020 15:22:42  [WARN] Already added controller "THomeController"
+06-07-2020 15:22:42  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:26:15 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:26:15  [DONE] Added controller "THomeController"
+06-07-2020 15:26:15  [WARN] Already added controller "THomeController"
+06-07-2020 15:26:15  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:26:55 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:26:55  [DONE] Added controller "THomeController"
+06-07-2020 15:26:55  [WARN] Already added controller "THomeController"
+06-07-2020 15:26:55  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:27:22 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:27:22  [DONE] Added controller "THomeController"
+06-07-2020 15:27:22  [WARN] Already added controller "THomeController"
+06-07-2020 15:27:22  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:28:21 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:28:21  [DONE] Added controller "THomeController"
+06-07-2020 15:28:21  [WARN] Already added controller "THomeController"
+06-07-2020 15:28:21  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:28:23  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:28:25  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:28:30 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:28:30  [DONE] Added controller "THomeController"
+06-07-2020 15:28:30  [WARN] Already added controller "THomeController"
+06-07-2020 15:28:30  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:28:32  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:28:34  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:28:56 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:28:56  [DONE] Added controller "THomeController"
+06-07-2020 15:28:56  [WARN] Already added controller "THomeController"
+06-07-2020 15:28:56  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:29:06  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:29:08  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:29:27 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:29:27  [DONE] Added controller "THomeController"
+06-07-2020 15:29:27  [WARN] Already added controller "THomeController"
+06-07-2020 15:29:27  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:29:28  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:29:29  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:29:31 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:29:31  [DONE] Added controller "THomeController"
+06-07-2020 15:29:31  [WARN] Already added controller "THomeController"
+06-07-2020 15:29:31  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:29:48 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:29:48  [DONE] Added controller "THomeController"
+06-07-2020 15:29:48  [WARN] Already added controller "THomeController"
+06-07-2020 15:29:48  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:29:49  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:29:50  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:30:30 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:30:30  [DONE] Added controller "THomeController"
+06-07-2020 15:30:30  [WARN] Already added controller "THomeController"
+06-07-2020 15:30:30  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:30:32  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:30:34  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:35:46 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:35:46  [DONE] Added controller "THomeController"
+06-07-2020 15:35:46  [WARN] Already added controller "THomeController"
+06-07-2020 15:35:46  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:35:47  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:35:48  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:36:29 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:36:29  [DONE] Added controller "THomeController"
+06-07-2020 15:36:29  [WARN] Already added controller "THomeController"
+06-07-2020 15:36:29  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:36:30  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:36:31  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:37:32 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:37:32  [DONE] Added controller "THomeController"
+06-07-2020 15:37:32  [WARN] Already added controller "THomeController"
+06-07-2020 15:37:32  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:37:34  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:38:40 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:38:40  [DONE] Added controller "THomeController"
+06-07-2020 15:38:40  [WARN] Already added controller "THomeController"
+06-07-2020 15:38:40  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:38:41  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:38:42  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:39:03 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:39:03  [DONE] Added controller "THomeController"
+06-07-2020 15:39:03  [WARN] Already added controller "THomeController"
+06-07-2020 15:39:03  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:39:06  [EXCEPT] (EAbort) : Operation aborted
+06-07-2020 15:39:07  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:40:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:40:10  [DONE] Added controller "THomeController"
+06-07-2020 15:40:10  [WARN] Already added controller "THomeController"
+06-07-2020 15:40:10  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:40:22  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:45:23 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:45:30  [DONE] Added controller "THomeController"
+06-07-2020 15:45:30  [WARN] Already added controller "THomeController"
+06-07-2020 15:45:30  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:45:35  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 15:51:48 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 15:51:50  [DONE] Added controller "THomeController"
+06-07-2020 15:51:50  [WARN] Already added controller "THomeController"
+06-07-2020 15:51:50  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 15:51:52  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:03:29 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:03:29  [DONE] Added controller "THomeController"
+06-07-2020 16:03:29  [WARN] Already added controller "THomeController"
+06-07-2020 16:03:29  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:03:30  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:04:00 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:04:04  [DONE] Added controller "THomeController"
+06-07-2020 16:04:04  [WARN] Already added controller "THomeController"
+06-07-2020 16:04:04  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:04:07  [EXCEPT] (EInvalidPointer) : Invalid pointer operation
+06-07-2020 16:04:19  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:04:53 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:04:56  [DONE] Added controller "THomeController"
+06-07-2020 16:04:56  [WARN] Already added controller "THomeController"
+06-07-2020 16:04:56  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:04:58  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:05:37 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:05:37  [DONE] Added controller "THomeController"
+06-07-2020 16:05:37  [WARN] Already added controller "THomeController"
+06-07-2020 16:05:37  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:05:38  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:05:43 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:05:43  [DONE] Added controller "THomeController"
+06-07-2020 16:05:43  [WARN] Already added controller "THomeController"
+06-07-2020 16:05:43  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:05:46  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:12:08 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:12:08  [DONE] Added controller "THomeController"
+06-07-2020 16:12:08  [WARN] Already added controller "THomeController"
+06-07-2020 16:12:08  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:12:09  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:12:13 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:12:13  [DONE] Added controller "THomeController"
+06-07-2020 16:12:13  [WARN] Already added controller "THomeController"
+06-07-2020 16:12:13  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:12:16  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:18:25 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:18:25  [DONE] Added controller "THomeController"
+06-07-2020 16:18:25  [WARN] Already added controller "THomeController"
+06-07-2020 16:18:25  [WARN] Error accessing WebRoot: Directory not found!
+06-07-2020 16:18:41  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:19:28 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:19:28  [DONE] Added controller "THomeController"
+06-07-2020 16:19:28  [WARN] Already added controller "THomeController"
+06-07-2020 16:19:28  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 06-07-2020 16:19:48 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+06-07-2020 16:19:48  [DONE] Added controller "THomeController"
+06-07-2020 16:19:48  [WARN] Already added controller "THomeController"
+06-07-2020 16:19:48  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 00:48:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 00:48:04  [DONE] Added controller "THomeController"
+07-07-2020 00:48:04  [WARN] Already added controller "THomeController"
+07-07-2020 00:48:04  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 01:32:53 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 01:32:53  [DONE] Added controller "THomeController"
+07-07-2020 01:32:53  [WARN] Already added controller "THomeController"
+07-07-2020 01:32:53  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 01:33:14  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 01:33:23 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 01:33:23  [DONE] Added controller "THomeController"
+07-07-2020 01:33:23  [WARN] Already added controller "THomeController"
+07-07-2020 01:33:23  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 01:33:25  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 01:33:30 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 01:33:30  [DONE] Added controller "THomeController"
+07-07-2020 01:33:30  [WARN] Already added controller "THomeController"
+07-07-2020 01:33:30  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 01:33:43  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:00:26 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:00:26  [DONE] Added controller "THomeController"
+07-07-2020 15:00:26  [WARN] Already added controller "THomeController"
+07-07-2020 15:00:26  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:03:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:03:04  [DONE] Added controller "THomeController"
+07-07-2020 15:03:04  [WARN] Already added controller "THomeController"
+07-07-2020 15:03:04  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:03:22  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:14:11 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:14:11  [DONE] Added controller "THomeController"
+07-07-2020 15:14:11  [WARN] Already added controller "THomeController"
+07-07-2020 15:14:11  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:14:23  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:19:41 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:19:41  [DONE] Added controller "THomeController"
+07-07-2020 15:19:41  [WARN] Already added controller "THomeController"
+07-07-2020 15:19:41  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:19:58  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:22:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:22:04  [DONE] Added controller "THomeController"
+07-07-2020 15:22:04  [WARN] Already added controller "THomeController"
+07-07-2020 15:22:04  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:22:05  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:25:23 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:25:23  [DONE] Added controller "THomeController"
+07-07-2020 15:25:23  [WARN] Already added controller "THomeController"
+07-07-2020 15:25:23  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:25:26  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:25:29 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:25:29  [DONE] Added controller "THomeController"
+07-07-2020 15:25:29  [WARN] Already added controller "THomeController"
+07-07-2020 15:25:29  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:25:31  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:26:14 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:26:14  [DONE] Added controller "THomeController"
+07-07-2020 15:26:14  [WARN] Already added controller "THomeController"
+07-07-2020 15:26:14  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:30:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:30:04  [DONE] Added controller "THomeController"
+07-07-2020 15:30:04  [WARN] Already added controller "THomeController"
+07-07-2020 15:30:04  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:30:06  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:30:10 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:30:10  [DONE] Added controller "THomeController"
+07-07-2020 15:30:10  [WARN] Already added controller "THomeController"
+07-07-2020 15:30:10  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:30:16  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:30:20 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:30:20  [DONE] Added controller "THomeController"
+07-07-2020 15:30:20  [WARN] Already added controller "THomeController"
+07-07-2020 15:30:20  [WARN] Error accessing WebRoot: Directory not found!
+07-07-2020 15:30:38  [EXCEPT] (EAbort) : Operation aborted
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:48:23 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:48:23  [DONE] Added controller "THomeController"
+07-07-2020 15:48:23  [WARN] Already added controller "THomeController"
+07-07-2020 15:48:23  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:49:13 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:49:13  [DONE] Added controller "THomeController"
+07-07-2020 15:49:13  [WARN] Already added controller "THomeController"
+07-07-2020 15:49:13  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 15:49:34 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 15:49:34  [DONE] Added controller "THomeController"
+07-07-2020 15:49:34  [WARN] Already added controller "THomeController"
+07-07-2020 15:49:34  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 07-07-2020 17:41:04 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+07-07-2020 17:41:04  [DONE] Added controller "THomeController"
+07-07-2020 17:41:04  [WARN] Already added controller "THomeController"
+07-07-2020 17:41:04  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 14-07-2020 23:50:07 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+14-07-2020 23:50:07  [DONE] Added controller "THomeController"
+14-07-2020 23:50:07  [WARN] Already added controller "THomeController"
+14-07-2020 23:50:07  [WARN] Error accessing WebRoot: Directory not found!
+14-07-2020 23:50:25  [EXCEPT] (EControlledException) : 401 : Unauthorized
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 14-07-2020 23:50:57 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+14-07-2020 23:50:57  [DONE] Added controller "THomeController"
+14-07-2020 23:50:57  [WARN] Already added controller "THomeController"
+14-07-2020 23:50:57  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 14-07-2020 23:52:18 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+14-07-2020 23:52:18  [DONE] Added controller "THomeController"
+14-07-2020 23:52:18  [WARN] Already added controller "THomeController"
+14-07-2020 23:52:18  [WARN] Error accessing WebRoot: Directory not found!
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:14:51 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:14:51  [WARN] Debug logging enabled
+03-05-2026 22:14:51  [DONE] Added controller "THomeController"
+03-05-2026 22:14:51  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:14:51  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:14:51  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:14:51  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:14:58  [ERROR] Request: GET favicon.ico [404 Not Found] Raised from: TStaticFilesMiddleware (The resource "D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\wwwroot\favicon.ico" you requested was not found)
+03-05-2026 22:17:12  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:26  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:27  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:27  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:28  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:28  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:29  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:17:29  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:20:40 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:20:40  [WARN] Debug logging enabled
+03-05-2026 22:20:40  [DONE] Added controller "THomeController"
+03-05-2026 22:20:40  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:20:40  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:20:40  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:20:40  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:20:43  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:20:51  [ERROR] Request: GET Sum/1/2 [401 Unauthorized] 401 : Unauthorized
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:25:33 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:25:33  [WARN] Debug logging enabled
+03-05-2026 22:25:33  [DONE] Added controller "THomeController"
+03-05-2026 22:25:33  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:25:33  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:25:33  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:25:33  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:25:47  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:25:50  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:26:13 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:26:13  [WARN] Debug logging enabled
+03-05-2026 22:26:13  [DONE] Added controller "THomeController"
+03-05-2026 22:26:13  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:26:13  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:26:13  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:26:13  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:26:26  [ERROR] Request: GET favicon.ico [404 Not Found] Raised from: TStaticFilesMiddleware (The resource "D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\wwwroot\favicon.ico" you requested was not found)
+03-05-2026 22:26:35  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:28:15 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:28:15  [WARN] Debug logging enabled
+03-05-2026 22:28:15  [DONE] Added controller "THomeController"
+03-05-2026 22:28:15  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:28:15  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:28:15  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:28:15  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:28:28  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:28:36  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:31:11 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:31:11  [WARN] Debug logging enabled
+03-05-2026 22:31:11  [DONE] Added controller "THomeController"
+03-05-2026 22:31:11  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:31:11  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:31:11  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:31:11  [INFO] < Wait for ENTER key pressed >
+03-05-2026 22:31:26  [ERROR] Request: GET Sum/%7Bnumber1%7D/%7Bnumber2%7D [404 Not Found] Raised from: TRoutingMiddleware (The page you requested was not found)
+03-05-2026 22:31:34  [ERROR] Request: GET Sum/1/2 [401 Unauthorized] 401 : Unauthorized
+03-05-2026 22:31:38  [ERROR] Request: GET Sum/1/2 [401 Unauthorized] 401 : Unauthorized
+----------------------------------------------------------------------
+Application : ServerApiKeyMemoryStore 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\ApiKeyMemoryStore\bin\Win64\Debug\
+CPU cores   : 16
+OS version  : Windows 11 (Version 25H2, OS Build 26200.8039, 64-bit Edition)
+Host        : COMMANDO
+Username    : kike
+Started     : 03-05-2026 22:35:08 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+03-05-2026 22:35:08  [WARN] Debug logging enabled
+03-05-2026 22:35:08  [DONE] Added controller "THomeController"
+03-05-2026 22:35:08  [WARN] Error accessing WebRoot ".\wwwroot\": Directory not found!
+03-05-2026 22:35:08  [INFO] ServerApiKeyMemoryStore listening on 127.0.0.1:8080
+03-05-2026 22:35:08  [INFO] Swagger UI available at http://127.0.0.1:8080/swagger
+03-05-2026 22:35:08  [INFO] < Wait for ENTER key pressed >

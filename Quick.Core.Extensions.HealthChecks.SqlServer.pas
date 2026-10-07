@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.HealthChecks.SqlServer
   Description : Core Extensions SqlServer Health Checks
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/02/2021
   Modified    : 21/02/2021
@@ -45,9 +45,13 @@ type
   TSqlServerHealthCheck = class(THealthCheck)
   private
     fEntityDatabase : TEntityDatabase;
+    fServer : string;
+    fDatabase : string;
   public
     constructor Create(aDataBase : TEntityDatabase; aTimeSpan : TTimeSpan);
     destructor Destroy; override;
+    function GetCheckKind : string; override;
+    function GetTags : string; override;
     procedure Check; override;
   end;
 
@@ -62,9 +66,11 @@ implementation
 class function TSqlServerHealthChecksExtension.AddSqlServerCheck<T>(const aName : string; aTimeSpan : TTimeSpan) : THealthChecksService;
 var
   check : IHealthCheck;
-  db : TEntityDatabase;
+  dbContext : T;
 begin
-  check := TSqlServerHealthCheck.Create(db,aTimeSpan);
+  Result := HealthChecksService;
+  dbContext := HealthChecksService.ServiceCollection.Resolve<T>();
+  check := TSqlServerHealthCheck.Create(dbContext.Database,aTimeSpan);
   check.Name := aName;
   Result := HealthChecksService.AddCheck(check);
 end;
@@ -83,6 +89,18 @@ begin
   inherited Create(aTimeSpan);
   fName := 'SqlServer';
   fEntityDatabase := aDataBase.Clone;
+  fServer := fEntityDatabase.Connection.Server;
+  fDatabase := fEntityDatabase.Connection.Database;
+end;
+
+function TSqlServerHealthCheck.GetCheckKind: string;
+begin
+  Result := 'sqlserver';
+end;
+
+function TSqlServerHealthCheck.GetTags: string;
+begin
+  Result := Format('{"server":"%s","database":"%s"}',[fServer, fDatabase]);
 end;
 
 destructor TSqlServerHealthCheck.Destroy;

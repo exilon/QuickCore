@@ -10,10 +10,10 @@ uses
   Quick.Commons;
 
 type
-  [Route('')]
+  [Route('Home')]
   THomeController = class(THttpController)
   published
-    [HttpGet,ActionName('Index')]
+    [HttpGet('Index')]
     function Index : IActionResult;
   end;
 

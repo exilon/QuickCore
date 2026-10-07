@@ -14,7 +14,7 @@ uses
   Quick.Core.Mvc.Context,
   Quick.Core.DependencyInjection,
   Quick.Core.TaskControl in '..\..\..\Quick.Core.TaskControl.pas',
-  Quick.Core.Extensions.MVC.TaskControl,
+  Quick.Core.Mvc.Extensions.TaskControl,
   TaskControlServer.Controller.Home in 'TaskControlServer.Controller.Home.pas',
   TaskControlServer.Config.App in 'TaskControlServer.Config.App.pas',
   Startup in 'Startup.pas';

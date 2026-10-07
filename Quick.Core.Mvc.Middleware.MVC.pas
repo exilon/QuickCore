@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.MVC
   Description : Core Mvc MVC Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/10/2019
   Modified    : 06/06/2020

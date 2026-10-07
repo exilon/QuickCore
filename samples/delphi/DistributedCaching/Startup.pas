@@ -50,11 +50,12 @@ class procedure TStartup.Configure(app : TMVCServer);
 begin
   app
   .AddControllers
-  .AddController(THomeController)
   .DefaultRoute(THomeController,'Home/Index')
   .UseWebRoot('.\wwwroot')
   .Extension<TResponseCachingMVCServerExtension>
     .UseResponseCaching
+  .UseSwagger('DistributedCaching API', '1.0.0',
+    'QuickCore DistributedCaching sample API.')
   .UseRouting
   .UseMVC;
 end;

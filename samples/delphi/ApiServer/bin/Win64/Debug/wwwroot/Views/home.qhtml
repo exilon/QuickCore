@@ -1,0 +1,19 @@
+<html>
+	<body>
+	Today is {{date}}
+
+	<b>Hello {{viewdata.name}},
+
+	<h1>welcome to the home page.</h1>
+
+	<h4>Product Info: {{viewdata.product}}</h4>
+
+	<ul>
+	  <li>Product: {{viewdata.product}}</li>
+	  <li>Colour: {{viewdata.colour}}</li>
+	  <li>Price: ${{viewdata.price}}</li>
+	</ul>
+
+	Home page is created by {{viewdata.name}} with {{viewdata.core}} copyright@{{year}} {{viewdata.company}}
+	</body>
+</html>

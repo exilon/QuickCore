@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Config
   Description : Core Entity DataBase Config
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 11/01/2022
+  Modified    : 08/11/2019
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 

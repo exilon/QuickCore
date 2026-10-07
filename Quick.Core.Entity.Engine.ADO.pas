@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2022 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Engine.ADO
   Description : Core Entity ADO Provider
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.1
   Created     : 22/11/2019
-  Modified    : 19/05/2022
+  Modified    : 09/06/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -81,6 +81,7 @@ type
     function IsConnected : Boolean; override;
     function From<T : class, constructor> : IEntityLinqQuery<T>;
     function Clone : TEntityDatabase; override;
+    function GetConnection : TADOConnection;
   end;
 
   TADOEntityQuery<T : class, constructor> = class(TEntityQuery<T>)
@@ -165,7 +166,7 @@ begin
     if Connection.Server = '' then dbconn := 'Data Source=' + Connection.Database
       else dbconn := Format('Database=%s;Data Source=%s',[Connection.Database,Connection.Server]);
 
-    Result := Format('Provider=%s;Persist Security Info=False;User ID=%s;Password=%s;%s;MARS Connection = True;',[
+    Result := Format('Provider=%s;Persist Security Info=False;User ID=%s;Password=%s;%s;MARS Connection = True; Pooling=True; Max Pool Size=150',[
                               GetDBProviderName(Connection.Provider),
                               Connection.UserName,
                               Connection.Password,
@@ -176,6 +177,11 @@ end;
 function TADOEntityDataBase.CreateQuery(aModel : TEntityModel) : IEntityQuery<TEntity>;
 begin
   Result := TADOEntityQuery<TEntity>.Create(Self,aModel,QueryGenerator);
+end;
+
+function TADOEntityDataBase.GetConnection: TADOConnection;
+begin
+  Result := fADOConnection;
 end;
 
 function TADOEntityDataBase.GetDBProviderName(aDBProvider: TDBProvider): string;
@@ -313,9 +319,18 @@ constructor TADOEntityQuery<T>.Create(aEntityDataBase : TEntityDatabase; aModel 
 begin
   inherited;
   CoInitialize(nil);
-  fADOConnection := TADOConnection.Create(nil);
-  fADOConnection.ConnectionString := TADOEntityDataBase(aEntityDataBase).CreateConnectionString;
-  fADOConnection.Connected := True;
+  fReuseConnection := aEntityDataBase.ReuseConnection;
+  if fReuseConnection then
+  begin
+    fADOConnection := TADOEntityDataBase(aEntityDataBase).GetConnection;
+    if not fADOConnection.Connected then fADOConnection.Connected := True;
+  end
+  else
+  begin
+    fADOConnection := TADOConnection.Create(nil);
+    fADOConnection.ConnectionString := TADOEntityDataBase(aEntityDataBase).CreateConnectionString;
+    fADOConnection.Connected := True;
+  end;
   fQuery := TADOQuery.Create(nil);
   //fQuery.Connection := TADOEntityDataBase(aEntityDataBase).fADOConnection;
   fQuery.Connection := fADOConnection;
@@ -325,7 +340,7 @@ end;
 destructor TADOEntityQuery<T>.Destroy;
 begin
   if Assigned(fQuery) then fQuery.Free;
-  if Assigned(fADOConnection) then fADOConnection.Free;
+  if (not fReuseConnection) and (Assigned(fADOConnection)) then fADOConnection.Free;
 
   CoUninitialize;
   inherited;

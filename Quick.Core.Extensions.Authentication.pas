@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Authentication
   Description : Core Extensions Authentication
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/03/2020
   Modified    : 18/04/2020

@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.ViewFeatures
   Description : Core Mvc ViewFeatures
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 29/10/2019
   Modified    : 03/12/2019

@@ -48,6 +48,8 @@ begin
   .UseWebRoot('.\wwwroot')
   .Extension<TResponseCachingMVCServerExtension>
     .UseResponseCaching
+  .UseSwagger('ResponseCaching API', '1.0.0',
+    'QuickCore ResponseCaching sample API.')
   .UseRouting
   .UseMVC;
 end;

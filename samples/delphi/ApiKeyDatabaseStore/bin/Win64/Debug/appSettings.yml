@@ -2,11 +2,11 @@ ConnectionStrings:
   Connections:
     - Name: ShopContext
       Provider: ""
-      ConnectionString: Database=.\\shop.db
+      ConnectionString: "Database=.\shop.db"
 
     - Name: ShopContext2
       Provider: ""
-      ConnectionString: Server=SERVER;Database=shop;User Id=user;Password=1234;
+      ConnectionString: "Server=SERVER;Database=shop;User Id=user;Password=1234;"
 
 
 IdentityOptions:

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.QueryGenerator.MSAccess
   Description : Core Entity MSAccess Query Generator
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 22/11/2019
-  Modified    : 11/09/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -50,10 +50,13 @@ type
     function AddColumn(aModel : TEntityModel; aField : TEntityField) : string;
     function SetPrimaryKey(aModel : TEntityModel) : string;
     function CreateIndex(aModel : TEntityModel; aIndex : TEntityIndex) : string;
-    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean) : string;
+    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean; nolock : Boolean) : string;
     function Sum(const aTableName, aFieldName, aWhere: string): string;
     function Count(const aTableName : string; const aWhere : string) : string;
     function Add(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string; override;
+    function SupportsInsertReturning : Boolean; override;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string; override;
     function AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
     function Update(const aTableName, aFieldPairs, aWhere : string) : string;
     function Delete(const aTableName : string; const aWhere : string) : string;
@@ -87,6 +90,22 @@ begin
   finally
     querytext.Free;
   end;
+end;
+
+function TMSAccessQueryGenerator.AddReturningId(const aTableName, aFieldNames, aFieldValues,
+  aPrimaryKeyName: string): string;
+begin
+  Result := Add(aTableName, aFieldNames, aFieldValues);
+end;
+
+function TMSAccessQueryGenerator.SupportsInsertReturning: Boolean;
+begin
+  Result := False;
+end;
+
+function TMSAccessQueryGenerator.LastInsertedIdQuery(const aPrimaryKeyName: string): string;
+begin
+  Result := 'SELECT @@IDENTITY AS Id';
 end;
 
 function TMSAccessQueryGenerator.AddColumn(aModel: TEntityModel; aField: TEntityField) : string;
@@ -224,7 +243,7 @@ var
 begin
   querytext := TStringList.Create;
   try
-    querytext.Add(Format('SELECT SUM (%s) FROM [%s] WHERE %s',[aTableName,aFieldName,aWhere]));
+    querytext.Add(Format('SELECT IIF(ISNULL(SUM([%s])),0,SUM([%s])) AS cnt FROM [%s] WHERE %s',[aFieldName,aFieldName,aTableName,aWhere]));
     Result := querytext.Text;
   finally
     querytext.Free;
@@ -232,7 +251,7 @@ begin
 end;
 
 function TMSAccessQueryGenerator.Select(const aTableName, aFieldNames: string; aLimit: Integer;
-  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean) : string;
+  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean; nolock : Boolean) : string;
 var
   orderdir : string;
   querytext : TStringList;

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2022 Kike P�rez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Query
   Description : Core Entity Query
-  Author      : Kike P�rez
+  Author      : Kike Perez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 20/02/2022
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -49,7 +49,8 @@ uses
   Quick.RTTI.Utils,
   Quick.Json.Serializer,
   Quick.Core.Entity.DAO,
-  Quick.Core.Entity.Database;
+  Quick.Core.Entity.Database,
+  Quick.Core.Entity.Navigation;
 
 type
 
@@ -57,19 +58,23 @@ type
   private
     {$IFDEF VALUE_FORMATPARAMS}
     function FormatParams(const aWhereClause : string; aWhereParams : array of TValue) : string;
-    {$ELSE}
-    function FormatParams(const aWhereClause : string; aWhereParams : array of const) : string;
+    {$ELSE}    function FormatParams(const aWhereClause : string; aWhereParams : array of const) : string;
     {$ENDIF}
   protected
     fWhereClause : string;
     fOrderClause : string;
     fOrderAsc : Boolean;
+    fNoLock : Boolean;
     fSelectedFields : TArray<string>;
+    fPredicate : TPredicate<T>;
+    fIncludes  : TArray<string>;
+    fSoftDelete: Boolean;
     fEntityDataBase : TEntityDataBase;
     fModel : TEntityModel;
     fQueryGenerator : IEntityQueryGenerator;
     fHasResults : Boolean;
     fFirstIteration : Boolean;
+    fReuseConnection : Boolean;
     function BoolToSQLString(aBoolean : Boolean) : string; virtual;
     function MoveNext : Boolean; virtual; abstract;
     function GetCurrent : T; virtual; abstract;
@@ -101,6 +106,8 @@ type
     function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>; overload;
     {$ENDIF}
     function Where(const aWhereClause : string) : IEntityLinqQuery<T>; overload;
+    function Where(aPredicate : TPredicate<T>) : IEntityLinqQuery<T>; overload;
+    function Include(const aPropertyName : string) : IEntityLinqQuery<T>;
     function SelectFirst : T; virtual;
     function SelectLast : T; virtual;
     function Select : IEntityResult<T>; overload; virtual;
@@ -112,6 +119,7 @@ type
     function Delete : Boolean; overload; virtual;
     function OrderBy(const aFieldValues : string) : IEntityLinqQuery<T>;
     function OrderByDescending(const aFieldValues : string) : IEntityLinqQuery<T>;
+    function WithNoLock : IEntityLinqQuery<T>;
   end;
 
 implementation
@@ -119,6 +127,9 @@ implementation
 { TEntityQuery }
 
 constructor TEntityQuery<T>.Create(aEntityDataBase : TEntityDataBase; aModel : TEntityModel; aQueryGenerator : IEntityQueryGenerator);
+var
+  ctx  : TRttiContext;
+  attr : TCustomAttribute;
 begin
   fFirstIteration := True;
   fEntityDataBase := aEntityDataBase;
@@ -127,8 +138,17 @@ begin
   fSelectedFields := [];
   fQueryGenerator := aQueryGenerator;
   if fEntityDataBase.Connection.ISO8601DateTime then fQueryGenerator.UseISO8601DateTime;
-  //fQueryGenerator.UseISO8601DateTime;
   fHasResults := False;
+  fNoLock := False;
+  // Detect [SoftDelete] attribute on the entity class
+  fSoftDelete := False;
+  for attr in ctx.GetType(fModel.Table.ClassInfo).GetAttributes do
+    if attr is SoftDelete then
+    begin
+      fSoftDelete := True;
+      fWhereClause := 'IsDeleted = 0';
+      Break;
+    end;
 end;
 
 function TEntityQuery<T>.GetFieldValues(aEntity : TEntity; aExcludeAutoIDFields : Boolean) : TStringList;
@@ -370,9 +390,9 @@ var
   rProp: TRttiProperty;
   propertyname : string;
   rvalue : TValue;
-  dbfield : TDBField;
   IsFilterSelect : Boolean;
   skip : Boolean;
+  incProp : string;
 begin
   try
     {$IFDEF DEBUG_ENTITY}
@@ -390,6 +410,9 @@ begin
         propertyname := rProp.Name;
         if IsPublishedProp(aEntity,propertyname) then
         begin
+          // Skip navigation properties — they are loaded via Include()
+          if TNavigationLoader.IsNavigationProperty(rProp) then Continue;
+
           for attr in rProp.GetAttributes do
           begin
             if  attr is MapField then propertyname := MapField(attr).Name;
@@ -404,6 +427,11 @@ begin
     finally
       ctx.Free;
     end;
+
+    // Eager-load navigation properties requested via Include()
+    if Length(fIncludes) > 0 then
+      for incProp in fIncludes do
+        TNavigationLoader.LoadProperty(fEntityDataBase, TEntity(aEntity), incProp);
   except
     on E : Exception do
     begin
@@ -564,6 +592,11 @@ function TEntityQuery<T>.Add(aEntity: TEntity): Boolean;
 var
   sqlfields : TStringList;
   sqlvalues : TStringList;
+  generatedId : Int64;
+  pkValue     : TValue;
+  plainInsertSQL : string;
+  returnInsertSQL : string;
+  identitySQL : string;
 begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Add',aEntity.ClassName);
@@ -571,11 +604,67 @@ begin
   Result := False;
   try
     if aEntity is TEntityTS then TEntityTS(aEntity).CreationDate := Now();
+    if aEntity is TEntityAudit then
+    begin
+      TEntityAudit(aEntity).CreatedAt := Now();
+      if TEntityAudit(aEntity).CreatedBy = '' then
+        TEntityAudit(aEntity).CreatedBy := GetEnvironmentVariable('USERNAME');
+    end;
     sqlfields := fModel.GetFieldNames(aEntity,False);
     try
       sqlvalues := GetFieldValues(aEntity,False);
       try
-        Result := ExecuteQuery(fQueryGenerator.Add(fModel.TableName,sqlfields.CommaText,CommaText(sqlvalues)));
+        plainInsertSQL := fQueryGenerator.Add(fModel.TableName,sqlfields.CommaText,CommaText(sqlvalues));
+        returnInsertSQL := '';
+        identitySQL := '';
+
+        if Assigned(fModel.PrimaryKey)
+          and (fModel.PrimaryKey.DataType = dtAutoID) then
+        begin
+          identitySQL := fQueryGenerator.LastInsertedIdQuery(fModel.PrimaryKey.Name);
+          if fQueryGenerator.SupportsInsertReturning then
+            returnInsertSQL := fQueryGenerator.AddReturningId(fModel.TableName, sqlfields.CommaText, CommaText(sqlvalues), fModel.PrimaryKey.Name);
+        end;
+
+        if not identitySQL.IsEmpty and not returnInsertSQL.IsEmpty then
+        begin
+          // Preferred path: provider handles an atomic insert + returned id SQL.
+          try
+            Result := OpenQuery(returnInsertSQL) > 0;
+            if Result then
+            begin
+              generatedId := GetFieldValue('Id');
+              TRTTI.SetPropertyValue(aEntity, fModel.PrimaryKey.Name, generatedId);
+            end;
+          except
+            // Fallback for engines/versions that do not accept RETURNING.
+            Result := ExecuteQuery(plainInsertSQL);
+            if Result and (OpenQuery(identitySQL) > 0) then
+            begin
+              generatedId := GetFieldValue('Id');
+              TRTTI.SetPropertyValue(aEntity, fModel.PrimaryKey.Name, generatedId);
+            end;
+          end;
+        end
+        else
+        begin
+          Result := ExecuteQuery(plainInsertSQL);
+
+          if Result and not identitySQL.IsEmpty
+            and Assigned(fModel.PrimaryKey)
+            and (fModel.PrimaryKey.DataType = dtAutoID) then
+          begin
+            pkValue := aEntity.FieldByName(fModel.PrimaryKey.Name);
+            if (pkValue.IsEmpty) or (pkValue.AsInt64 = 0) then
+            begin
+              if OpenQuery(identitySQL) > 0 then
+              begin
+                generatedId := GetFieldValue('Id');
+                TRTTI.SetPropertyValue(aEntity, fModel.PrimaryKey.Name, generatedId);
+              end;
+            end;
+          end;
+        end;
       finally
         sqlvalues.Free;
       end;
@@ -589,8 +678,6 @@ end;
 
 function TEntityQuery<T>.AddOrUpdate(aEntity: TEntity): Boolean;
 var
-  sqlfields : TStringList;
-  sqlvalues : TStringList;
   {$IFDEF VALUE_FORMATPARAMS}
   primarykey : TValue;
   {$ELSE}
@@ -648,14 +735,18 @@ end;
 function TEntityQuery<T>.Delete(aEntity : TEntity): Boolean;
 var
   whereid : string;
+  whereClause : string;
 begin
   {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Delete',aEntity.ClassName);
   {$ENDIF}
   try
-    //Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName,Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)])));
     whereid := Format('%s=?',[fModel.PrimaryKey.Name]);
-    Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName,FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name)])));
+    whereClause := FormatParams(whereid, [aEntity.FieldByName(fModel.PrimaryKey.Name)]);
+    if fSoftDelete then
+      Result := ExecuteQuery(fQueryGenerator.Update(fModel.TableName, 'IsDeleted=1', whereClause))
+    else
+      Result := ExecuteQuery(fQueryGenerator.Delete(fModel.TableName, whereClause));
   except
     on E : Exception do raise EEntityDeleteError.CreateFmt('Delete error: %s',[e.message]);
   end;
@@ -666,7 +757,10 @@ var
   query : string;
 begin
   try
-    query := fQueryGenerator.Delete(fModel.TableName,aWhere);
+    if fSoftDelete then
+      query := fQueryGenerator.Update(fModel.TableName, 'IsDeleted=1', aWhere)
+    else
+      query := fQueryGenerator.Delete(fModel.TableName, aWhere);
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Delete',query);
     {$ENDIF}
@@ -680,16 +774,32 @@ end;
 
 function TEntityQuery<T>.Count: Int64;
 var
-  query : string;
+  query  : string;
+  entity : T;
 begin
   try
-    query := fQueryGenerator.Count(fModel.TableName,fWhereClause);
-    {$IFDEF DEBUG_ENTITY}
-    TDebugger.TimeIt(Self,'Count',query);
-    {$ENDIF}
-    if OpenQuery(query) > 0 then Result := GetFieldValue('cnt')
-      else Result := 0;
-    HasResults := False;
+    if Assigned(fPredicate) then
+    begin
+      query := fQueryGenerator.Select(fModel.TableName,'',0,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
+      OpenQuery(query);
+      Result := 0;
+      while MoveNext do
+      begin
+        entity := GetCurrent;
+        if fPredicate(entity) then Inc(Result);
+        entity.Free;
+      end;
+    end
+    else
+    begin
+      query := fQueryGenerator.Count(fModel.TableName,fWhereClause);
+      {$IFDEF DEBUG_ENTITY}
+      TDebugger.TimeIt(Self,'Count',query);
+      {$ENDIF}
+      if OpenQuery(query) > 0 then Result := GetFieldValue('cnt')
+        else Result := 0;
+      HasResults := False;
+    end;
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select count error: %s',[e.message]);
   end;
@@ -706,6 +816,33 @@ begin
   if aWhereClause = '' then
   begin
     Result := '1 = 1';
+    Exit;
+  end;
+  // Support both '?' placeholder style and Delphi Format '%d/%s/...' style
+  if aWhereClause.CountChar('?') = 0 then
+  begin
+    if aWhereClause.Contains('%') and (Length(aWhereParams) > 0) then
+    begin
+      // Replace %X format specifiers with TValue values
+      Result := aWhereClause;
+      for i := 0 to High(aWhereParams) do
+      begin
+        var fmtPos := Result.IndexOf('%');
+        if fmtPos < 0 then Break;
+        var specStr := Result.Substring(fmtPos, 2); // e.g. '%d', '%s'
+        var valStr : string;
+        case aWhereParams[i].Kind of
+          tkInteger  : valStr := aWhereParams[i].AsInteger.ToString;
+          tkInt64    : valStr := aWhereParams[i].AsInt64.ToString;
+          tkFloat    : valStr := FloatToStr(aWhereParams[i].AsExtended);
+          tkString, tkLString, tkWString, tkUString :
+            valStr := fQueryGenerator.QuotedStr(aWhereParams[i].AsString);
+        else
+          valStr := aWhereParams[i].ToString;
+        end;
+        Result := StringReplace(Result, specStr, valStr, []);
+      end;
+    end;
     Exit;
   end;
   for i := 0 to aWhereClause.CountChar('?') - 1 do
@@ -788,7 +925,32 @@ begin
     Result := '1 = 1';
     Exit;
   end;
-  for i := 0 to aWhereClause.CountChar('?') - 1 do
+  // Support both '?' placeholder style and Delphi Format '%d/%s/...' style
+  if aWhereClause.CountChar('?') = 0 then
+  begin
+    // No '?' placeholders — try Delphi Format() style.
+    // SEC-05: Do NOT call Format() directly — string params would be unquoted → SQL injection.
+    // Convert any format specifiers to '?' placeholders and fall through to the safe quoting path.
+    if (Length(aWhereParams) > 0) and aWhereClause.Contains('%') then
+    begin
+      // Replace each %X format specifier with '?' for safe parameterised handling
+      Result := aWhereClause;
+      Result := StringReplace(Result, '%d', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%i', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%o', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%u', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%x', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%e', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%f', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%g', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%n', '?', [rfReplaceAll, rfIgnoreCase]);
+      Result := StringReplace(Result, '%s', '?', [rfReplaceAll, rfIgnoreCase]);
+      // Fall through to '?' handling loop below
+    end
+    else
+      Exit;
+  end;
+  for i := 0 to Result.CountChar('?') - 1 do
   begin
     case aWhereParams[i].VType of
       vtInteger : value := IntToStr(aWhereParams[i].VInteger);
@@ -841,14 +1003,27 @@ end;
 function TEntityQuery<T>.Select: IEntityResult<T>;
 var
   query : string;
+  entities : TObjectList<T>;
+  entity : T;
 begin
   try
-    query := fQueryGenerator.Select(fModel.TableName,'',0,fWhereClause,fOrderClause,fOrderAsc);
+    query := fQueryGenerator.Select(fModel.TableName,'',0,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Select',query);
     {$ENDIF}
     OpenQuery(query);
-    Result := TEntityResult<T>.Create(Self);
+    if Assigned(fPredicate) then
+    begin
+      entities := TObjectList<T>.Create(True);
+      while MoveNext do
+      begin
+        entity := GetCurrent;
+        if fPredicate(entity) then entities.Add(entity)
+          else entity.Free;
+      end;
+      Result := TFilteredEntityResult<T>.Create(entities);
+    end
+    else Result := TEntityResult<T>.Create(Self);
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select error: %s',[e.message]);
   end;
@@ -858,15 +1033,28 @@ function TEntityQuery<T>.Select(const aFieldNames: string): IEntityResult<T>;
 var
   query : string;
   filter : string;
+  entities : TObjectList<T>;
+  entity : T;
 begin
   try
     for filter in aFieldNames.Split([',']) do fSelectedFields := fSelectedFields + [filter];
-    query := fQueryGenerator.Select(fModel.TableName,aFieldNames,0,fWhereClause,fOrderClause,fOrderAsc);
+    query := fQueryGenerator.Select(fModel.TableName,aFieldNames,0,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Select',query);
     {$ENDIF}
     OpenQuery(query);
-    Result := TEntityResult<T>.Create(Self);
+    if Assigned(fPredicate) then
+    begin
+      entities := TObjectList<T>.Create(True);
+      while MoveNext do
+      begin
+        entity := GetCurrent;
+        if fPredicate(entity) then entities.Add(entity)
+          else entity.Free;
+      end;
+      Result := TFilteredEntityResult<T>.Create(entities);
+    end
+    else Result := TEntityResult<T>.Create(Self);
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select error: %s',[e.message]);
   end;
@@ -877,13 +1065,28 @@ var
   query : string;
 begin
   try
-    query := fQueryGenerator.Select(fModel.TableName,'',1,fWhereClause,fOrderClause,fOrderAsc);
-    {$IFDEF DEBUG_ENTITY}
-    TDebugger.TimeIt(Self,'SelectFirst',query);
-    {$ENDIF}
-    OpenQuery(query);
-    Self.Movenext;
-    Result := Self.GetCurrent;
+    if Assigned(fPredicate) then
+    begin
+      query := fQueryGenerator.Select(fModel.TableName,'',0,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
+      OpenQuery(query);
+      Result := nil;
+      while MoveNext do
+      begin
+        Result := GetCurrent;
+        if fPredicate(Result) then Exit
+          else FreeAndNil(Result);
+      end;
+    end
+    else
+    begin
+      query := fQueryGenerator.Select(fModel.TableName,'',1,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
+      {$IFDEF DEBUG_ENTITY}
+      TDebugger.TimeIt(Self,'SelectFirst',query);
+      {$ENDIF}
+      OpenQuery(query);
+      Self.Movenext;
+      Result := Self.GetCurrent;
+    end;
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select error: %s',[e.message]);
   end;
@@ -892,15 +1095,37 @@ end;
 function TEntityQuery<T>.SelectLast: T;
 var
   query : string;
+  last  : T;
 begin
   try
-    query := fQueryGenerator.Select(fModel.TableName,'',1,fWhereClause,fOrderClause,not fOrderAsc);
-    {$IFDEF DEBUG_ENTITY}
-    TDebugger.TimeIt(Self,'SelectLast',query);
-    {$ENDIF}
-    OpenQuery(query);
-    Self.Movenext;
-    Result := Self.GetCurrent;
+    if Assigned(fPredicate) then
+    begin
+      query := fQueryGenerator.Select(fModel.TableName,'',0,fWhereClause,fOrderClause,not fOrderAsc,fNoLock);
+      OpenQuery(query);
+      Result := nil;
+      last   := nil;
+      while MoveNext do
+      begin
+        var entity := GetCurrent;
+        if fPredicate(entity) then
+        begin
+          if Assigned(last) then last.Free;
+          last := entity;
+        end
+        else entity.Free;
+      end;
+      Result := last;
+    end
+    else
+    begin
+      query := fQueryGenerator.Select(fModel.TableName,'',1,fWhereClause,fOrderClause,not fOrderAsc,fNoLock);
+      {$IFDEF DEBUG_ENTITY}
+      TDebugger.TimeIt(Self,'SelectLast',query);
+      {$ENDIF}
+      OpenQuery(query);
+      Self.Movenext;
+      Result := Self.GetCurrent;
+    end;
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select error: %s',[e.message]);
   end;
@@ -908,15 +1133,28 @@ end;
 
 function TEntityQuery<T>.SelectTop(aNumber: Integer): IEntityResult<T>;
 var
-  query : string;
+  query    : string;
+  entities : TObjectList<T>;
+  entity   : T;
 begin
   try
-    query := fQueryGenerator.Select(fModel.TableName,'',aNumber,fWhereClause,fOrderClause,fOrderAsc);
+    query := fQueryGenerator.Select(fModel.TableName,'',aNumber,fWhereClause,fOrderClause,fOrderAsc,fNoLock);
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'SelectTop',query);
     {$ENDIF}
     OpenQuery(query);
-    Result := TEntityResult<T>.Create(Self);
+    if Assigned(fPredicate) then
+    begin
+      entities := TObjectList<T>.Create(True);
+      while MoveNext and (entities.Count < aNumber) do
+      begin
+        entity := GetCurrent;
+        if fPredicate(entity) then entities.Add(entity)
+          else entity.Free;
+      end;
+      Result := TFilteredEntityResult<T>.Create(entities);
+    end
+    else Result := TEntityResult<T>.Create(Self);
   except
     on E : Exception do raise EEntitySelectError.CreateFmt('Select error: %s',[e.message]);
   end;
@@ -926,6 +1164,7 @@ function TEntityQuery<T>.Sum(const aFieldName: string): Int64;
 var
   query : string;
 begin
+  Result := 0;
   try
     query := fQueryGenerator.Sum(fModel.TableName,aFieldName,fWhereClause);
     {$IFDEF DEBUG_ENTITY}
@@ -941,18 +1180,41 @@ function TEntityQuery<T>.Update(aEntity: TEntity): Boolean;
 var
   query : string;
   whereid : string;
+  oldRV : Integer;
 begin
+  oldRV := 0;
   try
     if aEntity is TEntityTS then TEntityTS(aEntity).ModifiedDate := Now();
+    if aEntity is TEntityAudit then
+    begin
+      TEntityAudit(aEntity).UpdatedAt := Now();
+      if TEntityAudit(aEntity).UpdatedBy = '' then
+        TEntityAudit(aEntity).UpdatedBy := GetEnvironmentVariable('USERNAME');
+    end;
     whereid := Format('%s=?',[fModel.PrimaryKey.Name]);
-    query := fQueryGenerator.Update(fModel.TableName,GetFieldsPairs(aEntity),
-                           //Format('%s=%s',[fModel.PrimaryKey.Name,aEntity.FieldByName(fModel.PrimaryKey.Name)]));
-                           FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name)]));
+    if aEntity is TEntityRV then
+    begin
+      oldRV := TEntityRV(aEntity).RowVersion;
+      TEntityRV(aEntity).RowVersion := oldRV + 1;
+      whereid := whereid + ' AND RowVersion=?';
+      query := fQueryGenerator.Update(fModel.TableName,GetFieldsPairs(aEntity),
+                             FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name), TValue.From<Integer>(oldRV)]));
+    end
+    else
+      query := fQueryGenerator.Update(fModel.TableName,GetFieldsPairs(aEntity),
+                             FormatParams(whereid,[aEntity.FieldByName(fModel.PrimaryKey.Name)]));
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Update',query);
     {$ENDIF}
     Result := ExecuteQuery(query);
+    if (aEntity is TEntityRV) and (not Result) then
+    begin
+      TEntityRV(aEntity).RowVersion := oldRV;
+      raise EOptimisticConcurrencyException.CreateFmt('Optimistic concurrency conflict on %s (Id=%s, RowVersion=%d)',
+        [aEntity.ClassName, aEntity.FieldValueByName(fModel.PrimaryKey.Name), oldRV]);
+    end;
   except
+    on E : EOptimisticConcurrencyException do raise;
     on E : Exception do raise EEntityUpdateError.CreateFmt('Update error: %s',[e.message]);
   end;
 end;
@@ -962,6 +1224,7 @@ var
   stamped : Boolean;
   query : string;
 begin
+  stamped := False;
   try
     query := fQueryGenerator.Update(fModel.TableName,GetFieldsPairs(aFieldNames,aFieldValues,stamped),fWhereClause);
     {$IFDEF DEBUG_ENTITY}
@@ -977,7 +1240,33 @@ end;
 function TEntityQuery<T>.Where(const aWhereClause: string): IEntityLinqQuery<T>;
 begin
   Result := Self;
-  fWhereClause := aWhereClause;
+  if fSoftDelete then
+  begin
+    if aWhereClause.IsEmpty then
+      fWhereClause := 'IsDeleted = 0'
+    else
+      fWhereClause := '(' + aWhereClause + ') AND (IsDeleted = 0)';
+  end
+  else
+    fWhereClause := aWhereClause;
+end;
+
+function TEntityQuery<T>.Where(aPredicate: TPredicate<T>): IEntityLinqQuery<T>;
+begin
+  Result := Self;
+  fPredicate := aPredicate;
+end;
+
+function TEntityQuery<T>.Include(const aPropertyName: string): IEntityLinqQuery<T>;
+begin
+  Result := Self;
+  fIncludes := fIncludes + [aPropertyName];
+end;
+
+function TEntityQuery<T>.WithNoLock: IEntityLinqQuery<T>;
+begin
+  Result := Self;
+  fNoLock := True;
 end;
 
 {$IFDEF VALUE_FORMATPARAMS}
@@ -985,9 +1274,15 @@ function TEntityQuery<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWh
 {$ELSE}
 function TEntityQuery<T>.Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>;
 {$ENDIF}
+var
+  clause : string;
 begin
   Result := Self;
-  fWhereClause := FormatParams(aFormatSQLWhere,aValuesSQLWhere);
+  clause := FormatParams(aFormatSQLWhere, aValuesSQLWhere);
+  if fSoftDelete then
+    fWhereClause := '(' + clause + ') AND (IsDeleted = 0)'
+  else
+    fWhereClause := clause;
 end;
 
 function TEntityQuery<T>.Delete: Boolean;
@@ -995,7 +1290,10 @@ var
   query : string;
 begin
   try
-    query := fQueryGenerator.Delete(fModel.TableName,fWhereClause);
+    if fSoftDelete then
+      query := fQueryGenerator.Update(fModel.TableName, 'IsDeleted=1', fWhereClause)
+    else
+      query := fQueryGenerator.Delete(fModel.TableName, fWhereClause);
     {$IFDEF DEBUG_ENTITY}
     TDebugger.TimeIt(Self,'Delete',query);
     {$ENDIF}

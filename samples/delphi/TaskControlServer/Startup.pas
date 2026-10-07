@@ -8,12 +8,12 @@ uses
   Quick.Core.Logging,
   Quick.Core.Mvc.Context,
   Quick.Core.TaskControl,
-  Quick.Core.Extensions.MVC.TaskControl,
+  Quick.Core.Mvc.Extensions.TaskControl,
   TaskControlServer.Config.App,
   TaskControlServer.Controller.Home;
 
 type
-  TStartup = class(TStartupBase)
+  TStartup = class(TStartupMvc)
   public
     class procedure ConfigureServices(services : TServiceCollection); override;
     class procedure Configure(app : TMVCServer); override;
@@ -25,7 +25,7 @@ class procedure TStartup.ConfigureServices(services : TServiceCollection);
 begin
   services
     .AddLogging(TLoggerBuilder.GetBuilder//(TLoggerOptionsFormat.ofYAML,False)
-        .AddConsole(procedure(aOptions : TLoggerConsoleOptions)
+        .AddConsole(procedure(aOptions : TConsoleLoggerOptions)
             begin
               aOptions.LogLevel := LOG_DEBUG;
               aOptions.ShowEventColors := True;
@@ -33,7 +33,7 @@ begin
               aOptions.ShowEventType := False;
               aOptions.Enabled := True;
             end)
-        .AddFile(procedure(aOptions : TLoggerFileOptions)
+        .AddFile(procedure(aOptions : TFileLoggerOptions)
             begin
               aOptions.FileName := '.\TaskControlService.log';
               aOptions.MaxFileSizeInMB := 200;
@@ -54,10 +54,11 @@ class procedure TStartup.Configure(app : TMVCServer);
 begin
   app
     .AddControllers
-    .AddController(THomeController)
     //configure routing
     .DefaultRoute(THomeController,'Home/Index')
     .UseWebRoot('.\wwwroot')
+    .UseSwagger('TaskControlServer API', '1.0.0',
+      'QuickCore TaskControlServer sample API.')
     .UseRouting
     .UseMVC
     .Extension<TTaskControlMVCServerExtension>.UseTaskControl;

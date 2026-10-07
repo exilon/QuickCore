@@ -1,0 +1,18 @@
+{% assign total = viewdata.item_count %}
+<h1>{{ viewdata.page_title }}</h1>
+<p>Showing <strong>{{ total }}</strong> products.</p>
+
+<style>
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 16px; margin-top: 24px; }
+  .product-card { border: 1px solid #ddd; border-radius: 6px; padding: 16px; text-align: center; }
+  .product-card a { display: block; margin-top: 8px; color: #0066cc; text-decoration: none; }
+</style>
+
+<div class="product-grid">
+{% for name in viewdata.product_names %}
+  <div class="product-card">
+    <strong>{{ name | capitalize }}</strong>
+    <a href="/catalog/{{ forloop.index }}">View &rarr;</a>
+  </div>
+{% endfor %}
+</div>

@@ -1,10 +1,10 @@
-﻿{ ***************************************************************************
+{ ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.DependencyInjection
   Description : Core Services Dependency Injection
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 19/10/2019
   Modified    : 03/03/2021
@@ -41,8 +41,10 @@ uses
   System.IOUtils,
   {$ENDIF}
   System.SysUtils,
+  System.StrUtils,
   RTTI,
   System.TypInfo,
+  System.Generics.Collections,
   Quick.Commons,
   Quick.Options,
   Quick.Parameters,
@@ -58,6 +60,8 @@ type
   TServiceCollection = class;
 
   TRegisterServicesProc = procedure(aServices : TServiceCollection);
+  /// <summary>Factory delegate for the Decorate pattern. Receives the inner service and returns the decorator.</summary>
+  TDecoratorDelegate<I> = reference to function(inner: I): I;
 
   TOptionsFileFormat = (ofJSON, ofYAML);
 
@@ -88,6 +92,24 @@ type
 
   TStartupClass = class of TStartupBase;
 
+  TServiceProvider = class;
+
+  /// <summary>Provides an explicit lifetime scope for scoped service resolution.
+  /// All services resolved through the scope's ServiceProvider share the same
+  /// instance for the lifetime of the scope. Free the scope to release them.
+  /// Usage:
+  ///   scope := services.CreateScope;
+  ///   try
+  ///     svc := scope.ServiceProvider.GetService<IMyService>();
+  ///   finally
+  ///     scope.Free;
+  ///   end;</summary>
+  IServiceScope = interface
+  ['{A3E7C1D2-F84B-4E9A-B0C6-3D52F17A9E04}']
+    function GetServiceProvider : TServiceProvider;
+    property ServiceProvider : TServiceProvider read GetServiceProvider;
+  end;
+
   TServiceCollection = class(TInterfacedObject,IServiceCollection)
   private
     fLoggerService : ILogger;
@@ -95,6 +117,7 @@ type
     fDependencyInjector : TDependencyInjector;
     fOptionsService : TOptionsContainer;
     fHostEnvironment : IHostEnvironment;
+    procedure ResolveEnvVars(aOptions : TOptions);
   protected
     function DependencyInjector : TDependencyInjector; inline;
     function Options : TOptionsContainer; inline;
@@ -137,6 +160,35 @@ type
     function AddDebugger : TServiceCollection;
     function AddCommandline<TArguments : TParameters> : TServiceCollection;
     function AbstractFactory<T : class, constructor> : T;
+    /// <summary>Create a new service scope. Caller is responsible for freeing it (interface ref-count).</summary>
+    function CreateScope : IServiceScope;
+    // ── Keyed (named) service helpers (I-04) ────────────────────────────────
+    /// <summary>Register a keyed singleton: shorthand for AddSingleton<I,T>(aKey).</summary>
+    function AddKeyedSingleton<TInterface: IInterface; TImplementation: class>(const aKey : string) : TServiceCollection;
+    /// <summary>Register a keyed transient: shorthand for AddTransient<I,T>(aKey).</summary>
+    function AddKeyedTransient<TInterface: IInterface; TImplementation: class>(const aKey : string) : TServiceCollection;
+    /// <summary>Register a keyed scoped: shorthand for AddScoped<I,T>(aKey).</summary>
+    function AddKeyedScoped<TInterface: IInterface; TImplementation: class>(const aKey : string) : TServiceCollection;
+    /// <summary>Resolve a keyed service: shorthand for Resolve<T>(aKey).</summary>
+    function GetKeyedService<T>(const aKey : string) : T;
+    // ── DI-01: TryAdd (conditional registration) ────────────────────────────
+    /// <summary>Register Singleton only when TInterface is not already registered.</summary>
+    function TryAddSingleton<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    /// <summary>Register Transient only when TInterface is not already registered.</summary>
+    function TryAddTransient<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    /// <summary>Register Scoped only when TInterface is not already registered.</summary>
+    function TryAddScoped<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    // ── DI-02: Replace ───────────────────────────────────────────────────────
+    /// <summary>Replace existing registration for TInterface with TImplementation (Singleton).</summary>
+    function ReplaceSingleton<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    /// <summary>Replace existing registration for TInterface with TImplementation (Transient).</summary>
+    function ReplaceTransient<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    /// <summary>Replace existing registration for TInterface with TImplementation (Scoped).</summary>
+    function ReplaceScoped<TInterface: IInterface; TImplementation: class>(const aName: string = ''): TServiceCollection;
+    // ── DI-04: Decorate ──────────────────────────────────────────────────────
+    /// <summary>Wrap the existing registration for I with a decorator. aFactory receives the inner service and must return the decorator.
+    ///  The decorator has the same lifetime as the original registration.</summary>
+    function Decorate<I: IInterface>(aFactory: TDecoratorDelegate<I>): TServiceCollection;
     procedure Build;
   end;
 
@@ -154,15 +206,32 @@ type
     function CreateInstance<T : class, constructor> : T; overload;
   end;
 
+  TServiceScope = class(TInterfacedObject, IServiceScope)
+  private
+    fProvider        : TServiceProvider;
+    fScopedInstances : TDictionary<string, TValue>;
+    function GetServiceProvider : TServiceProvider;
+  public
+    constructor Create(aParentCollection : TServiceCollection);
+    destructor Destroy; override;
+    /// <summary>Resolve a service, caching the instance for the lifetime of this scope.</summary>
+    function GetService<T : IInterface>(const aName : string = '') : T;
+    property ServiceProvider : TServiceProvider read GetServiceProvider;
+  end;
+
   TServiceProvider = class
   private
     fServiceCollection : TServiceCollection;
   public
     constructor Create(aServiceCollection : TServiceCollection);
     function GetService<T : IInterface> : T; overload;
+    function GetService<T : IInterface>(const aName : string) : T; overload;
     function GetService(aTypeInfo: PTypeInfo): TValue; overload;
+    function GetService(aTypeInfo: PTypeInfo; const aName: string): TValue; overload;
     function Serializer : ISerializers;
     function ActivatorUtilities : TActivatorUtilities;
+    /// <summary>Create a new service scope. Caller must free the returned scope.</summary>
+    function CreateScope : IServiceScope;
   end;
 
   TServiceCollectionExtension = class
@@ -179,6 +248,31 @@ type
 
   EServiceConfigError = class(Exception);
   EServiceBuildError = class(Exception);
+
+  // ── DI-04: Decorate helper types ────────────────────────────────────────────
+  // Delphi cannot reference a generic type parameter I inside an anonymous
+  // function body. We work around this by placing the generic logic in a plain
+  // generic class method, and calling it through a non-generic interface from
+  // inside the anonymous function.
+
+  /// <summary>Non-generic interface for decorator activators.</summary>
+  IDecoratorActivator = interface
+  ['{A3B7C2D1-4E5F-6A7B-8C9D-E0F1A2B3C4D5}']
+    function Activate: TValue;
+  end;
+
+  /// <summary>Generic activator that resolves the inner service and applies the factory.
+  ///  Declared as a class so that generic type I can be referenced normally.</summary>
+  TDecoratorActivator<I: IInterface> = class(TInterfacedObject, IDecoratorActivator)
+  private
+    FServices : TServiceCollection;
+    FInnerKey : string;
+    FFactory  : TDecoratorDelegate<I>;
+  public
+    constructor Create(aServices: TServiceCollection; const aInnerKey: string;
+                       aFactory: TDecoratorDelegate<I>);
+    function Activate: TValue;
+  end;
 
 implementation
 
@@ -259,6 +353,167 @@ end;
 function TServiceCollection.AbstractFactory<T>: T;
 begin
   Result := fDependencyInjector.AbstractFactory<T>;
+end;
+
+function TServiceCollection.AddKeyedSingleton<TInterface, TImplementation>(const aKey : string) : TServiceCollection;
+begin
+  Result := AddSingleton<TInterface, TImplementation>(aKey);
+end;
+
+function TServiceCollection.AddKeyedTransient<TInterface, TImplementation>(const aKey : string) : TServiceCollection;
+begin
+  Result := AddTransient<TInterface, TImplementation>(aKey);
+end;
+
+function TServiceCollection.AddKeyedScoped<TInterface, TImplementation>(const aKey : string) : TServiceCollection;
+begin
+  Result := AddScoped<TInterface, TImplementation>(aKey);
+end;
+
+function TServiceCollection.GetKeyedService<T>(const aKey : string) : T;
+begin
+  Result := fDependencyInjector.Resolve<T>(aKey);
+end;
+
+// ── DI-01: TryAdd ────────────────────────────────────────────────────────────
+
+function TServiceCollection.TryAddSingleton<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  if not IsRegistered<TInterface>(aName) then
+    AddSingleton<TInterface, TImplementation>(aName);
+end;
+
+function TServiceCollection.TryAddTransient<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  if not IsRegistered<TInterface>(aName) then
+    AddTransient<TInterface, TImplementation>(aName);
+end;
+
+function TServiceCollection.TryAddScoped<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  if not IsRegistered<TInterface>(aName) then
+    AddScoped<TInterface, TImplementation>(aName);
+end;
+
+// ── DI-02: Replace ───────────────────────────────────────────────────────────
+
+function TServiceCollection.ReplaceSingleton<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  fDependencyInjector.Registrator.RemoveRegistrations(
+    fDependencyInjector.Registrator.GetKey(TypeInfo(TInterface), aName));
+  AddSingleton<TInterface, TImplementation>(aName);
+end;
+
+function TServiceCollection.ReplaceTransient<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  fDependencyInjector.Registrator.RemoveRegistrations(
+    fDependencyInjector.Registrator.GetKey(TypeInfo(TInterface), aName));
+  AddTransient<TInterface, TImplementation>(aName);
+end;
+
+function TServiceCollection.ReplaceScoped<TInterface, TImplementation>(const aName: string): TServiceCollection;
+begin
+  Result := Self;
+  fDependencyInjector.Registrator.RemoveRegistrations(
+    fDependencyInjector.Registrator.GetKey(TypeInfo(TInterface), aName));
+  AddScoped<TInterface, TImplementation>(aName);
+end;
+
+// ── DI-04: Decorate ──────────────────────────────────────────────────────────
+
+function TServiceCollection.Decorate<I>(aFactory: TDecoratorDelegate<I>): TServiceCollection;
+const
+  INNER_SUFFIX = '.__inner__';
+var
+  key        : string;
+  innerKey   : string;
+  regList    : TObjectList<TIocRegistration>;
+  existing   : TIocRegistration;
+  implClass  : TClass;
+  isSingle   : Boolean;
+  isTransient: Boolean;
+  savedDlg   : TActivatorDelegate<TValue>;
+  innerReg   : TIocRegistration;
+  decReg     : TIocRegistrationInterface;
+  decList    : TObjectList<TIocRegistration>;
+  act        : IDecoratorActivator;
+begin
+  Result := Self;
+  key := fDependencyInjector.Registrator.GetKey(TypeInfo(I), '');
+
+  if not fDependencyInjector.Registrator.Dependencies.TryGetValue(key, regList)
+     or (regList.Count = 0) then
+    raise EServiceConfigError.CreateFmt(
+      'Decorate: service %s is not registered', [GetTypeName(TypeInfo(I))]);
+
+  existing    := regList[regList.Count - 1]; // last = active registration
+  implClass   := existing.&Implementation;
+  isSingle    := existing.IsSingleton;
+  isTransient := existing.IsTransient;
+  savedDlg    := existing.ActivatorDelegate;
+
+  if implClass = nil then
+    raise EServiceConfigError.CreateFmt(
+      'Decorate: cannot decorate instance-based registration of %s. ' +
+      'Use type-based AddSingleton/Transient/Scoped instead.',
+      [GetTypeName(TypeInfo(I))]);
+
+  // Re-register the original implementation under a keyed "inner" name
+  innerKey := key + INNER_SUFFIX;
+  innerReg := fDependencyInjector.RegisterType(TypeInfo(I), implClass, innerKey);
+  if isSingle then innerReg.AsSingleton
+  else if isTransient then innerReg.AsTransient
+  else innerReg.AsScoped;
+  if Assigned(savedDlg) then
+    innerReg.ActivatorDelegate := savedDlg;
+
+  // Remove the original (unnamed) registration so the decorator takes its place
+  fDependencyInjector.Registrator.RemoveRegistrations(key);
+
+  // Build the decorator registration using a factory delegate.
+  // TDecoratorActivator<I> is used to avoid referencing generic type I
+  // inside the anonymous function body (Delphi compiler limitation).
+  act := TDecoratorActivator<I>.Create(Self, innerKey, aFactory);
+  decReg := TIocRegistrationInterface.Create('');
+  decReg.IntfInfo := TypeInfo(I);
+  decReg.ActivatorDelegate := function: TValue
+  begin
+    Result := act.Activate;  // No generic type I referenced inside this closure
+  end;
+  if isSingle then decReg.AsSingleton
+  else if isTransient then decReg.AsTransient
+  else decReg.AsScoped;
+
+  // Inject decorator registration into the IOC registrator
+  if not fDependencyInjector.Registrator.Dependencies.TryGetValue(key, decList) then
+  begin
+    decList := TObjectList<TIocRegistration>.Create(True); // owns objects
+    fDependencyInjector.Registrator.Dependencies.Add(key, decList);
+  end;
+  decList.Add(decReg);
+  fDependencyInjector.Registrator.DependencyOrder.Add(decReg);
+end;
+
+// ── TDecoratorActivator<I> ──────────────────────────────────────────────────
+
+constructor TDecoratorActivator<I>.Create(aServices: TServiceCollection;
+  const aInnerKey: string; aFactory: TDecoratorDelegate<I>);
+begin
+  inherited Create;
+  FServices := aServices;
+  FInnerKey := aInnerKey;
+  FFactory  := aFactory;
+end;
+
+function TDecoratorActivator<I>.Activate: TValue;
+begin
+  // I is the class's own generic parameter here – Delphi handles this normally.
+  Result := TValue.From<I>(FFactory(FServices.Resolve<I>(FInnerKey)));
 end;
 
 function TServiceCollection.AddDebugger: TServiceCollection;
@@ -496,6 +751,7 @@ begin
   begin
     Logger.Debug('Loading "%s" settings...',[TOptions(options).Name]);
     fOptionsService.LoadSection(options);
+    ResolveEnvVars(options);
   end;
 end;
 
@@ -510,6 +766,46 @@ begin
   begin
     Logger.Debug('Loading "%s" settings...',[TOptions(aOptions).Name]);
     fOptionsService.LoadSection(aOptions);
+    ResolveEnvVars(aOptions);
+  end;
+end;
+
+procedure TServiceCollection.ResolveEnvVars(aOptions : TOptions);
+var
+  ctx      : TRttiContext;
+  rType    : TRttiType;
+  rProp    : TRttiProperty;
+  value    : string;
+  startPos : Integer;
+  endPos   : Integer;
+  varName  : string;
+  varValue : string;
+begin
+  if aOptions = nil then
+    Exit;
+
+  rType := ctx.GetType(aOptions.ClassInfo);
+  for rProp in rType.GetProperties do
+  begin
+    if not rProp.IsWritable then
+      Continue;
+    if not (rProp.PropertyType.TypeKind in [tkString, tkLString, tkWString, tkUString]) then
+      Continue;
+
+    value := rProp.GetValue(aOptions).AsString;
+    startPos := Pos('${', value);
+    while startPos > 0 do
+    begin
+      endPos := PosEx('}', value, startPos + 2);
+      if endPos = 0 then
+        Break;
+      varName := Copy(value, startPos + 2, endPos - startPos - 2);
+      varValue := GetEnvironmentVariable(varName);
+      value := Copy(value, 1, startPos - 1) + varValue + Copy(value, endPos + 1, MaxInt);
+      startPos := Pos('${', value);
+    end;
+
+    rProp.SetValue(aOptions, value);
   end;
 end;
 
@@ -529,6 +825,11 @@ begin
   Result := fDependencyInjector.Resolve<T>(aName);
 end;
 
+function TServiceCollection.CreateScope : IServiceScope;
+begin
+  Result := TServiceScope.Create(Self);
+end;
+
 { TServiceProvider }
 
 function TServiceProvider.ActivatorUtilities: TActivatorUtilities;
@@ -546,6 +847,11 @@ begin
   Result := fServiceCollection.Resolve<T>;
 end;
 
+function TServiceProvider.GetService<T>(const aName : string): T;
+begin
+  Result := fServiceCollection.Resolve<T>(aName);
+end;
+
 function TServiceProvider.Serializer: ISerializers;
 begin
   Result := fServiceCollection.Serializer;
@@ -554,6 +860,52 @@ end;
 function TServiceProvider.GetService(aTypeInfo : PTypeInfo) : TValue;
 begin
   Result := fServiceCollection.Resolve(aTypeInfo,'');
+end;
+
+function TServiceProvider.GetService(aTypeInfo : PTypeInfo; const aName: string) : TValue;
+begin
+  Result := fServiceCollection.Resolve(aTypeInfo, aName);
+end;
+
+function TServiceProvider.CreateScope : IServiceScope;
+begin
+  Result := TServiceScope.Create(fServiceCollection);
+end;
+
+{ TServiceScope }
+
+constructor TServiceScope.Create(aParentCollection : TServiceCollection);
+begin
+  fProvider        := TServiceProvider.Create(aParentCollection);
+  fScopedInstances := TDictionary<string, TValue>.Create;
+end;
+
+destructor TServiceScope.Destroy;
+begin
+  fScopedInstances.Free; // releases all TValue entries (and their interface ref-counts)
+  fProvider.Free;
+  inherited;
+end;
+
+function TServiceScope.GetServiceProvider : TServiceProvider;
+begin
+  Result := fProvider;
+end;
+
+function TServiceScope.GetService<T>(const aName : string = '') : T;
+var
+  key : string;
+  val : TValue;
+begin
+  key := string(GetTypeName(TypeInfo(T)));
+  if aName <> '' then key := key + '::' + aName;
+  if fScopedInstances.TryGetValue(key, val) then
+  begin
+    Result := val.AsType<T>;
+    Exit;
+  end;
+  Result := fProvider.fServiceCollection.Resolve<T>(aName);
+  fScopedInstances.Add(key, TValue.From<T>(Result));
 end;
 
 { TAppServices }

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2023 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.MessageQueue
   Description : Core MessageQueue
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/07/2020
-  Modified    : 12/06/2023
+  Modified    : 10/07/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -54,7 +54,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; virtual; abstract;
+    function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; overload; virtual; abstract;
+    function Push(const aMessage : T) : TMSQWaitResult; overload; virtual;
     function Pop(out oMessage : T) : TMSQWaitResult; virtual; abstract;
     function Remove(const aMessage : T) : Boolean; overload; virtual; abstract;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload; virtual; abstract;
@@ -102,6 +103,11 @@ begin
   except
     on E : Exception do raise EMessageQueueSerializationError.CreateFmt('MessaegQueue Serialization Error: %s',[e.Message]);
   end;
+end;
+
+function TMessageQueue<T>.Push(const aMessage: T): TMSQWaitResult;
+begin
+  Result := Push(aMessage, False);
 end;
 
 end.

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.HealthChecks.Entity
   Description : Core Extensions Entity Health Checks
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/02/2021
-  Modified    : 21/02/2021
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -46,9 +46,13 @@ type
   TEntityHealthCheck = class(THealthCheck)
   private
     fDBContext : TDBContext;
+    fServer : string;
+    fDatabase : string;
   public
     constructor Create(aDBContext : TDBContext; aTimeSpan : TTimeSpan);
     destructor Destroy; override;
+    function GetCheckKind : string; override;
+    function GetTags : string; override;
     procedure Check; override;
   end;
 
@@ -93,6 +97,18 @@ begin
   inherited Create(aTimeSpan);
   fName := 'Entity';
   fDBContext := aDBContext;
+  fServer := fDBContext.Connection.Server;
+  fDatabase := fDBContext.Connection.Database;
+end;
+
+function TEntityHealthCheck.GetCheckKind: string;
+begin
+  Result := 'dbcontext';
+end;
+
+function TEntityHealthCheck.GetTags: string;
+begin
+  Result := Format('{"server":"%s","database":"%s"}',[fServer, fDatabase]);
 end;
 
 destructor TEntityHealthCheck.Destroy;

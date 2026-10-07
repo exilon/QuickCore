@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike P�rez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.AutoMapper
   Description : Core AutoMapper
-  Author      : Kike P�rez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/02/2020
-  Modified    : 07/07/2021
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -45,6 +45,7 @@ uses
 type
 
   TMapProc<TSource,TDestination> = reference to procedure(src : TSource; dest : TDestination);
+  TValueConverterFunc = reference to function(const aSrcValue : TValue) : TValue;
 
   TCustomMapping = class
   private
@@ -59,17 +60,35 @@ type
 
   TProfileMap = class
   private
-    fMap : TMapProc<TObject,TObject>;
-    fCustomMapping : TCustomMapping;
-    fIgnoreOtherMembers : Boolean;
+    fMap              : TMapProc<TObject,TObject>;
+    fCustomMapping    : TCustomMapping;
+    fIgnoreOtherMembers   : Boolean;
     fIgnoreAllNonExisting : Boolean;
+    fSrcClass         : TClass;
+    fDstClass         : TClass;
+    fBeforeMap        : TMapProc<TObject,TObject>;
+    fAfterMap         : TMapProc<TObject,TObject>;
+    fMemberConditions : TDictionary<string, TFunc<TObject,Boolean>>;
+    fValueConverters  : TDictionary<string, TValueConverterFunc>;
+    fNullSubstitutes  : TDictionary<string, TValue>;
   public
-    constructor Create(aMap : TMapProc<TObject,TObject>);
+    constructor Create(aMap : TMapProc<TObject,TObject>; aSrcClass : TClass = nil; aDstClass : TClass = nil);
     destructor Destroy; override;
     property Map : TMapProc<TObject,TObject> read fMap;
+    function ReverseMap : TProfileMap;
     function IgnoreOtherMembers : TProfileMap;
     function IgnoreAllNonExisting : TProfileMap;
     function ForMember(const aSrcProperty, aTgtProperty : string) : TProfileMap;
+    /// <summary>Skip mapping aDstMember when aCondition(src) returns False.</summary>
+    function Condition(const aDstMember : string; aCondition : TFunc<TObject,Boolean>) : TProfileMap;
+    /// <summary>Apply aConverter to transform the source TValue before assigning to aDstMember.</summary>
+    function ConvertUsing(const aDstMember : string; aConverter : TValueConverterFunc) : TProfileMap;
+    /// <summary>Use aValue when the mapped source member resolves to null/empty.</summary>
+    function NullSubstitute(const aDstMember : string; const aValue : TValue) : TProfileMap;
+    /// <summary>Called before the RTTI auto-mapping for the root object.</summary>
+    function BeforeMap(aProc : TMapProc<TObject,TObject>) : TProfileMap;
+    /// <summary>Called after the RTTI auto-mapping for the root object.</summary>
+    function AfterMap(aProc : TMapProc<TObject,TObject>) : TProfileMap;
   end;
 
   TProfileMapList = TObjectDictionary<string,TProfileMap>;
@@ -84,6 +103,8 @@ type
   public
     class constructor Create;
     class destructor Destroy;
+    constructor Create; virtual;
+    procedure Configure; virtual;
     function ResolveUnmapped : TProfileMap;
     function CreateMap<TSource,TDestination : class, constructor>(aMapProc : TMapProc<TSource,TDestination> = nil) : TProfileMap;
   end;
@@ -93,6 +114,7 @@ type
     fDefaultProfileMap : TProfileMap;
     fResolveUnmapped : Boolean;
     fMappingList : TObjectDictionary<string,TProfileMap>;
+    procedure MapInternal(aSrcObj, aTgtObj : TObject; aContext : TMapContext);
     procedure ObjMapper(aSrcObj : TObject; aTgtObj : TObject; aProfileMap : TProfileMap; IsRootClass : Boolean); overload;
     procedure ListMapper(aSrcList, aTgtList : TObject; aProfileMap : TProfileMap);
     procedure ObjListMapper(aSrcObjList, aTgtObjList: TObject; aProfileMap: TProfileMap);
@@ -102,12 +124,36 @@ type
     procedure Map(aSrcObj, aTgtObj : TObject); overload;
     function Map<T : class, constructor>(aSrcObj : TObject) : T; overload;
     function Map(aSrcObj : TObject) : TMapTarget; overload;
+    function Map(aSrcObj : TObject; aConfigure : TMapOptionsProc) : TMapTarget; overload;
+    function Map<T : class, constructor>(aSrcObj : TObject; aConfigure : TMapOptionsProc) : T; overload;
     class procedure RegisterProfile<T : TProfile, constructor>;
+    class function CurrentContext : TMapContext;
+    /// <summary>Validates all registered mappings. Raises EAutoMapperError if any
+    /// destination property has no corresponding source property and the mapping
+    /// does not use IgnoreAllNonExisting or IgnoreOtherMembers.</summary>
+    procedure AssertConfigurationIsValid;
   end;
 
   EAutoMapperError = class(Exception);
 
 implementation
+
+threadvar
+  vCurrentMapContext : TMapContext;
+
+function IsNullMappingValue(const aValue : TValue) : Boolean;
+begin
+  Result := aValue.IsEmpty or ((aValue.Kind = tkClass) and aValue.IsObjectInstance and (aValue.AsObject = nil));
+end;
+
+function ApplyNullSubstitute(aProfileMap : TProfileMap; const aDstMember : string;
+  const aValue : TValue) : TValue;
+begin
+  Result := aValue;
+  if Assigned(aProfileMap) and IsNullMappingValue(Result) then
+    if aProfileMap.fNullSubstitutes.ContainsKey(aDstMember) then
+      Result := aProfileMap.fNullSubstitutes[aDstMember];
+end;
 
 { TAutoMapper }
 
@@ -194,9 +240,18 @@ begin
 end;
 
 procedure TAutoMapper.Map(aSrcObj, aTgtObj: TObject);
+begin
+  MapInternal(aSrcObj, aTgtObj, nil);
+end;
+
+procedure TAutoMapper.MapInternal(aSrcObj, aTgtObj : TObject; aContext : TMapContext);
 var
   profile : TProfileMap;
+  oldContext : TMapContext;
 begin
+  oldContext := vCurrentMapContext;
+  vCurrentMapContext := aContext;
+  try
   if TProfile.fMappings.TryGetValue(TProfile.GetKey(aSrcObj,aTgtObj),profile) then
   begin
     ObjMapper(aSrcObj,aTgtObj,profile,True);
@@ -206,18 +261,41 @@ begin
     if fResolveUnmapped then ObjMapper(aSrcObj,aTgtObj,fDefaultProfileMap,True)
       else raise EAutoMapperError.CreateFmt('AutoMapper: Not defined profile for %s > %s',[aSrcObj.ClassName,aTgtObj.ClassName]);
   end;
+  finally
+    vCurrentMapContext := oldContext;
+  end;
 end;
 
 function TAutoMapper.Map(aSrcObj : TObject): TMapTarget;
 begin
   if aSrcObj = nil then raise EAutoMapperError.Create('AutoMapper: Source object cannot be null!');
-  Result.Create(aSrcObj,Self.Map);
+  Result.Create(aSrcObj,Self.MapInternal);
+end;
+
+function TAutoMapper.Map(aSrcObj : TObject; aConfigure : TMapOptionsProc) : TMapTarget;
+var
+  mapContext : TMapContext;
+begin
+  if aSrcObj = nil then raise EAutoMapperError.Create('AutoMapper: Source object cannot be null!');
+  mapContext := TMapContext.Create;
+  if Assigned(aConfigure) then
+    aConfigure(mapContext);
+  Result.Create(aSrcObj, Self.MapInternal, mapContext);
 end;
 
 function TAutoMapper.Map<T>(aSrcObj: TObject): T;
 begin
-  Result := T.Create;
-  ObjMapper(aSrcObj,Result,nil,True);
+  Result := Map(aSrcObj).AsType<T>;
+end;
+
+function TAutoMapper.Map<T>(aSrcObj : TObject; aConfigure : TMapOptionsProc) : T;
+begin
+  Result := Map(aSrcObj, aConfigure).AsType<T>;
+end;
+
+class function TAutoMapper.CurrentContext : TMapContext;
+begin
+  Result := vCurrentMapContext;
 end;
 
 procedure TAutoMapper.ObjMapper(aSrcObj : TObject; aTgtObj : TObject; aProfileMap : TProfileMap; IsRootClass : Boolean);
@@ -229,23 +307,57 @@ var
   obj : TObject;
   clname : string;
   objvalue : TValue;
+  conditionFn : TFunc<TObject,Boolean>;
+  converterFn : TValueConverterFunc;
+  srcValue : TValue;
 begin
   //if aTgtObj = nil then aTgtObj := GetTypeData(aTgtObj.ClassInfo).classType.Create;
   if aTgtObj = nil then raise EAutoMapperError.Create('TObjMapper: Target Object passed must be created before');
   if not Assigned(aProfileMap) then EAutoMapperError.CreateFmt('AutoMapper: Not defined Profile for %s > %s mapping',[aSrcObj.ClassName,aTgtObj]);
 
+  // BeforeMap hook (AM-04)
+  if IsRootClass and Assigned(aProfileMap.fBeforeMap) then aProfileMap.fBeforeMap(aSrcObj,aTgtObj);
+
   //if exists a map delegate
   if (IsRootClass) and (Assigned(aProfileMap.Map)) then aProfileMap.Map(aSrcObj,aTgtObj);
   //check if need to mapping other members
-  if (aProfileMap.fIgnoreOtherMembers) and (not Assigned(aProfileMap.fCustomMapping)) then Exit;
+  if (aProfileMap.fIgnoreOtherMembers) and (not Assigned(aProfileMap.fCustomMapping)) then
+  begin
+    // AfterMap hook before exit (AM-04)
+    if IsRootClass and Assigned(aProfileMap.fAfterMap) then aProfileMap.fAfterMap(aSrcObj,aTgtObj);
+    Exit;
+  end;
   objvalue := TValue.From(aSrcObj);
   rType := ctx.GetType(aSrcObj.ClassInfo);
   for tgtprop in ctx.GetType(aTgtObj.ClassInfo).GetProperties do
   begin
     if tgtprop.IsWritable then
     begin
+      // AM-02: Condition check — skip member if condition returns False
+      if aProfileMap.fMemberConditions.TryGetValue(tgtprop.Name, conditionFn) then
+        if not conditionFn(aSrcObj) then Continue;
+
       if not tgtprop.PropertyType.IsInstance then
       begin
+        // AM-03: ConvertUsing — apply a registered value converter for this member
+        if aProfileMap.fValueConverters.TryGetValue(tgtprop.Name, converterFn) then
+        begin
+          // resolve source property name (may be remapped via ForMember)
+          if not aProfileMap.fCustomMapping.GetMap(tgtprop.Name, mapname) then
+            mapname := tgtprop.Name;
+          if rType.GetProperty(mapname) <> nil then
+          begin
+            srcValue := rType.GetProperty(mapname).GetValue(aSrcObj);
+            srcValue := ApplyNullSubstitute(aProfileMap, tgtprop.Name, srcValue);
+            try
+              tgtprop.SetValue(aTgtObj, converterFn(srcValue));
+            except
+              on E : Exception do raise EAutoMapperError.CreateFmt('ConvertUsing error on property "%s" : %s',[tgtprop.Name, E.Message]);
+            end;
+          end;
+          Continue;
+        end;
+
         if (Assigned(aProfileMap)) and (Assigned(aProfileMap.fCustomMapping)) then
         begin
           if aProfileMap.fCustomMapping.GetMap(tgtprop.Name,mapname) then
@@ -254,9 +366,12 @@ begin
               if rType.GetProperty(mapname) = nil then
               begin
                 if not aProfileMap.fIgnoreAllNonExisting then raise EAutoMapperError.CreateFmt('No valid custom mapping (Source: %s - Target: %s)',[mapname,tgtprop.Name]);
+                Continue; // source property does not exist — skip this target member
               end;
               try
-                tgtprop.SetValue(aTgtObj,rType.GetProperty(mapname).GetValue(aSrcObj));
+                srcValue := rType.GetProperty(mapname).GetValue(aSrcObj);
+                srcValue := ApplyNullSubstitute(aProfileMap, tgtprop.Name, srcValue);
+                tgtprop.SetValue(aTgtObj,srcValue);
               except
                 on E : Exception do raise EAutoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
               end;
@@ -264,6 +379,7 @@ begin
               if not TRTTI.PathExists(aSrcObj,mapname) then
               begin
                 if not aProfileMap.fIgnoreAllNonExisting then raise EAutoMapperError.CreateFmt('No valid custom mapping (Source: %s - Target: %s)',[mapname,tgtprop.Name]);
+                Continue; // source path does not exist — skip this target member
               end;
               TRTTI.SetPathValue(aTgtObj,tgtprop.Name,TRTTI.GetPathValue(aSrcObj,mapname));
             {$ENDIF}
@@ -274,7 +390,9 @@ begin
             if (not aProfileMap.fIgnoreOtherMembers) and (rType.GetProperty(tgtprop.Name) <> nil) then
             begin
               try
-                tgtprop.SetValue(aTgtObj,rType.GetProperty(tgtprop.Name).GetValue(aSrcObj));
+                srcValue := rType.GetProperty(tgtprop.Name).GetValue(aSrcObj);
+                srcValue := ApplyNullSubstitute(aProfileMap, tgtprop.Name, srcValue);
+                tgtprop.SetValue(aTgtObj,srcValue);
               except
                 on E : Exception do raise EAutoMapperError.CreateFmt('Error mapping property "%s" : %s',[tgtprop.Name,e.message]);
               end;
@@ -315,6 +433,8 @@ begin
       end;
     end;
   end;
+  // AfterMap hook (AM-04)
+  if IsRootClass and Assigned(aProfileMap.fAfterMap) then aProfileMap.fAfterMap(aSrcObj,aTgtObj);
 end;
 
 procedure TAutoMapper.ObjListMapper(aSrcObjList, aTgtObjList: TObject; aProfileMap: TProfileMap);
@@ -351,6 +471,17 @@ end;
 
 { TProfile }
 
+constructor TProfile.Create;
+begin
+  inherited;
+  Configure;
+end;
+
+procedure TProfile.Configure;
+begin
+  // Base class — override in subclasses to register mappings
+end;
+
 class constructor TProfile.Create;
 begin
   fMappings := TObjectDictionary<string,TProfileMap>.Create([doOwnsValues]);
@@ -386,25 +517,51 @@ function TProfile.CreateMap<TSource,TDestination>(aMapProc : TMapProc<TSource,TD
 var
   profilemap : TProfileMap;
 begin
-  profilemap := TProfileMap.Create(TMapProc<TObject,TObject>(aMapProc));
+  profilemap := TProfileMap.Create(TMapProc<TObject,TObject>(aMapProc), TClass(TSource), TClass(TDestination));
   fMappings.Add(GetKey(TClass(TSource),TClass(TDestination)),profilemap);
   Result := profilemap;
 end;
 
 { TProfileMap }
 
-constructor TProfileMap.Create(aMap: TMapProc<TObject, TObject>);
+constructor TProfileMap.Create(aMap: TMapProc<TObject, TObject>; aSrcClass : TClass = nil; aDstClass : TClass = nil);
 begin
   fIgnoreAllNonExisting := False;
   fIgnoreOtherMembers := False;
   fMap := aMap;
+  fSrcClass := aSrcClass;
+  fDstClass := aDstClass;
   fCustomMapping := TCustomMapping.Create;
+  fMemberConditions := TDictionary<string, TFunc<TObject,Boolean>>.Create;
+  fValueConverters  := TDictionary<string, TValueConverterFunc>.Create;
+  fNullSubstitutes  := TDictionary<string, TValue>.Create;
 end;
 
 destructor TProfileMap.Destroy;
 begin
   fCustomMapping.Free;
+  fMemberConditions.Free;
+  fValueConverters.Free;
+  fNullSubstitutes.Free;
   inherited;
+end;
+
+function TProfileMap.ReverseMap: TProfileMap;
+var
+  reverseProfileMap : TProfileMap;
+  reverseKey : string;
+begin
+  if (fSrcClass = nil) or (fDstClass = nil) then
+    raise EAutoMapperError.Create('ReverseMap: mapping was not created with class type information');
+  reverseKey := fDstClass.ClassName + ':' + fSrcClass.ClassName;
+  if TProfile.fMappings.ContainsKey(reverseKey) then
+  begin
+    Result := TProfile.fMappings[reverseKey];
+    Exit;
+  end;
+  reverseProfileMap := TProfileMap.Create(nil, fDstClass, fSrcClass);
+  TProfile.fMappings.Add(reverseKey, reverseProfileMap);
+  Result := reverseProfileMap;
 end;
 
 function TProfileMap.ForMember(const aSrcProperty, aTgtProperty : string): TProfileMap;
@@ -417,6 +574,36 @@ function TProfileMap.IgnoreAllNonExisting: TProfileMap;
 begin
   Result := Self;
   fIgnoreAllNonExisting := True;
+end;
+
+function TProfileMap.Condition(const aDstMember : string; aCondition : TFunc<TObject,Boolean>) : TProfileMap;
+begin
+  Result := Self;
+  fMemberConditions.AddOrSetValue(aDstMember, aCondition);
+end;
+
+function TProfileMap.ConvertUsing(const aDstMember : string; aConverter : TValueConverterFunc) : TProfileMap;
+begin
+  Result := Self;
+  fValueConverters.AddOrSetValue(aDstMember, aConverter);
+end;
+
+function TProfileMap.NullSubstitute(const aDstMember : string; const aValue : TValue) : TProfileMap;
+begin
+  Result := Self;
+  fNullSubstitutes.AddOrSetValue(aDstMember, aValue);
+end;
+
+function TProfileMap.BeforeMap(aProc : TMapProc<TObject,TObject>) : TProfileMap;
+begin
+  Result := Self;
+  fBeforeMap := aProc;
+end;
+
+function TProfileMap.AfterMap(aProc : TMapProc<TObject,TObject>) : TProfileMap;
+begin
+  Result := Self;
+  fAfterMap := aProc;
 end;
 
 function TProfileMap.IgnoreOtherMembers: TProfileMap;
@@ -454,6 +641,64 @@ end;
 function TCustomMapping.GetMap(const aName: string; out vMapName: string): Boolean;
 begin
   Result := fMapDictionary.TryGetValue(aName,vMapName);
+end;
+
+{ TAutoMapper - AssertConfigurationIsValid (AM-05) }
+
+procedure TAutoMapper.AssertConfigurationIsValid;
+var
+  pair    : TPair<string, TProfileMap>;
+  profile : TProfileMap;
+  ctx     : TRttiContext;
+  srcType : TRttiType;
+  dstType : TRttiType;
+  tgtprop : TRttiProperty;
+  mapName : string;
+begin
+  for pair in fMappingList do
+  begin
+    profile := pair.Value;
+    if (profile.fSrcClass = nil) or (profile.fDstClass = nil) then Continue;
+    // No validation needed if we deliberately ignore unmatched
+    if profile.fIgnoreAllNonExisting then Continue;
+    srcType := ctx.GetType(profile.fSrcClass.ClassInfo);
+    dstType := ctx.GetType(profile.fDstClass.ClassInfo);
+    for tgtprop in dstType.GetProperties do
+    begin
+      if not tgtprop.IsWritable then Continue;
+      if tgtprop.PropertyType.IsInstance then Continue; // skip object properties
+      // If IgnoreOtherMembers: auto-mapping is suppressed, only custom maps matter
+      if profile.fIgnoreOtherMembers then
+      begin
+        // Verify that any registered custom map points to an existing source prop
+        if profile.fCustomMapping.GetMap(tgtprop.Name, mapName) then
+          if srcType.GetProperty(mapName) = nil then
+            raise EAutoMapperError.CreateFmt(
+              'AssertConfigurationIsValid: custom mapping "%s" → "%s" not found in source "%s"',
+              [tgtprop.Name, mapName, profile.fSrcClass.ClassName]);
+        Continue;
+      end;
+      // ConvertUsing covers the property
+      if profile.fValueConverters.ContainsKey(tgtprop.Name) then Continue;
+      // Custom ForMember mapping
+      if profile.fCustomMapping.GetMap(tgtprop.Name, mapName) then
+      begin
+        if srcType.GetProperty(mapName) = nil then
+          raise EAutoMapperError.CreateFmt(
+            'AssertConfigurationIsValid: custom mapping "%s" → "%s" not found in source "%s"',
+            [tgtprop.Name, mapName, profile.fSrcClass.ClassName]);
+      end
+      else
+      begin
+        // Same-name auto-mapping
+        if srcType.GetProperty(tgtprop.Name) = nil then
+          raise EAutoMapperError.CreateFmt(
+            'AssertConfigurationIsValid: destination property "%s" has no matching source property in "%s". ' +
+            'Use ForMember, ConvertUsing, or IgnoreAllNonExisting.',
+            [tgtprop.Name, profile.fSrcClass.ClassName]);
+      end;
+    end;
+  end;
 end;
 
 end.

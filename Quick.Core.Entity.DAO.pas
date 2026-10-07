@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.DAO
   Description : Core Entity DAO
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 30/08/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -73,6 +73,11 @@ type
     property Size : Integer read fSize;
     property Decimals : Integer read fdecimals;
   end;
+
+  { SoftDelete: decorate an entity CLASS to enable soft-delete behaviour.
+    Queries will automatically append `IsDeleted = 0` to the WHERE clause.
+    Delete operations will perform UPDATE SET IsDeleted = 1 instead of DELETE. }
+  SoftDelete = class(TCustomAttribute);
 
   TDBProvider = (
     dbMSAccess2000 = $00010,
@@ -237,10 +242,13 @@ type
     function AddColumn(aModel : TEntityModel; aField : TEntityField) : string;
     function SetPrimaryKey(aModel : TEntityModel) : string;
     function CreateIndex(aModel : TEntityModel; aIndex : TEntityIndex) : string;
-    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean) : string;
+    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean; aNoLock : Boolean) : string;
     function Sum(const aTableName, aFieldName, aWhere : string) : string;
     function Count(const aTableName : string; const aWhere : string) : string;
     function Add(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string;
+    function SupportsInsertReturning : Boolean;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string;
     function AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
     function Update(const aTableName, aFieldPairs, aWhere : string) : string;
     function Delete(const aTableName : string; const aWhere : string) : string;
@@ -259,6 +267,8 @@ type
     {$ELSE}
     function Where(const aFormatSQLWhere: string; const aValuesSQLWhere: array of const): IEntityLinqQuery<T>; overload;
     {$ENDIF}function Where(const aWhereClause: string) : IEntityLinqQuery<T>; overload;
+    function Where(aPredicate : TPredicate<T>) : IEntityLinqQuery<T>; overload;
+    function Include(const aPropertyName : string) : IEntityLinqQuery<T>;
     function Select : IEntityResult<T>; overload;
     function Select(const aFieldNames : string) : IEntityResult<T>; overload;
     function SelectFirst : T;
@@ -270,6 +280,7 @@ type
     function Delete : Boolean;
     function OrderBy(const aFieldValues : string) : IEntityLinqQuery<T>;
     function OrderByDescending(const aFieldValues : string) : IEntityLinqQuery<T>;
+    function WithNoLock : IEntityLinqQuery<T>;
   end;
 
   TEntityResult<T : class, constructor> = class(TInterfacedObject,IEntityResult<T>)
@@ -299,11 +310,43 @@ type
     function HasResults : Boolean;
   end;
 
+  TFilteredEntityResult<T : class, constructor> = class(TInterfacedObject, IEntityResult<T>)
+  type
+    TFilteredEnumerator = class(TEnumerator<T>)
+    private
+      fItems : TObjectList<T>;
+      fIndex : Integer;
+    protected
+      function DoGetCurrent : T; override;
+      function DoMoveNext  : Boolean; override;
+    public
+      constructor Create(aItems : TObjectList<T>);
+    end;
+  private
+    fItems : TObjectList<T>;
+    fGetOneIndex : Integer;
+  public
+    constructor Create(aItems : TObjectList<T>);
+    destructor Destroy; override;
+    function Count      : Integer;
+    function HasResults : Boolean;
+    function GetEnumerator  : TEnumerator<T>;
+    function ToList : IList<T>; overload;
+    procedure ToList(aList : TList<T>); overload;
+    function ToObjectList : IObjectList<T>; overload;
+    procedure ToObjectList(aList : TObjectList<T>); overload;
+    function ToArray : TArray<T>;
+    function GetOne(aEntity : T) : Boolean;
+  end;
+
   TEntityQueryGenerator = class(TInterfacedObject)
   protected
     fISO8601DateTime : Boolean;
   public
     function QuotedStr(const aValue: string): string; virtual;
+    function SupportsInsertReturning : Boolean; virtual;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string; virtual;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string; virtual;
     procedure UseISO8601DateTime;
   end;
 
@@ -329,6 +372,62 @@ type
     property CreationDate : TCreationDate read fCreationDate write fCreationDate;
     property ModifiedDate : TModifiedDate read fModifiedDate write fModifiedDate;
   end;
+
+  { Base class for entities with soft-delete support.
+    Combine with the [SoftDelete] class attribute so queries filter automatically. }
+  {$M+}
+  TEntitySD = class(TEntity)
+  private
+    fIsDeleted : Boolean;
+  published
+    property IsDeleted : Boolean read fIsDeleted write fIsDeleted;
+  end;
+  {$M-}
+
+  { Timestamped + soft delete }
+  {$M+}
+  TEntityTSSD = class(TEntityTS)
+  private
+    fIsDeleted : Boolean;
+  published
+    property IsDeleted : Boolean read fIsDeleted write fIsDeleted;
+  end;
+  {$M-}
+
+  { TEntityRV: base entity class with optimistic concurrency via RowVersion.
+    On every Update the engine adds AND RowVersion=<current> to the WHERE clause
+    and increments RowVersion in the SET. If 0 rows are affected,
+    EOptimisticConcurrencyException is raised. }
+  {$M+}
+  TEntityRV = class(TEntity)
+  private
+    fRowVersion : Integer;
+  published
+    property RowVersion : Integer read fRowVersion write fRowVersion;
+  end;
+  {$M-}
+
+  EOptimisticConcurrencyException = class(Exception);
+
+  { TEntityAudit: base entity class with automatic audit fields.
+    CreatedAt and CreatedBy are set on Add; UpdatedAt and UpdatedBy on Update.
+    Override UpdatedBy/CreatedBy via the class-level var or set them before saving. }
+  {$M+}
+  TEntityAudit = class(TEntity)
+  private
+    fCreatedAt  : TDateTime;
+    fUpdatedAt  : TDateTime;
+    fCreatedBy  : string;
+    fUpdatedBy  : string;
+  published
+    property CreatedAt : TDateTime read fCreatedAt write fCreatedAt;
+    property UpdatedAt : TDateTime read fUpdatedAt write fUpdatedAt;
+    [StringLength(100)]
+    property CreatedBy : string read fCreatedBy write fCreatedBy;
+    [StringLength(100)]
+    property UpdatedBy : string read fUpdatedBy write fUpdatedBy;
+  end;
+  {$M-}
 
   function QuotedStrEx(const aValue : string) : string;
   function FormatSQLParams(const aSQLClause : string; aSQLParams : array of const) : string;
@@ -877,11 +976,136 @@ begin
   Result := fEntityQuery.MoveNext;
 end;
 
+{ TFilteredEntityResult<T> }
+
+constructor TFilteredEntityResult<T>.Create(aItems : TObjectList<T>);
+begin
+  fItems := aItems;
+  fGetOneIndex := 0;
+end;
+
+destructor TFilteredEntityResult<T>.Destroy;
+begin
+  fItems.Free;
+  inherited;
+end;
+
+function TFilteredEntityResult<T>.Count: Integer;
+begin
+  Result := fItems.Count;
+end;
+
+function TFilteredEntityResult<T>.HasResults: Boolean;
+begin
+  Result := fItems.Count > 0;
+end;
+
+function TFilteredEntityResult<T>.GetEnumerator: TEnumerator<T>;
+begin
+  Result := TFilteredEnumerator.Create(fItems);
+end;
+
+function TFilteredEntityResult<T>.ToList: IList<T>;
+var
+  entity : T;
+begin
+  Result := TXList<T>.Create;
+  for entity in fItems do Result.Add(entity);
+end;
+
+procedure TFilteredEntityResult<T>.ToList(aList: TList<T>);
+var
+  entity : T;
+begin
+  for entity in fItems do aList.Add(entity);
+end;
+
+function TFilteredEntityResult<T>.ToObjectList: IObjectList<T>;
+var
+  entity : T;
+begin
+  Result := TXObjectList<T>.Create(False);
+  for entity in fItems do Result.Add(entity);
+end;
+
+procedure TFilteredEntityResult<T>.ToObjectList(aList: TObjectList<T>);
+var
+  entity : T;
+begin
+  for entity in fItems do aList.Add(entity);
+end;
+
+function TFilteredEntityResult<T>.ToArray: TArray<T>;
+var
+  i : Integer;
+begin
+  SetLength(Result, fItems.Count);
+  for i := 0 to fItems.Count - 1 do Result[i] := fItems[i];
+end;
+
+function TFilteredEntityResult<T>.GetOne(aEntity: T): Boolean;
+var
+  ctx   : TRttiContext;
+  rType : TRttiType;
+  rProp : TRttiProperty;
+  src   : T;
+begin
+  Result := fGetOneIndex < fItems.Count;
+  if not Result then Exit;
+  src := fItems[fGetOneIndex];
+  Inc(fGetOneIndex);
+  rType := ctx.GetType(src.ClassInfo);
+  try
+    for rProp in rType.GetProperties do
+    begin
+      if rProp.IsWritable and (rProp.Visibility = mvPublished) then
+        rProp.SetValue(TObject(aEntity), rProp.GetValue(TObject(src)));
+    end;
+  finally
+    ctx.Free;
+  end;
+end;
+
+{ TFilteredEntityResult<T>.TFilteredEnumerator }
+
+constructor TFilteredEntityResult<T>.TFilteredEnumerator.Create(aItems: TObjectList<T>);
+begin
+  fItems := aItems;
+  fIndex := -1;
+end;
+
+function TFilteredEntityResult<T>.TFilteredEnumerator.DoGetCurrent: T;
+begin
+  Result := fItems[fIndex];
+end;
+
+function TFilteredEntityResult<T>.TFilteredEnumerator.DoMoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex < fItems.Count;
+end;
+
 { TEntityQueryGenerator }
 
 function TEntityQueryGenerator.QuotedStr(const aValue: string): string;
 begin
   Result := '''' + aValue + '''';
+end;
+
+function TEntityQueryGenerator.SupportsInsertReturning: Boolean;
+begin
+  Result := False;
+end;
+
+function TEntityQueryGenerator.AddReturningId(const aTableName, aFieldNames, aFieldValues,
+  aPrimaryKeyName: string): string;
+begin
+  Result := '';
+end;
+
+function TEntityQueryGenerator.LastInsertedIdQuery(const aPrimaryKeyName: string): string;
+begin
+  Result := '';
 end;
 
 procedure TEntityQueryGenerator.UseISO8601DateTime;

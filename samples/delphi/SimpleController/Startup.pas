@@ -38,9 +38,10 @@ class procedure TStartup.Configure(app : TMVCServer);
 begin
   app
   .AddControllers
-  .AddController(THomeController)
   .DefaultRoute(THomeController,'Home/Index')
   .UseWebRoot('.\wwwroot')
+  .UseSwagger('SimpleController API', '1.0.0',
+    'QuickCore SimpleController sample API.')
   .UseRouting
   .UseMVC;
 end;

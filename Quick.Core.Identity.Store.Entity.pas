@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Identity.Store.Entity
   Description : Core Identity Store Database
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/03/2020
-  Modified    : 29/08/2021
+  Modified    : 24/03/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -35,9 +35,7 @@ interface
 
 uses
   System.SysUtils,
-  {$IFDEF VALUE_FORMATPARAMS}
   System.Rtti,
-  {$ENDIF}
   Quick.Commons,
   Quick.Collections,
   Quick.Value,
@@ -90,6 +88,17 @@ type
     function ValidateCredentials(const aUsername, aPassword : string) : Boolean;
     function Users : ILinq<TUser>;
     function Roles : ILinq<TRole>;
+    function FindByName(const aUserName : string) : TUser;
+    function FindByEmail(const aEmail : string) : TUser;
+    function GetPasswordHash(aUser : TUser) : string;
+    function SetPasswordHash(aUser : TUser; const aHash : string) : Boolean;
+    function GetSecurityStamp(aUser : TUser) : string;
+    function SetSecurityStamp(aUser : TUser; const aStamp : string) : Boolean;
+    function IsLockedOut(aUser : TUser) : Boolean;
+    function SetLockoutEnd(aUser : TUser; aEnd : TDateTime) : Boolean;
+    function GetRolesForUser(aUser : TUser) : TArray<string>;
+    function AddUserToRole(aUser : TUser; const aRoleName : string) : Boolean;
+    function RemoveUserFromRole(aUser : TUser; const aRoleName : string) : Boolean;
   end;
 
 implementation
@@ -157,6 +166,95 @@ end;
 function TEntityIdentityStore<TUser, TRole>.ValidateCredentials(const aUsername, aPassword: string): Boolean;
 begin
   Result := fDBContext.Users.Where('UserName = ? AND PasswordHash = ?',[aUserName,aPassword]).Count > 0;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.FindByName(const aUserName: string): TUser;
+begin
+  Result := fDBContext.Users.Where('UserName = ?',[aUserName]).SelectFirst;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.FindByEmail(const aEmail: string): TUser;
+begin
+  Result := fDBContext.Users.Where('Email = ?',[aEmail]).SelectFirst;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.GetPasswordHash(aUser: TUser): string;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+begin
+  Result := '';
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('PasswordHash');
+  if prop <> nil then Result := prop.GetValue(TObject(aUser)).AsString;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.SetPasswordHash(aUser: TUser; const aHash: string): Boolean;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+begin
+  Result := False;
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('PasswordHash');
+  if prop <> nil then begin prop.SetValue(TObject(aUser), aHash); Result := True; end;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.GetSecurityStamp(aUser: TUser): string;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+begin
+  Result := '';
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('SecurityStamp');
+  if prop <> nil then Result := prop.GetValue(TObject(aUser)).AsString;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.SetSecurityStamp(aUser: TUser; const aStamp: string): Boolean;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+begin
+  Result := False;
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('SecurityStamp');
+  if prop <> nil then begin prop.SetValue(TObject(aUser), aStamp); Result := True; end;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.IsLockedOut(aUser: TUser): Boolean;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+  lockoutEnd : TDateTime;
+begin
+  Result := False;
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('LockoutEnd');
+  if prop <> nil then begin
+    lockoutEnd := prop.GetValue(TObject(aUser)).AsExtended;
+    Result := (lockoutEnd > 0) and (lockoutEnd > Now);
+  end;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.SetLockoutEnd(aUser: TUser; aEnd: TDateTime): Boolean;
+var
+  ctx : TRttiContext;
+  prop : TRttiProperty;
+begin
+  Result := False;
+  prop := ctx.GetType(TObject(aUser).ClassType).GetProperty('LockoutEnd');
+  if prop <> nil then begin prop.SetValue(TObject(aUser), TValue.From<TDateTime>(aEnd)); Result := True; end;
+end;
+
+function TEntityIdentityStore<TUser, TRole>.GetRolesForUser(aUser: TUser): TArray<string>;
+begin
+  raise ENotImplemented.Create('GetRolesForUser not implemented in TEntityIdentityStore');
+end;
+
+function TEntityIdentityStore<TUser, TRole>.AddUserToRole(aUser: TUser; const aRoleName: string): Boolean;
+begin
+  raise ENotImplemented.Create('AddUserToRole not implemented in TEntityIdentityStore');
+end;
+
+function TEntityIdentityStore<TUser, TRole>.RemoveUserFromRole(aUser: TUser; const aRoleName: string): Boolean;
+begin
+  raise ENotImplemented.Create('RemoveUserFromRole not implemented in TEntityIdentityStore');
 end;
 
 { TEntityStoreLinq<T> }

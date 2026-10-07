@@ -1,0 +1,36 @@
+<p><a href="/catalog">&larr; Back to catalog</a></p>
+
+<h1>{{ viewdata.name | escape }}</h1>
+
+<table style="border-collapse:collapse; margin: 16px 0;">
+  <tr>
+    <th style="text-align:left; padding:6px 16px 6px 0; color:#555;">Price</th>
+    <td><strong>${{ viewdata.price }}</strong></td>
+  </tr>
+  <tr>
+    <th style="text-align:left; padding:6px 16px 6px 0; color:#555;">Availability</th>
+    <td>
+      {% if viewdata.in_stock %}
+        <span style="color:green;">&#10003; In Stock</span>
+      {% else %}
+        <span style="color:red;">&#10007; Out of Stock</span>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <th style="text-align:left; padding:6px 16px 6px 0; color:#555;">Description</th>
+    <td>{{ viewdata.description | default: 'No description available.' }}</td>
+  </tr>
+</table>
+
+{% if viewdata.in_stock %}
+  <button style="background:#0066cc;color:#fff;border:none;padding:10px 24px;
+                 border-radius:4px;cursor:pointer;font-size:1em;">
+    Add to Cart
+  </button>
+{% else %}
+  <button disabled style="background:#ccc;color:#666;border:none;padding:10px 24px;
+                           border-radius:4px;font-size:1em;">
+    Unavailable
+  </button>
+{% endif %}

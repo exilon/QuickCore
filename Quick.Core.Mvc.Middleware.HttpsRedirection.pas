@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.HttpsRedirection
   Description : Core Mvc Https Redirection Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 22/02/2020
   Modified    : 22/02/2020
@@ -78,8 +78,10 @@ begin
   inherited;
   if aContext.Request.Port <> 443 then //only redirects if not 443 port...check if https better
   begin
-    url := 'https://' + aContext.Request.Host + '/' + aContext.Request.URL + aContext.Request.UnparsedParams;
-    aContext.Response.Headers.AddOrUpdate('Location',aContext.Request.UnparsedParams);
+    url := 'https://' + aContext.Request.Host + '/' + aContext.Request.URL;
+    if aContext.Request.UnparsedParams <> '' then
+      url := url + aContext.Request.UnparsedParams;
+    aContext.Response.Headers.AddOrUpdate('Location', url);
     aContext.Response.StatusCode := fResponseStatus;
   end
   else Next(aContext);

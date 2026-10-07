@@ -1,0 +1,42 @@
+{% assign engine = viewdata.engine_name %}
+{% assign ver    = viewdata.version %}
+
+<h1>About</h1>
+
+<p>This sample demonstrates <strong>{{ engine }}</strong> v{{ ver }}.</p>
+
+<h2>Liquid Template Features</h2>
+<ul>
+  <li><code>{% raw %}{{ variable }}{% endraw %}</code> — variable output with optional filters</li>
+  <li><code>{% raw %}{{ var | upcase | truncate: 20 }}{% endraw %}</code> — chained filters</li>
+  <li><code>{% raw %}{% if condition %}…{% else %}…{% endif %}{% endraw %}</code> — conditionals</li>
+  <li><code>{% raw %}{% unless cond %}…{% endunless %}{% endraw %}</code> — inverse conditional</li>
+  <li><code>{% raw %}{% for x in list %}…{{ forloop.index }}…{% endfor %}{% endraw %}</code> — loops</li>
+  <li><code>{% raw %}{% assign name = "value" %}{% endraw %}</code> — variable assignment</li>
+  <li><code>{% raw %}{% include 'partial.liquid' %}{% endraw %}</code> — partials</li>
+</ul>
+
+<h2>Built-in Filters</h2>
+<table style="border-collapse:collapse; width:100%;">
+  <thead><tr style="background:#eee;">
+    <th style="padding:6px 12px; text-align:left;">Filter</th>
+    <th style="padding:6px 12px; text-align:left;">Example</th>
+    <th style="padding:6px 12px; text-align:left;">Result</th>
+  </tr></thead>
+  <tbody>
+    <tr><td style="padding:4px 12px;"><code>upcase</code></td>    <td><code>"hello" | upcase</code></td>    <td>HELLO</td></tr>
+    <tr><td style="padding:4px 12px;"><code>downcase</code></td>  <td><code>"WORLD" | downcase</code></td>  <td>world</td></tr>
+    <tr><td style="padding:4px 12px;"><code>capitalize</code></td><td><code>"quick" | capitalize</code></td><td>Quick</td></tr>
+    <tr><td style="padding:4px 12px;"><code>size</code></td>      <td><code>"abc" | size</code></td>        <td>3</td></tr>
+    <tr><td style="padding:4px 12px;"><code>strip</code></td>     <td><code>" hi " | strip</code></td>      <td>hi</td></tr>
+    <tr><td style="padding:4px 12px;"><code>default: 'x'</code></td><td><code>"" | default: 'N/A'</code></td><td>N/A</td></tr>
+    <tr><td style="padding:4px 12px;"><code>escape</code></td>    <td><code>"&lt;b&gt;" | escape</code></td><td>&amp;lt;b&amp;gt;</td></tr>
+    <tr><td style="padding:4px 12px;"><code>truncate: n</code></td><td><code>"long text" | truncate: 4</code></td><td>long...</td></tr>
+    <tr><td style="padding:4px 12px;"><code>append: 's'</code></td><td><code>"item" | append: 's'</code></td><td>items</td></tr>
+    <tr><td style="padding:4px 12px;"><code>prepend: '$'</code></td><td><code>"9.99" | prepend: '$'</code></td><td>$9.99</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:24px; color:#555;">
+  Page rendered at: <strong>{{ now }}</strong>
+</p>

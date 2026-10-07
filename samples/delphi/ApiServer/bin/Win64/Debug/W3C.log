@@ -1,0 +1,5 @@
+30-03-2023 16:31:21  127.0.0.1 8080 GET Test/hello Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.54  127.0.0.1 200
+30-03-2023 16:31:25  127.0.0.1 8080 GET favicon.ico Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.54 http://127.0.0.1:8080/Test/hello 127.0.0.1 404
+30-03-2023 16:32:30  127.0.0.1 8080 GET Test/hello Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.54  127.0.0.1 200
+30-03-2023 16:55:53  localhost 8081 POST Test PostmanRuntime/7.31.3  127.0.0.1 200
+30-03-2023 16:57:03  localhost 8081 POST GrafanaAlert/Send PostmanRuntime/7.31.3  127.0.0.1 404

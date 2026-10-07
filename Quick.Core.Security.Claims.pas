@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Security.Claims
   Description : Core Security Claims
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/03/2020
-  Modified    : 05/03/2021
+  Modified    : 07/03/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -86,13 +86,17 @@ type
     function GetAuthenticationType : string;
     function GetIsAuthenticated : Boolean;
     function GetName : string;
+  protected
+    // Disable ref-count-driven destruction: lifetime is controlled by owner (TObjectList)
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   public
     constructor Create;
     destructor Destroy; override;
     property Actor : TClaimsIdentity read fActor write fActor;
     property AuthenticationType : string read GetAuthenticationType write fAuthenticationType;
     property IsAuthenticated : Boolean read GetIsAuthenticated;
-    property fabel : string read fLabel write fLabel;
+    property &Label : string read fLabel write fLabel;
     property Name : string read GetName write fName;
     property NameClaimType : string read fNameClaimType write fNameClaimType;
     property RoleClaimType : string read fRoleClaimType write fRoleClaimType;
@@ -212,11 +216,13 @@ begin
 end;
 
 constructor TClaimsPrincipal.Create(aIdentity: IIdentity);
+var
+  obj : TClaimsIdentity;
 begin
   Create;
   if aIdentity = nil then raise EArgumentNilException.Create('Identity cannot be null');
-  fIdentities.Add(TClaimsIdentity(aIdentity));
-  //aIdentity._AddRef;
+  obj := aIdentity as TClaimsIdentity;
+  fIdentities.Add(obj);
 end;
 
 destructor TClaimsPrincipal.Destroy;
@@ -278,7 +284,7 @@ begin
   Result := TxList<TClaim>.Create;
   for identity in fIdentities do
   begin
-    for claim in Identity.Claims do Result.Add(claim);
+    for claim in identity.Claims do Result.Add(claim);
   end;
 end;
 
@@ -304,6 +310,16 @@ end;
 procedure TClaimsIdentity.AddClaim(aClaim: TClaim);
 begin
   fClaims.Add(aClaim);
+end;
+
+function TClaimsIdentity._AddRef: Integer;
+begin
+  Result := -1; // disable ref-count-driven destruction
+end;
+
+function TClaimsIdentity._Release: Integer;
+begin
+  Result := -1; // disable ref-count-driven destruction
 end;
 
 constructor TClaimsIdentity.Create;

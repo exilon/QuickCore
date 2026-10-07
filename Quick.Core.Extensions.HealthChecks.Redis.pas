@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.HealthChecks.Redis
   Description : Core Extensions Entity Health Checks
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 14/02/2021
   Modified    : 21/02/2021
@@ -70,6 +70,8 @@ type
   public
     constructor Create(aRedisOptions : TRedisHealthCheckOptions; aTimeSpan : TTimeSpan);
     destructor Destroy; override;
+    function GetCheckKind : string; override;
+    function GetTags : string; override;
     procedure Check; override;
   end;
 
@@ -125,6 +127,16 @@ destructor TRedisHealthCheck.Destroy;
 begin
   fRedisClient.Free;
   inherited;
+end;
+
+function TRedisHealthCheck.GetCheckKind: string;
+begin
+  Result := 'redis';
+end;
+
+function TRedisHealthCheck.GetTags: string;
+begin
+  Result := Format('{"host":"%s","port":%d,"database":%d}',[fRedisOptions.Host, fRedisOptions.Port, fRedisOptions.DatabaseNumber]);
 end;
 
 { TRedisHealthCheckOptions }

@@ -33,10 +33,6 @@ begin
       try
         ApiServer.UseStartup<TStartup>;
         ApiServer.Start;
-        //Wait for Exit
-        cout(' ',ccWhite);
-        cout('Press [Enter] to quit',ccYellow);
-        ConsoleWaitForEnterKey;
       finally
         ApiServer.Free;
       end;

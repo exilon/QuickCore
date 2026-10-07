@@ -1,0 +1,60 @@
+ConnectionStrings:
+  Connections:
+    - Name: ShopContext
+      Provider: ""
+      ConnectionString: Database=.\\shop.db
+
+    - Name: ShopContext2
+      Provider: ""
+      ConnectionString: Server=MARVEL;Database=shop;User Id=exilonuser;Password=KionaiMo$2200;
+
+
+AppSettings:
+  Smtp: mail.domain.com
+  Email: info@domain.com
+
+IdentityOptions:
+  LockOut:
+    AllowedForNewUsers: False
+    DefaultLockoutTimeSpan: null
+    MaxFailedAccessAttempts: 0
+  Password:
+    RequireDigit: False
+    RequiredLength: 6
+    RequiredUniqueChars: 0
+    RequireLowercase: False
+    RequireNonAlphanumeric: False
+    RequireUppercase: False
+  SignIn:
+    RequireConfirmedAccount: False
+    RequireConfirmedEmail: False
+    RequireConfirmedPhoneNumber: False
+  Stores:
+    MaxLengthForKeys: 0
+    ProtectPersonalData: False
+  Tokens:
+    DefaultAuthenticatorProvider: ""
+    DefaultEmailProvider: ""
+    DefaultPhoneProvider: ""
+    DefaultProvider: ""
+  User:
+    AllowedUserNameCharacters: ""
+    RequireUniqueEmail: True
+
+ApiKey:
+  UnAuthorizedErrorCode: 401
+  UnAuthorizedErrorMessage: Not authenticated
+  ApiKeys:
+    - Name: John
+      Role: Admin
+      Key: fkjsfVMfskdfkaiienvz23k12nfaadfavbkx
+      Expiration: null
+      Active: True
+
+    - Name: Peter
+      Role: User
+      Key: mmvkasffoasd034jadsfkvnaaj3bfajxcfh
+      Expiration: null
+      Active: True
+
+

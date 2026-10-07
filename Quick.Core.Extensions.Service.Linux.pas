@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Service.Linux
   Description : Allow run app as Linux daemon
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 01/07/2021
   Modified    : 02/08/2021

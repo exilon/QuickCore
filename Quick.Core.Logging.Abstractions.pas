@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Logging.Abstractions
   Description : Core Logging Interface
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 05/02/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 

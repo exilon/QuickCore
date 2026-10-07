@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Controller
   Description : Core Mvc Controller
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 30/08/2019
   Modified    : 06/06/2020
@@ -46,7 +46,8 @@ uses
   Quick.Core.Mvc.Context,
   Quick.Core.Mvc.Routing,
   Quick.Core.Mvc.ActionInvoker,
-  Quick.Core.Mvc.ViewFeatures;
+  Quick.Core.Mvc.ViewFeatures,
+  Quick.Core.Security.Claims;
 
 type
   IHttpController = interface
@@ -70,8 +71,10 @@ type
     fViewEngine : IViewEngine;
     function GetContext: THttpContextBase;
     procedure SetContext(const Value: THttpContextBase);
+    function GetUser: TClaimsPrincipal;
   protected
-    function StatusCode(const aStatusCode : THttpStatusCode; const aStatusText : string = '') : TStatusResult;
+    function StatusCode(const aStatusCode : THttpStatusCode; const aStatusText : string = '') : TStatusResult; overload;
+    function StatusCode(aStatusCode : Integer; const aStatusText : string = '') : TStatusResult; overload;
     function Ok(const aStatusText : string = '') : TStatusResult;
     function Accepted(const aStatusText : string = '') : TStatusResult;
     function BadRequest(const aStatusText : string = '') : TStatusResult;
@@ -81,8 +84,14 @@ type
     function Redirect(const aURL : string) : TRedirectResult;
     function RedirectPermanent(const aURL : string) : TRedirectResult;
     function Content(const aContentText : string) : TContentResult;
-    function Json(aObject: TObject; aOnlyPublishedProperties : Boolean = False): TJsonResult;
+    function Json(aObject: TObject; aOnlyPublishedProperties : Boolean = False): TJsonResult; overload;
+    function Json(const aJsonText : string): TJsonResult; overload;
     function View(const aView : string = '') : TViewResult;
+    { Resource-based authorization helper.
+      Evaluates the named policy against the current User and the supplied
+      resource object.  Returns True when the policy succeeds.
+      Requires IAuthorizationService to be registered via AddAuthorization(). }
+    function AuthorizeResource(aResource: TObject; const aPolicyName: string): Boolean; overload;
   public
     destructor Destroy; override;
     //property Resolver : IDependencyResolver read fResolver;
@@ -92,6 +101,7 @@ type
     property ViewData : TViewDataDictionary read fViewData write fViewData;
     property Logger : ILogger read fLogger;
     property HttpContext : THttpContextBase read GetContext write SetContext;
+    property User : TClaimsPrincipal read GetUser;
     property OnResultExecuting : TExecuteEvent read fOnResultExecuting write fOnResultExecuting;
     property OnResultExecuted : TExecuteEvent read fOnResultExecuted write fOnResultExecuted;
     //property OnException
@@ -182,7 +192,46 @@ type
 
   FromBody = class(TCustomAttribute);
 
+  FromQuery = class(TCustomAttribute)
+  private
+    fName : string;
+  public
+    constructor Create(const aName : string = '');
+    property Name : string read fName;
+  end;
+
+  FromHeader = class(TCustomAttribute)
+  private
+    fName : string;
+  public
+    constructor Create(const aName : string = '');
+    property Name : string read fName;
+  end;
+
+  /// <summary>Bind a controller constructor parameter from a named (keyed) DI registration.
+  /// Equivalent to .NET 8 [FromKeyedServices("key")].
+  /// Example:  constructor Create([FromKeyedServices('secondary')] aRepo: IRepository);</summary>
+  FromKeyedServices = class(TCustomAttribute)
+  private
+    fKey : string;
+  public
+    constructor Create(const aKey : string);
+    property Key : string read fKey;
+  end;
+
   ApiController = class(TCustomAttribute);
+
+  (* Applied to a controller to declare which API version(s) it implements.
+    Use with [Route('api/v<major>/[controller]')] for URL-based versioning. *)
+  ApiVersion = class(TCustomAttribute)
+  private
+    fVersion : string;
+    fDeprecated : Boolean;
+  public
+    constructor Create(const aVersion : string; aDeprecated : Boolean = False);
+    property Version    : string  read fVersion;
+    property Deprecated : Boolean read fDeprecated;
+  end;
 
   procedure RegisterController(aHttpController : THttpControllerClass);
 
@@ -191,12 +240,45 @@ var
 
 implementation
 
+uses
+  RTTI,
+  Quick.Core.Mvc.Filters,
+  Quick.Core.Security.Authorization;
+
 
 procedure RegisterController(aHttpController : THttpControllerClass);
 begin
   RegisteredControllers := RegisteredControllers + [aHttpController];
 end;
 
+{ ApiVersion }
+
+constructor ApiVersion.Create(const aVersion : string; aDeprecated : Boolean);
+begin
+  fVersion    := aVersion;
+  fDeprecated := aDeprecated;
+end;
+
+{ FromQuery }
+
+constructor FromQuery.Create(const aName : string);
+begin
+  fName := aName;
+end;
+
+{ FromHeader }
+
+constructor FromHeader.Create(const aName : string);
+begin
+  fName := aName;
+end;
+
+{ FromKeyedServices }
+
+constructor FromKeyedServices.Create(const aKey : string);
+begin
+  fKey := aKey;
+end;
 
 { TMethodVerbAttribute }
 
@@ -243,6 +325,16 @@ end;
 { THttpController }
 
 procedure THttpController.Execute(aRequestContext : TRequestContext; aViewEngine : IViewEngine);
+var
+  ctx          : TRttiContext;
+  rtype        : TRttiType;
+  rmethod      : TRttiMethod;
+  attr         : TCustomAttribute;
+  filterAttr   : TActionFilterAttribute;
+  execCtx      : TActionExecutingContext;
+  doneCtx      : TActionExecutedContext;
+  actionError  : Exception;
+  actionContext : TActionContext;
 begin
   {$IFDEF DEBUG_ROUTING}
     TDebugger.Enter(Self,Format('Execute (%s)',[aRequestContext.HttpContext.Request.URL])).TimeIt;
@@ -254,8 +346,80 @@ begin
   fRoute := aRequestContext.HttpContext.Route;
   fViewData := TViewDataDictionary.Create;
   fViewEngine := aViewEngine;
-  //execute controller action method
-  TActionInvoker.Invoke(Self,aRequestContext);
+
+  // --- collect action filters from controller class + action method ---
+  execCtx := TActionExecutingContext.Create(aRequestContext);
+  doneCtx := nil;
+  actionError := nil;
+  rtype := nil;
+  rmethod := nil;
+  try
+    rtype := ctx.GetType(aRequestContext.HttpContext.Route.ControllerClass);
+    if rtype <> nil then
+      rmethod := rtype.GetMethod(aRequestContext.HttpContext.Route.ActionMethodName);
+
+    // OnActionExecuting: controller-level filters first, then method-level
+    if rtype <> nil then
+      for attr in rtype.GetAttributes do
+        if attr is TActionFilterAttribute then
+        begin
+          filterAttr := TActionFilterAttribute(attr);
+          filterAttr.OnActionExecuting(execCtx);
+          if execCtx.Canceled then Break;
+        end;
+    if (not execCtx.Canceled) and (rmethod <> nil) then
+      for attr in rmethod.GetAttributes do
+        if attr is TActionFilterAttribute then
+        begin
+          filterAttr := TActionFilterAttribute(attr);
+          filterAttr.OnActionExecuting(execCtx);
+          if execCtx.Canceled then Break;
+        end;
+
+    if execCtx.Canceled then
+    begin
+      // short-circuit: execute the assigned result if any
+      if Assigned(execCtx.Result) then
+      begin
+        actionContext := TActionContext.Create(aRequestContext.HttpContext, aRequestContext.RouteData);
+        try
+          execCtx.Result.ExecuteResult(actionContext);
+        finally
+          actionContext.Free;
+        end;
+      end;
+    end
+    else
+    begin
+      // execute controller action method
+      try
+        TActionInvoker.Invoke(Self, aRequestContext);
+      except
+        on E : Exception do
+        begin
+          actionError := E;
+          raise;
+        end;
+      end;
+    end;
+  finally
+    // OnActionExecuted: method-level first, then controller-level
+    doneCtx := TActionExecutedContext.Create(aRequestContext, actionError);
+    try
+      if rmethod <> nil then
+        for attr in rmethod.GetAttributes do
+          if attr is TActionFilterAttribute then
+            TActionFilterAttribute(attr).OnActionExecuted(doneCtx);
+      if rtype <> nil then
+        for attr in rtype.GetAttributes do
+          if attr is TActionFilterAttribute then
+            TActionFilterAttribute(attr).OnActionExecuted(doneCtx);
+    finally
+      doneCtx.Free;
+      execCtx.Free;
+    end;
+  end;
+
   if Assigned(fOnResultExecuted) then fOnResultExecuted(aRequestContext);
 end;
 
@@ -269,14 +433,43 @@ begin
   fHttpContext := Value;
 end;
 
+function THttpController.GetUser: TClaimsPrincipal;
+begin
+  if fHttpContext <> nil then Result := fHttpContext.User
+    else Result := nil;
+end;
+
+function THttpController.AuthorizeResource(aResource: TObject; const aPolicyName: string): Boolean;
+var
+  authService : IAuthorizationService;
+  authResult  : TAuthorizationResult;
+begin
+  if fHttpContext = nil then Exit(False);
+  authService := fHttpContext.RequestServices.GetService<IAuthorizationService>;
+  if authService = nil then
+    raise EAuthorizationError.Create('IAuthorizationService is not registered. Call services.Extension<TAuthorizationServiceExtension>.AddAuthorization(...)');
+  authResult := authService.Authorize(fHttpContext.User, aResource, aPolicyName);
+  Result := authResult.Succeeded;
+end;
+
 function THttpController.Json(aObject: TObject; aOnlyPublishedProperties : Boolean = False): TJsonResult;
 begin
   Result := TJsonResult.Create(aObject,aOnlyPublishedProperties);
 end;
 
+function THttpController.Json(const aJsonText: string): TJsonResult;
+begin
+  Result := TJsonResult.Create(aJsonText);
+end;
+
 function THttpController.StatusCode(const aStatusCode: THttpStatusCode; const aStatusText: string): TStatusResult;
 begin
   Result := TStatusResult.Create(Integer(aStatusCode),aStatusText);
+end;
+
+function THttpController.StatusCode(aStatusCode: Integer; const aStatusText: string): TStatusResult;
+begin
+  Result := TStatusResult.Create(aStatusCode,aStatusText);
 end;
 
 function THttpController.Ok(const aStatusText: string): TStatusResult;

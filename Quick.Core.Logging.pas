@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2023 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Logging
   Description : Core Logging
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 02/11/2019
-  Modified    : 01/03/2023
+  Modified    : 16/06/2020
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 

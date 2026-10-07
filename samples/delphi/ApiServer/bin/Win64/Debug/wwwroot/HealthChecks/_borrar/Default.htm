@@ -1,0 +1,89 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WCF Client</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <title></title>
+  <style type="text/css">
+      body
+      {
+          font-family: Arial;
+          font-size: 10pt;
+      }
+      table
+      {
+          border: 1px solid #ccc;
+          border-collapse: collapse;
+      }
+      table th
+      {
+          background-color: #F7F7F7;
+          color: #333;
+          font-weight: bold;
+      }
+      table th, table td
+      {
+          padding: 5px;
+          border-color: #ccc;
+      }
+  </style>
+</head>
+
+<body>
+
+<table id="location" border='1'>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Elapsed</th>
+        <th>LastCheck</th>
+        <th>Description</th>
+    </tr>
+</table>
+
+<script>
+
+var service = 'http://127.0.0.1:8080/healthchecks';
+
+$(document).ready(function(){
+
+    jQuery.support.cors = true;
+    setInterval(function()
+    {
+      $.ajax(
+      {
+        type: "GET",
+        url: service,
+        data: "{}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        cache: false,
+        success: function (data) {
+
+        var trHTML = '';
+        $("#location tbody").empty();
+        $.each(data,function(i,item){
+          $("#location tbody").append(
+              "<tr>"
+                  +"<td>"+item.Name+"</td>"
+                  +"<td>"+item.Status+"</td>"
+                  +"<td>"+item.Elapsed+"</td>"
+                  +"<td>"+item.LastCheck+"</td>"
+                  +"<td>"+item.Description+"</td>"
+              +"</tr>" )
+          })
+        },
+        error: function (msg) {
+
+            alert(msg.responseText);
+        }
+      });
+  }, 2000); //10000 milliseconds = 10 seconds
+})
+
+</script>
+
+</body>
+</html>

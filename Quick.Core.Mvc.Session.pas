@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike P�rez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Session
   Description : Core Mvc Sessions
-  Author      : Kike P�rez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 23/02/2020
   Modified    : 23/02/2020
@@ -35,7 +35,9 @@ interface
 
 uses
   System.SysUtils,
+  System.DateUtils,
   System.Generics.Collections,
+  System.SyncObjs,
   Quick.Options,
   Quick.Core.Caching.Abstractions;
 
@@ -122,6 +124,53 @@ type
   public
     constructor Create(aDistributedCache : IDistributedCache); virtual;
     function CreateSession(const aSessionKey : string; aIdleTimeOut : Integer; aIsNewSessionKey : Boolean) : ISession; virtual;
+  end;
+
+  { Forward declaration }
+  TInMemorySessionStore = class;
+
+  { TInMemorySession — ISession backed by TInMemorySessionStore }
+  TInMemorySession = class(TInterfacedObject, ISession)
+  private
+    fId              : string;
+    fIsAvailable     : Boolean;
+    fData            : TDictionary<string, string>; // reference — owned by store
+    fStore           : TInMemorySessionStore;       // not owned
+    fIdleTimeoutSecs : Integer;
+    function GetId            : string;
+    function GetIsAvailable   : Boolean;
+  public
+    constructor Create(const aId : string; aData : TDictionary<string, string>;
+                       aStore : TInMemorySessionStore; aIdleTimeoutSecs : Integer);
+    property Id          : string  read GetId;
+    property IsAvailable : Boolean read GetIsAvailable;
+    procedure SetString(const aKey : string; const aValue : string);
+    procedure SetInteger(const aKey : string; const aValue : Int64);
+    procedure SetFloat(const aKey : string; const aValue : Extended);
+    function  GetString(const aKey : string) : string;
+    function  GetInteger(const aKey : string) : Int64;
+    function  GetFloat(const aKey : string) : Extended;
+    procedure Remove(const aValue : string);
+    procedure Load;
+    procedure Commit;
+    procedure Clear;
+  end;
+
+  { TInMemorySessionStore — thread-safe in-process session store }
+  TInMemorySessionStore = class(TInterfacedObject, ISessionStore)
+  private
+    fSessions            : TObjectDictionary<string, TDictionary<string, string>>;
+    fExpiry              : TDictionary<string, TDateTime>;
+    fLock                : TCriticalSection;
+    fDefaultIdleTimeout  : Integer;  // seconds
+    procedure CleanExpired;
+  public
+    constructor Create(aDefaultIdleTimeoutSecs : Integer = 1200);
+    destructor Destroy; override;
+    function  CreateSession(const aSessionKey : string; aIdleTimeOut : Integer;
+                             aIsNewSessionKey : Boolean) : ISession;
+    function  SessionExists(const aSessionKey : string) : Boolean;
+    procedure UpdateExpiry(const aSessionKey : string; aIdleTimeoutSecs : Integer);
   end;
 
 implementation
@@ -215,6 +264,180 @@ end;
 procedure TDistributedSession.Commit;
 begin
 
+end;
+
+{ TInMemorySession }
+
+constructor TInMemorySession.Create(const aId : string; aData : TDictionary<string, string>;
+                                    aStore : TInMemorySessionStore; aIdleTimeoutSecs : Integer);
+begin
+  fId              := aId;
+  fData            := aData;
+  fStore           := aStore;
+  fIdleTimeoutSecs := aIdleTimeoutSecs;
+  fIsAvailable     := True;
+end;
+
+function TInMemorySession.GetId : string;
+begin
+  Result := fId;
+end;
+
+function TInMemorySession.GetIsAvailable : Boolean;
+begin
+  Result := fIsAvailable;
+end;
+
+procedure TInMemorySession.SetString(const aKey : string; const aValue : string);
+begin
+  fData.AddOrSetValue(aKey, aValue);
+end;
+
+procedure TInMemorySession.SetInteger(const aKey : string; const aValue : Int64);
+begin
+  fData.AddOrSetValue(aKey, aValue.ToString);
+end;
+
+procedure TInMemorySession.SetFloat(const aKey : string; const aValue : Extended);
+begin
+  fData.AddOrSetValue(aKey, aValue.ToString);
+end;
+
+function TInMemorySession.GetString(const aKey : string) : string;
+begin
+  fData.TryGetValue(aKey, Result);
+end;
+
+function TInMemorySession.GetInteger(const aKey : string) : Int64;
+var
+  s : string;
+begin
+  Result := 0;
+  if fData.TryGetValue(aKey, s) then Result := StrToInt64Def(s, 0);
+end;
+
+function TInMemorySession.GetFloat(const aKey : string) : Extended;
+var
+  s : string;
+begin
+  Result := 0.0;
+  if fData.TryGetValue(aKey, s) then Result := StrToFloatDef(s, 0.0);
+end;
+
+procedure TInMemorySession.Remove(const aValue : string);
+begin
+  fData.Remove(aValue);
+end;
+
+procedure TInMemorySession.Load;
+begin
+  // Data is already loaded from the store — no-op for in-memory sessions
+end;
+
+procedure TInMemorySession.Commit;
+begin
+  // Data dict is shared with the store — just refresh the expiry TTL
+  if fStore <> nil then
+    fStore.UpdateExpiry(fId, fIdleTimeoutSecs);
+end;
+
+procedure TInMemorySession.Clear;
+begin
+  fData.Clear;
+end;
+
+{ TInMemorySessionStore }
+
+constructor TInMemorySessionStore.Create(aDefaultIdleTimeoutSecs : Integer = 1200);
+begin
+  fDefaultIdleTimeout := aDefaultIdleTimeoutSecs;
+  fSessions := TObjectDictionary<string, TDictionary<string, string>>.Create([doOwnsValues]);
+  fExpiry   := TDictionary<string, TDateTime>.Create;
+  fLock     := TCriticalSection.Create;
+end;
+
+destructor TInMemorySessionStore.Destroy;
+begin
+  fLock.Free;
+  fExpiry.Free;
+  fSessions.Free;
+  inherited;
+end;
+
+procedure TInMemorySessionStore.CleanExpired;
+var
+  id       : string;
+  expired  : TArray<string>;
+  expireAt : TDateTime;
+  currentTime : TDateTime;
+  i        : Integer;
+begin
+  // Called while fLock is held
+  currentTime := Now;
+  expired := [];
+  for id in fExpiry.Keys do
+  begin
+    if fExpiry.TryGetValue(id, expireAt) and (currentTime > expireAt) then
+      expired := expired + [id];
+  end;
+  for i := 0 to High(expired) do
+  begin
+    fExpiry.Remove(expired[i]);
+    fSessions.Remove(expired[i]);
+  end;
+end;
+
+function TInMemorySessionStore.CreateSession(const aSessionKey : string;
+                                              aIdleTimeOut : Integer;
+                                              aIsNewSessionKey : Boolean) : ISession;
+var
+  data    : TDictionary<string, string>;
+  timeout : Integer;
+begin
+  timeout := aIdleTimeOut;
+  if timeout <= 0 then timeout := fDefaultIdleTimeout;
+
+  fLock.Enter;
+  try
+    CleanExpired;
+
+    if aIsNewSessionKey or not fSessions.TryGetValue(aSessionKey, data) then
+    begin
+      // New session — create fresh data dict
+      data := TDictionary<string, string>.Create;
+      fSessions.AddOrSetValue(aSessionKey, data);
+    end;
+    fExpiry.AddOrSetValue(aSessionKey, IncSecond(Now, timeout));
+  finally
+    fLock.Leave;
+  end;
+
+  Result := TInMemorySession.Create(aSessionKey, data, Self, timeout);
+end;
+
+function TInMemorySessionStore.SessionExists(const aSessionKey : string) : Boolean;
+var
+  expireAt : TDateTime;
+begin
+  fLock.Enter;
+  try
+    Result := fSessions.ContainsKey(aSessionKey) and
+              fExpiry.TryGetValue(aSessionKey, expireAt) and
+              (Now <= expireAt);
+  finally
+    fLock.Leave;
+  end;
+end;
+
+procedure TInMemorySessionStore.UpdateExpiry(const aSessionKey : string; aIdleTimeoutSecs : Integer);
+begin
+  fLock.Enter;
+  try
+    if fSessions.ContainsKey(aSessionKey) then
+      fExpiry.AddOrSetValue(aSessionKey, IncSecond(Now, aIdleTimeoutSecs));
+  finally
+    fLock.Leave;
+  end;
 end;
 
 end.

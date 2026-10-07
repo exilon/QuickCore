@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Identity.Store.Abstractions
   Description : Core Identity Store Abstractions
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 12/03/2020
   Modified    : 14/04/2020
@@ -34,6 +34,7 @@ unit Quick.Core.Identity.Store.Abstractions;
 interface
 
 uses
+  System.SysUtils,
   Quick.Value,
   Quick.Core.Linq.Abstractions;
 
@@ -50,6 +51,18 @@ type
     function ValidateCredentials(const aUsername, aPassword : string) : Boolean;
     function Users : ILinq<TUser>;
     function Roles : ILinq<TRole>;
+    // Extended store operations (optional â€” raise ENotImplemented if unsupported)
+    function FindByName(const aUserName : string) : TUser;
+    function FindByEmail(const aEmail : string) : TUser;
+    function GetPasswordHash(aUser : TUser) : string;
+    function SetPasswordHash(aUser : TUser; const aHash : string) : Boolean;
+    function GetSecurityStamp(aUser : TUser) : string;
+    function SetSecurityStamp(aUser : TUser; const aStamp : string) : Boolean;
+    function IsLockedOut(aUser : TUser) : Boolean;
+    function SetLockoutEnd(aUser : TUser; aEnd : TDateTime) : Boolean;
+    function GetRolesForUser(aUser : TUser) : TArray<string>;
+    function AddUserToRole(aUser : TUser; const aRoleName : string) : Boolean;
+    function RemoveUserFromRole(aUser : TUser; const aRoleName : string) : Boolean;
   end;
 
 implementation

@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Security.Authentication
   Description : Core Security Authentication
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 10/03/2020
   Modified    : 14/04/2020
@@ -611,7 +611,7 @@ end;
 
 function TAuthenticationProperties.GetString(const aKey: string): string;
 begin
-  if not fItems.TryGetValue(RedirectUriKey,Result) then raise EAuthenticationProperty.CreateFmt('Authentication property "%s" not defined!',[aKey]);
+  if not fItems.TryGetValue(aKey, Result) then raise EAuthenticationProperty.CreateFmt('Authentication property "%s" not defined!',[aKey]);
 end;
 
 procedure TAuthenticationProperties.SetAllowRefresh(const aValue: Boolean);

@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.Authorization
   Description : Core Mvc Authorization Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/03/2020
   Modified    : 16/04/2020
@@ -81,8 +81,8 @@ end;
 procedure TAuthorizationMiddleware.Invoke(aContext: THttpContextBase);
 begin
   inherited;
-  //var a := aContext.Route.ActionMethodName;
-  ValidateAuthorization(aContext);
+  if aContext.Route <> nil then
+    ValidateAuthorization(aContext);
 
   Next(aContext);
 end;
@@ -94,6 +94,7 @@ var
   isAuthorized : Boolean;
   ctx : TRttiContext;
   rtype : TRttiType;
+  rmethod : TRttiMethod;
   attr : TCustomAttribute;
 
 begin
@@ -102,8 +103,11 @@ begin
   methodname := aContext.Route.ActionMethodName;
   //controller type
   rtype := ctx.GetType(controller);
+  if rtype = nil then Exit(False);
   //get action attributes
-  for attr in rtype.GetMethod(methodname).GetAttributes do
+  rmethod := rtype.GetMethod(methodname);
+  if (rmethod <> nil) then
+  for attr in rmethod.GetAttributes do
   begin
     if (attr is AllowAnonymous) then isAuthorized := True
     else if (attr is Authorize) then

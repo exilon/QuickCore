@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Localization
   Description : Core Extensions Localization
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 26/06/2020
   Modified    : 26/06/2020
@@ -35,6 +35,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Classes,
   System.Generics.Collections,
   Quick.Options,
   Quick.Core.DependencyInjection,
@@ -55,17 +56,31 @@ type
 
   TTranslationNotFoundEvent = procedure(const aName : string) of object;
 
+  TFileLocalizationStore = class(TInterfacedObject, ILocalizationStore)
+  private
+    fLocalesPath : string;
+    fCache : TObjectDictionary<string, TDictionary<string,string>>;
+    function LoadCulture(const aCulture : string) : TDictionary<string,string>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function GetCultureTranslations(const aCulture : string) : TDictionary<string,string>;
+  end;
+
   TStringLocalization = class(TInterfacedObject,IStringLocalization)
   private
-    fTranslations : TDictionary<string,string>;
     fLocalizationStore : ILocalizationStore;
+    fCurrentCulture : string;
     fOnTranslationNotFound : TTranslationNotFoundEvent;
     function GetItem(const aName: string): string;
     function GetItemFmt(const aName : string; params : array of const) : string;
+    procedure SetCulture(const aCulture : string);
+    function GetCulture : string;
   public
     constructor Create(aLocalizationStore : ILocalizationStore);
     property Items[const aName : string] : string read GetItem; default;
     property Items[const aName : string; params : array of const] : string read GetItemFmt; default;
+    property Culture : string read GetCulture write SetCulture;
   end;
 
   TLocalizationServiceExtension = class(TServiceCollectionExtension)
@@ -80,10 +95,10 @@ implementation
 class function TLocalizationServiceExtension.AddLocalization(aConfigureOptions: TConfigureOptionsProc<TLocalizationOptions>): TServiceCollection;
 begin
   Result := ServiceCollection;
+  if not Result.IsRegistered<ILocalizationStore,TFileLocalizationStore> then
+    Result.AddSingleton<ILocalizationStore,TFileLocalizationStore>;
   if not Result.IsRegistered<IStringLocalization,TStringLocalization> then
-  begin
-    Result.AddSingleton<IStringLocalization,TStringLocalization>;
-  end;
+    Result.AddScoped<IStringLocalization,TStringLocalization>;
 end;
 
 { TLocalizationOptions }
@@ -104,17 +119,88 @@ begin
   inherited;
 end;
 
+{ TFileLocalizationStore }
+
+constructor TFileLocalizationStore.Create;
+begin
+  fLocalesPath := ExtractFilePath(ParamStr(0)) + 'locales\';
+  fCache := TObjectDictionary<string, TDictionary<string,string>>.Create([doOwnsValues]);
+end;
+
+destructor TFileLocalizationStore.Destroy;
+begin
+  fCache.Free;
+  inherited;
+end;
+
+function TFileLocalizationStore.LoadCulture(const aCulture: string): TDictionary<string,string>;
+var
+  lines : TStringList;
+  line, key, value : string;
+  eqPos : Integer;
+  filePath : string;
+begin
+  Result := TDictionary<string,string>.Create;
+  filePath := fLocalesPath + aCulture + '.lng';
+  if not FileExists(filePath) then
+    Exit;
+  lines := TStringList.Create;
+  try
+    lines.LoadFromFile(filePath, TEncoding.UTF8);
+    for line in lines do
+    begin
+      eqPos := line.IndexOf('=');
+      if eqPos > 0 then
+      begin
+        key   := line.Substring(0, eqPos).Trim;
+        value := line.Substring(eqPos + 1).Trim;
+        Result.AddOrSetValue(key, value);
+      end;
+    end;
+  finally
+    lines.Free;
+  end;
+end;
+
+function TFileLocalizationStore.GetCultureTranslations(const aCulture: string): TDictionary<string,string>;
+var
+  culture : string;
+begin
+  // normalise: 'es-ES' -> 'es'
+  culture := LowerCase(aCulture);
+  if culture.Contains('-') then
+    culture := culture.Substring(0, culture.IndexOf('-'));
+  if not fCache.TryGetValue(culture, Result) then
+  begin
+    Result := LoadCulture(culture);
+    fCache.Add(culture, Result);
+  end;
+end;
+
 { TStringLocalization }
 
 constructor TStringLocalization.Create(aLocalizationStore: ILocalizationStore);
 begin
   fLocalizationStore := aLocalizationStore;
-  fTranslations := aLocalizationStore.GetCultureTranslations('es-es');
+  fCurrentCulture    := 'en';
+end;
+
+procedure TStringLocalization.SetCulture(const aCulture: string);
+begin
+  fCurrentCulture := aCulture;
+end;
+
+function TStringLocalization.GetCulture: string;
+begin
+  Result := fCurrentCulture;
 end;
 
 function TStringLocalization.GetItem(const aName: string): string;
+var
+  translations : TDictionary<string,string>;
 begin
-  if not fTranslations.TryGetValue(aName,Result) then
+  translations := fLocalizationStore.GetCultureTranslations(fCurrentCulture);
+  if not translations.TryGetValue(aName, Result) then
   begin
     if Assigned(fOnTranslationNotFound) then fOnTranslationNotFound(aName);
     Result := aName;
@@ -122,13 +208,16 @@ begin
 end;
 
 function TStringLocalization.GetItemFmt(const aName: string; params: array of const): string;
+var
+  translations : TDictionary<string,string>;
 begin
-  if not fTranslations.TryGetValue(aName,Result) then
+  translations := fLocalizationStore.GetCultureTranslations(fCurrentCulture);
+  if not translations.TryGetValue(aName, Result) then
   begin
     if Assigned(fOnTranslationNotFound) then fOnTranslationNotFound(aName);
     Result := aName;
   end;
-  Result := Format(Result,params);
+  Result := Format(Result, params);
 end;
 
 end.

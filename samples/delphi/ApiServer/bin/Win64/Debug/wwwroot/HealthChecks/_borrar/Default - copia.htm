@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <style type="text/css">
+        body
+        {
+            font-family: Arial;
+            font-size: 10pt;
+        }
+        table
+        {
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+        table th
+        {
+            background-color: #F7F7F7;
+            color: #333;
+            font-weight: bold;
+        }
+        table th, table td
+        {
+            padding: 5px;
+            border-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <input type="button" id="btnGenerate" value="Generate Table" />
+    <hr />
+    <div id="dvTable">
+    </div>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $("#btnGenerate").click(function () {
+                //Build an array containing Customer records.
+                var customers = new Array();
+                customers.push(["Customer Id", "Name", "Country"]);
+                customers.push([1, "John Hammond", "United States"]);
+                customers.push([2, "Mudassar Khan", "India"]);
+                customers.push([3, "Suzanne Mathews", "France"]);
+                customers.push([4, "Robert Schidner", "Russia"]);
+
+                //Create a HTML Table element.
+                var table = $("<table />");
+                table[0].border = "1";
+
+                //Get the count of columns.
+                var columnCount = customers[0].length;
+
+                //Add the header row.
+                var row = $(table[0].insertRow(-1));
+                for (var i = 0; i < columnCount; i++) {
+                    var headerCell = $("<th />");
+                    headerCell.html(customers[0][i]);
+                    row.append(headerCell);
+                }
+
+                //Add the data rows.
+                for (var i = 1; i < customers.length; i++) {
+                    row = $(table[0].insertRow(-1));
+                    for (var j = 0; j < columnCount; j++) {
+                        var cell = $("<td />");
+                        cell.html(customers[i][j]);
+                        row.append(cell);
+                    }
+                }
+
+                var dvTable = $("#dvTable");
+                dvTable.html("");
+                dvTable.append(table);
+            });
+        });
+    </script>
+</body>
+</html>

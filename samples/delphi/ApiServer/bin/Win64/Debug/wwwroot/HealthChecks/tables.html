@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>HealthChecks</title>
+
+    <!-- Bootstrap -->
+    <link href="./dist/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="./dist/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="./dist/css/custom.min.css" rel="stylesheet">
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0;">
+              <a href="index.html" class="site_title"><i class="fa fa-heart" style="color:rgb(29, 177, 115)"></i> <span>HealthChecks</span></a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li><a><i class="fa fa-home"></i> List <span class="fa fa-chevron"></span></a>
+                  </li>
+                  <li><a><i class="fa fa-bar-chart-o"></i> Graphs <span class="fa fa-chevron"></span></a>
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+            <!-- /sidebar menu -->
+
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+            <div class="nav_menu">
+                <div class="nav toggle">
+                  <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+                </div>
+                <nav class="nav navbar-nav">
+                <ul class=" navbar-right">
+                  <li role="presentation" class="nav-item dropdown open">
+                    <a href="javascript:;" class="dropdown-toggle info-number" id="navbarDropdown1" data-toggle="dropdown" aria-expanded="false">
+                      <i class="fa fa-bell-o"></i>
+                      <span class="badge bg-green">2</span>
+                    </a>
+                    <ul class="dropdown-menu list-unstyled msg_list" role="menu" aria-labelledby="navbarDropdown1">
+                      <li class="nav-item">
+                        <div class="text-center">
+                          <a class="dropdown-item">
+                            <strong>See All Alerts</strong>
+                            <i class="fa fa-angle-right"></i>
+                          </a>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        <!-- /top navigation -->
+
+        <!-- page content -->
+        <div class="right_col" role="main">
+              <div class="col-md-12 col-sm-12  ">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2>HealthChecks status</h2>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                    <table id="tablechecks" class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Status</th>
+                          <th>On state from</th>
+                          <th>Response time</th>
+                          <th>Last execution</th>
+                          <th>Error message</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>   
+        </div>
+        <!-- /page content -->
+
+        <!-- footer content -->
+        <footer>
+          <div class="pull-right">
+            QuickCore <a href="https://github.com/exilon/QuickCore"></a>
+          </div>
+          <div class="clearfix"></div>
+        </footer>
+        <!-- /footer content -->
+      </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script>
+
+      var service = 'http://127.0.0.1:8080/healthchecks';
+
+      function prettyDate(time){
+        var date = new Date((time || "").replace(/-/g,"/").replace(/[TZ]/g," ")),
+            diff = (((new Date()).getTime() - date.getTime()) / 1000),
+            day_diff = Math.floor(diff / 86400);
+
+        return day_diff == 0 && (
+                diff < 10 && "just now" ||
+                diff < 60 && Math.floor(diff) + " seconds ago" ||
+                diff < 120 && "1 min ago" ||
+                diff < 3600 && Math.floor( diff / 60 ) + " min ago" ||
+                diff < 7200 && "1 hour ago" ||
+                diff < 86400 && Math.floor( diff / 3600 ) + " hours ago") ||
+            day_diff == 1 && "Yesterday" ||
+            day_diff < 7 && day_diff + " days ago" ||
+            day_diff < 31 && Math.ceil( day_diff / 7 ) + " week(s)";
+      }
+
+      function hStatus(sStatus){
+        return sStatus == 
+          sStatus == 'hsNotChecked' && '<i class="fa fa-clock-o" style="color:gray;font-size:20px"</i>' ||
+          sStatus == 'hsPassed' && '<i class="fa fa-check-circle" style="color:green;font-size:20px"</i> <a style="color:black;font-family:Helvetica Neue, Roboto, Arial, Droid Sans, sans-serif;font-size:13px">Healthy</a>' ||
+          sStatus == 'hsFailed' && '<i class="fa fa-exclamation" style="color:red;font-size:20px"</i> <a style="color:black;font-family:Helvetica Neue, Roboto, Arial, Droid Sans, sans-serif;font-size:13px">Unhealthy</a>';
+      }
+
+      
+      $(document).ready(function(){
+      
+          jQuery.support.cors = true;
+          setInterval(function()
+          {
+            $.ajax(
+            {
+              type: "GET",
+              url: service,
+              //data: "{}",
+              contentType: "application/json; charset=utf-8",
+              dataType: "json",
+              cache: true,
+              success: function (data) {
+      
+              var trHTML = '';
+              $("#tablechecks tbody").empty();
+              $.each(data,function(i,item){
+                $("#tablechecks tbody").append(
+                    "<tr>"
+                      +"<td>"+item.Name+"</td>"
+                      +"<td>"+ hStatus(item.Status) + "</td>"
+                      +"<td>"+prettyDate(item.LastStatusChange)+"</td>"
+                      +"<td>"+item.TimeElapsed+"</td>"
+                      +"<td>"+item.LastCheck+"</td>"
+                      +"<td>"+item.ErrorMsg+"</td>"
+                    +"</tr>" )
+                })
+              },
+              error: function (msg) {
+      
+                  //alert(msg.responseText);
+              }
+            });
+        }, 2000); //10000 milliseconds = 10 seconds
+      })
+      
+      </script>
+  </body>
+</html>

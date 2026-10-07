@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2022 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Engine.RestServer
   Description : Core Entity RestServer Provider
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.1
   Created     : 31/11/2019
-  Modified    : 18/01/2022
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -58,7 +58,6 @@ type
     fHost : string;
     fUser : string;
     fPassword : string;
-    fSessionId : string;
     procedure SetConnected(const Value: Boolean);
   public
     constructor Create;
@@ -355,8 +354,6 @@ begin
 end;
 
 function TRestServerEntityQuery<T>.FillRecordFromDB(aEntity: T) : T;
-var
-  field : TDBField;
 begin
   aEntity.Free;
   Result := fQuery.Results[fCurrentIndex];
@@ -399,6 +396,7 @@ var
   request : TEntityCountRequest;
   response : string;
 begin
+  Result := 0;
   request := TEntityCountRequest.Create;
   try
     request.Table := fModel.TableName;

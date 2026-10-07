@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Extensions.Serialization
   Description : Core Extensions Serialization
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 02/02/2020
-  Modified    : 18/06/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 

@@ -81,9 +81,10 @@ class procedure TStartup.Configure(app : TMVCServer);
 begin
   app
   .AddControllers
-  .AddController(THomeController)
   .DefaultRoute(THomeController,'Home/Index')
   .UseWebRoot('.\wwwroot')
+  .UseSwagger('ApiKeyMemoryStore API', '1.0.0',
+    'QuickCore ApiKeyMemoryStore sample API.')
   .UseStaticFiles
   .UseRouting
   .UseAuthentication

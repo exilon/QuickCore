@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.StaticFile
   Description : Core Mvc StaticFiles Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 17/10/2019
   Modified    : 17/10/2019
@@ -36,6 +36,7 @@ interface
 uses
   Classes,
   System.SysUtils,
+  System.IOUtils,
   System.Generics.Collections,
   Quick.HttpServer.Types,
   Quick.HttpServer.Request,
@@ -47,45 +48,25 @@ uses
 type
   TStaticFilesMiddleware = class(TRequestDelegate)
   private
-    fValidExtensions : TStringList;
     function CanHandleExtension(const aFilename : string) : Boolean;
   public
     destructor Destroy; override;
-    constructor Create;
     procedure Invoke(aContext : THttpContextBase); override;
-    procedure AddValidExtension(const aExtension: string);
   end;
 
 implementation
 
 { TStaticFilesMiddleware }
 
-procedure TStaticFilesMiddleware.AddValidExtension(const aExtension: string);
-begin
-  fValidExtensions.Add(aExtension);
-end;
-
 function TStaticFilesMiddleware.CanHandleExtension(const aFilename: string): Boolean;
 begin
-  //check extensionless and valid extensions
-
-  var currentExtension := ExtractFileExt(aFilename);
-
-  var validExtension := not currentExtension.IsEmpty;
-
-  if not fValidExtensions.IsEmpty then validExtension := validExtension and fValidExtensions.Contains(currentExtension);
-
-  Result := validExtension;
-end;
-
-constructor TStaticFilesMiddleware.Create;
-begin
-  fValidExtensions := TStringList.Create;
+  //check extensionless
+  Result := not ExtractFileExt(aFilename).IsEmpty;
 end;
 
 destructor TStaticFilesMiddleware.Destroy;
 begin
-  fValidExtensions.Free;
+
   inherited;
 end;
 
@@ -97,6 +78,22 @@ begin
 
   filename := aContext.WebRoot + aContext.Request.URL;
   if filename.Contains('?') then filename.Substring(0,filename.IndexOf('?')-1);
+
+  // SEC-21: Prevent path traversal â€” reject any URL containing '..' segments,
+  // then verify the canonical path is still within WebRoot
+  if aContext.Request.URL.Contains('..') then
+  begin
+    aContext.Response.StatusCode := 400;
+    aContext.Response.ContentText := 'Bad Request';
+    Exit;
+  end;
+  filename := TPath.GetFullPath(filename);
+  if not filename.StartsWith(TPath.GetFullPath(aContext.WebRoot), True) then
+  begin
+    aContext.Response.StatusCode := 400;
+    aContext.Response.ContentText := 'Bad Request';
+    Exit;
+  end;
 
   //check if can handle extension
   if CanHandleExtension(filename) then
@@ -119,7 +116,5 @@ begin
   end
   else Next(aContext);
 end;
-
-initialization
 
 end.

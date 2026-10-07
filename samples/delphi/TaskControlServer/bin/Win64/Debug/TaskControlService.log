@@ -1,0 +1,30 @@
+----------------------------------------------------------------------
+Application : TaskControlServer 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\TaskControlServer\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 11-02-2020 00:13:42 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+11-02-2020 00:13:42  [DONE] Settings loaded
+11-02-2020 00:13:42  [DONE] Added controller "THomeController"
+11-02-2020 00:13:42  [WARN] Already added controller "THomeController"
+11-02-2020 00:13:42  [DONE] Added controller "TTaskControlController"
+----------------------------------------------------------------------
+Application : TaskControlServer 
+Path        : D:\Delphi\LibsRAD10\QuickLibs\QuickCore\samples\delphi\TaskControlServer\bin\Win64\Debug\
+CPU cores   : 8
+OS version  : Windows 10 (Version 10.0, Build 18362, 64-bit Edition)
+Host        : MASTER
+Username    : kike
+Started     : 11-02-2020 00:23:05 
+AppType     : Console
+Debug mode  : On
+----------------------------------------------------------------------
+11-02-2020 00:23:05  [DONE] Settings loaded
+11-02-2020 00:23:05  [DONE] Added controller "THomeController"
+11-02-2020 00:23:05  [WARN] Already added controller "THomeController"
+11-02-2020 00:23:05  [DONE] Added controller "TTaskControlController"

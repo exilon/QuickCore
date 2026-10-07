@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Factory.Controller
   Description : Core Mvc Controller Factory
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 30/08/2019
   Modified    : 29/10/2019

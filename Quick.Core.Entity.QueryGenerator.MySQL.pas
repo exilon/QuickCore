@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.QueryGenerator.MySQL
   Description : Core Entity MySQL Query Generator
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 22/11/2019
-  Modified    : 11/09/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -50,10 +50,13 @@ type
     function AddColumn(aModel : TEntityModel; aField : TEntityField) : string;
     function SetPrimaryKey(aModel : TEntityModel) : string;
     function CreateIndex(aModel : TEntityModel; aIndex : TEntityIndex) : string;
-    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean) : string;
+    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean; nolock : Boolean) : string;
     function Sum(const aTableName, aFieldName, aWhere : string) : string;
     function Count(const aTableName : string; const aWhere : string) : string;
     function Add(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string; override;
+    function SupportsInsertReturning : Boolean; override;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string; override;
     function AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
     function Update(const aTableName, aFieldPairs, aWhere : string) : string;
     function Delete(const aTableName : string; const aWhere : string) : string;
@@ -166,7 +169,7 @@ var
 begin
   querytext := TStringList.Create;
   try
-    querytext.Add(Format('SELECT SUM(%s) as cnt FROM [%s] WHERE %s',[aTableName,aFieldName,aWhere]));
+    querytext.Add(Format('SELECT COALESCE(SUM(%s),0) AS cnt FROM [%s] WHERE %s',[aFieldName,aTableName,aWhere]));
     Result := querytext.Text;
   finally
     querytext.Free;
@@ -174,13 +177,14 @@ begin
 end;
 
 function TMySQLQueryGenerator.Select(const aTableName, aFieldNames: string; aLimit: Integer;
-  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean) : string;
+  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean; nolock : Boolean) : string;
 var
   orderdir : string;
   querytext : TStringList;
 begin
   querytext := TStringList.Create;
   try
+    if nolock then querytext.Add('SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;');
     //define select-where clauses
     if aFieldNames.IsEmpty then querytext.Add(Format('SELECT * FROM [%s] WHERE %s',[aTableName,aWhere]))
       else querytext.Add(Format('SELECT %s FROM [%s] WHERE %s',[aFieldNames,aTableName,aWhere]));
@@ -193,6 +197,7 @@ begin
     end;
     //define limited query clause
     if aLimit > 0 then querytext.Add('LIMIT ' + aLimit.ToString);
+    if nolock then querytext.Add('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
     Result := querytext.Text;
   finally
     querytext.Free;
@@ -208,9 +213,37 @@ begin
     querytext.Add(Format('INSERT INTO [%s]',[aTableName]));
     querytext.Add(Format('(%s)',[aFieldNames]));
     querytext.Add(Format('VALUES(%s)',[aFieldValues]));
+    Result := querytext.Text;
   finally
     querytext.Free;
   end;
+end;
+
+function TMySQLQueryGenerator.AddReturningId(const aTableName, aFieldNames, aFieldValues,
+  aPrimaryKeyName: string): string;
+var
+  querytext : TStringList;
+begin
+  querytext := TStringList.Create;
+  try
+    querytext.Add(Format('INSERT INTO [%s]',[aTableName]));
+    querytext.Add(Format('(%s)',[aFieldNames]));
+    querytext.Add(Format('VALUES(%s)',[aFieldValues]));
+    querytext.Add(Format('RETURNING %s AS Id',[aPrimaryKeyName]));
+    Result := querytext.Text;
+  finally
+    querytext.Free;
+  end;
+end;
+
+function TMySQLQueryGenerator.SupportsInsertReturning: Boolean;
+begin
+  Result := True;
+end;
+
+function TMySQLQueryGenerator.LastInsertedIdQuery(const aPrimaryKeyName: string): string;
+begin
+  Result := 'SELECT LAST_INSERT_ID() AS Id';
 end;
 
 function TMySQLQueryGenerator.AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;

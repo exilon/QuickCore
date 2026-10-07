@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.DAO.QueryGenerator.SQLite
   Description : Core Entity SQLite Query Generator
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 22/11/2019
-  Modified    : 11/09/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -53,10 +53,13 @@ type
     function AddColumn(aModel : TEntityModel; aField : TEntityField) : string;
     function SetPrimaryKey(aModel : TEntityModel) : string;
     function CreateIndex(aModel : TEntityModel; aIndex : TEntityIndex) : string;
-    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean) : string;
+    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean; nolock : Boolean) : string;
     function Sum(const aTableName, aFieldName, aWhere: string): string;
     function Count(const aTableName : string; const aWhere : string) : string;
     function Add(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string; override;
+    function SupportsInsertReturning : Boolean; override;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string; override;
     function AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
     function Update(const aTableName, aFieldPairs, aWhere : string) : string;
     function Delete(const aTableName : string; const aWhere : string) : string;
@@ -192,7 +195,10 @@ var
 begin
   querytext := TStringList.Create;
   try
-    querytext.Add(Format('SELECT SUM (%s) FROM [%s] WHERE %s',[aTableName,aFieldName,aWhere]));
+    if aWhere.IsEmpty then
+      querytext.Add(Format('SELECT COALESCE(SUM([%s]),0) AS cnt FROM [%s]',[aFieldName,aTableName]))
+    else
+      querytext.Add(Format('SELECT COALESCE(SUM([%s]),0) AS cnt FROM [%s] WHERE %s',[aFieldName,aTableName,aWhere]));
     Result := querytext.Text;
   finally
     querytext.Free;
@@ -200,7 +206,7 @@ begin
 end;
 
 function TSQLiteQueryGenerator.Select(const aTableName, aFieldNames : string; aLimit: Integer;
-  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean) : string;
+  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean; nolock : Boolean) : string;
 var
   orderdir : string;
   querytext : TStringList;
@@ -208,8 +214,16 @@ begin
   querytext := TStringList.Create;
   try
     //define select-where clauses
-    if aFieldNames.IsEmpty then querytext.Add(Format('SELECT * FROM [%s] WHERE %s',[aTableName,aWhere]))
-      else querytext.Add(Format('SELECT %s FROM [%s] WHERE %s',[aFieldNames,aTableName,aWhere]));
+    if aFieldNames.IsEmpty then
+    begin
+      if aWhere.IsEmpty then querytext.Add(Format('SELECT * FROM [%s]',[aTableName]))
+        else querytext.Add(Format('SELECT * FROM [%s] WHERE %s',[aTableName,aWhere]));
+    end
+    else
+    begin
+      if aWhere.IsEmpty then querytext.Add(Format('SELECT %s FROM [%s]',[aFieldNames,aTableName]))
+        else querytext.Add(Format('SELECT %s FROM [%s] WHERE %s',[aFieldNames,aTableName,aWhere]));
+    end;
     //define orderby clause
     if not aOrderFields.IsEmpty then
     begin
@@ -238,6 +252,33 @@ begin
   finally
     querytext.Free;
   end;
+end;
+
+function TSQLiteQueryGenerator.AddReturningId(const aTableName, aFieldNames, aFieldValues,
+  aPrimaryKeyName: string): string;
+var
+  querytext : TStringList;
+begin
+  querytext := TStringList.Create;
+  try
+    querytext.Add(Format('INSERT INTO [%s]',[aTableName]));
+    querytext.Add(Format('(%s)',[aFieldNames]));
+    querytext.Add(Format('VALUES(%s)',[aFieldValues]));
+    querytext.Add(Format('RETURNING [%s] AS Id',[aPrimaryKeyName]));
+    Result := querytext.Text;
+  finally
+    querytext.Free;
+  end;
+end;
+
+function TSQLiteQueryGenerator.SupportsInsertReturning: Boolean;
+begin
+  Result := True;
+end;
+
+function TSQLiteQueryGenerator.LastInsertedIdQuery(const aPrimaryKeyName: string): string;
+begin
+  Result := 'SELECT last_insert_rowid() AS Id';
 end;
 
 function TSQLiteQueryGenerator.AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
@@ -272,7 +313,10 @@ end;
 
 function TSQLiteQueryGenerator.Count(const aTableName : string; const aWhere : string) : string;
 begin
-  Result := Format('SELECT COUNT(*) AS cnt FROM [%s] WHERE %s',[aTableName,aWhere]);
+  if aWhere.IsEmpty then
+    Result := Format('SELECT COUNT(*) AS cnt FROM [%s]',[aTableName])
+  else
+    Result := Format('SELECT COUNT(*) AS cnt FROM [%s] WHERE %s',[aTableName,aWhere]);
 end;
 
 function TSQLiteQueryGenerator.DateTimeToDBField(aDateTime: TDateTime): string;

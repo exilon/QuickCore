@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Database
   Description : Core Entity DataBase
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 03/11/2019
-  Modified    : 06/06/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -116,6 +116,7 @@ type
     fIndexes : TEntityIndexes;
     fOnQueryError: TQueryErrorEvent;
     fOnConnectionFailure: TConnectionFailureEvent;
+    fReuseConnection : Boolean;
     function CheckIsConnectionError(aException : Exception) : Boolean;
   protected
     property OwnsConnection : Boolean read fOwnsConnection write fOwnsConnection;
@@ -135,6 +136,7 @@ type
     destructor Destroy; override;
     function QueryGenerator : IEntityQueryGenerator;
     property Connection : TDBConnectionSettings read fDBConnection write fDBConnection;
+    property ReuseConnection : Boolean read fReuseConnection write fReuseConnection;
     property Models : TEntityModels read fModels write fModels;
     property Indexes : TEntityIndexes read fIndexes write fIndexes;
     property OnConnectionFailure : TConnectionFailureEvent read fOnConnectionFailure write fOnConnectionFailure;
@@ -152,6 +154,10 @@ type
     function Clone : TEntityDatabase; virtual; abstract;
     procedure ExecuteSQLQuery(const aQueryText : string);
     procedure OpenSQLQuery(const aQueryText: string);
+    // Transaction support
+    procedure BeginTransaction; virtual;
+    procedure CommitTransaction; virtual;
+    procedure RollbackTransaction; virtual;
   end;
 
 implementation
@@ -164,6 +170,7 @@ begin
   fOwnsConnection := True;
   fModels := TEntityModels.Create;
   fIndexes := TEntityIndexes.Create;
+  fReuseConnection := False;
 end;
 
 destructor TEntityDatabase.Destroy;
@@ -232,6 +239,21 @@ begin
       raise;
     end;
   end;
+end;
+
+procedure TEntityDatabase.BeginTransaction;
+begin
+  ExecuteSQLQuery('BEGIN TRANSACTION');
+end;
+
+procedure TEntityDatabase.CommitTransaction;
+begin
+  ExecuteSQLQuery('COMMIT');
+end;
+
+procedure TEntityDatabase.RollbackTransaction;
+begin
+  ExecuteSQLQuery('ROLLBACK');
 end;
 
 procedure TEntityDatabase.CreateIndexes;

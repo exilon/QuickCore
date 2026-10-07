@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCore WebDashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { background: #1e293b; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.4rem; color: #38bdf8; }
+    header span { font-size: .85rem; color: #94a3b8; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: .75rem; padding: 1.25rem; text-align: center; }
+    .stat-card .val { font-size: 2rem; font-weight: 700; color: #38bdf8; }
+    .stat-card .lbl { font-size: .8rem; color: #94a3b8; margin-top: .25rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: .75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1rem; }
+    .add-row { display: flex; gap: .75rem; margin-bottom: 1rem; }
+    .add-row input { flex: 1; background: #0f172a; border: 1px solid #475569; border-radius: .5rem; padding: .6rem .9rem; color: #e2e8f0; font-size: .95rem; }
+    .add-row input:focus { outline: none; border-color: #38bdf8; }
+    button { cursor: pointer; border: none; border-radius: .5rem; padding: .55rem 1rem; font-size: .9rem; font-weight: 600; transition: opacity .15s; }
+    button:hover { opacity: .85; }
+    .btn-add { background: #0ea5e9; color: #fff; }
+    .btn-refresh { background: #334155; color: #e2e8f0; }
+    .task-list { list-style: none; }
+    .task-item { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border-radius: .5rem; margin-bottom: .4rem; background: #0f172a; }
+    .task-item.done { opacity: .5; }
+    .task-item .title { flex: 1; font-size: .95rem; }
+    .task-item.done .title { text-decoration: line-through; color: #64748b; }
+    .badge { font-size: .75rem; padding: .2rem .55rem; border-radius: 9999px; font-weight: 600; }
+    .badge.pending { background: #1d4ed8; color: #bfdbfe; }
+    .badge.done    { background: #166534; color: #bbf7d0; }
+    .btn-complete { background: #16a34a; color: #fff; font-size: .8rem; padding: .35rem .7rem; }
+    .btn-delete   { background: #dc2626; color: #fff; font-size: .8rem; padding: .35rem .7rem; }
+    #statusMsg { font-size: .85rem; color: #f59e0b; min-height: 1.2rem; margin-bottom: .5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>&#x26A1; QuickCore</h1>
+    <span>WebDashboard Sample &mdash; S-26</span>
+  </header>
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-card"><div class="val" id="sUptime">—</div><div class="lbl">Uptime (s)</div></div>
+      <div class="stat-card"><div class="val" id="sRequests">—</div><div class="lbl">Total Requests</div></div>
+      <div class="stat-card"><div class="val" id="sPending">—</div><div class="lbl">Tasks Pending</div></div>
+      <div class="stat-card"><div class="val" id="sDone">—</div><div class="lbl">Tasks Done</div></div>
+    </div>
+    <div class="card">
+      <h2>Task Manager</h2>
+      <div class="add-row">
+        <input id="newTitle" type="text" placeholder="New task title..." />
+        <button class="btn-add" onclick="addTask()">&#43; Add Task</button>
+        <button class="btn-refresh" onclick="refresh()">&#8635; Refresh</button>
+      </div>
+      <div id="statusMsg"></div>
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+  </div>
+  <script>
+    async function refresh() {
+      await Promise.all([loadStats(), loadTasks()]);
+    }
+
+    async function loadStats() {
+      const r = await fetch('/api/stats');
+      const d = await r.json();
+      document.getElementById('sUptime').textContent   = d.uptimeSeconds;
+      document.getElementById('sRequests').textContent = d.totalRequests;
+      document.getElementById('sPending').textContent  = d.tasksPending;
+      document.getElementById('sDone').textContent     = d.tasksDone;
+    }
+
+    async function loadTasks() {
+      const r = await fetch('/api/tasks');
+      const tasks = await r.json();
+      const ul = document.getElementById('taskList');
+      ul.innerHTML = '';
+      tasks.forEach(t => {
+        const li = document.createElement('li');
+        li.className = 'task-item' + (t.status === 'done' ? ' done' : '');
+        li.innerHTML =
+          `<span class="badge ${t.status}">${t.status}</span>` +
+          `<span class="title">${t.title}</span>` +
+          (t.status === 'pending'
+            ? `<button class="btn-complete" onclick="completeTask(${t.id})">&#10003; Done</button>`
+            : '') +
+          `<button class="btn-delete" onclick="deleteTask(${t.id})">&#x2715; Delete</button>`;
+        ul.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const inp = document.getElementById('newTitle');
+      const title = inp.value.trim();
+      if (!title) { setStatus('Please enter a task title.'); return; }
+      const r = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      if (r.ok) { inp.value = ''; setStatus('Task added.'); await refresh(); }
+      else setStatus('Error adding task.');
+    }
+
+    async function completeTask(id) {
+      await fetch('/api/tasks/' + id + '/complete', { method: 'PUT' });
+      await refresh();
+    }
+
+    async function deleteTask(id) {
+      await fetch('/api/tasks/' + id, { method: 'DELETE' });
+      await refresh();
+    }
+
+    function setStatus(msg) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('newTitle').addEventListener('keydown', e => {
+        if (e.key === 'Enter') addTask();
+      });
+      refresh();
+      setInterval(loadStats, 5000);
+    });
+  </script>
+</body>
+</html>

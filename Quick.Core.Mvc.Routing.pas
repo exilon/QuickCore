@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Routing
   Description : Core Http Routing
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 30/08/2019
   Modified    : 01/07/2020
@@ -73,6 +73,7 @@ type
     fIsDefaultRoute : Boolean;
     procedure SetURL(const Value: string);
     function GetParamName(const aRawParam : string) : string;
+    function NormalizedURL : string;
   public
     constructor Create;
     property Name : string read fName write fName;
@@ -127,19 +128,19 @@ begin
   //compare if method allowed
   if not (aRequest.Method in Self.HttpMethods) then Exit(False);
   {$IFDEF DEBUG_EXTRA}
-  TDebugger.Trace(Self,Format('Compare (Route: %s) = (URL: %s)',[aRequest.URL,fURL]));
+  TDebugger.Trace(Self,Format('Compare (Route: %s) = (URL: %s)',[aRequest.URL,NormalizedURL]));
   {$ENDIF}
   //if simple route without required or optional values
   if not fHasParamValues then
   begin
     //compare route
-    Result := CompareText(aRequest.URL,fURL) = 0;
+    Result := CompareText(aRequest.URL,NormalizedURL) = 0;
   end
   else //has required or optional values
   begin
     requestsegments := aRequest.URL.Split(['/']);
     nseg := 0;
-    for routesegment in fURL.Split(['/']) do
+    for routesegment in NormalizedURL.Split(['/']) do
     begin
       //check if param value needed
       if routesegment.Contains('{') then
@@ -176,32 +177,62 @@ var
   maxreqseg : Integer;
   routesegment : string;
   requestsegments : TArray<string>;
+  defaultPrefix : string;
+  paramPos : Integer;
 begin
   Result := TRouteData.Create;
-  if fIsDefaultRoute then requestsegments := (fURL.Substring(0,fURL.IndexOf('{')) + aRequest.URL).Split(['/'])
-    else requestsegments := aRequest.URL.Split(['/']);
+  if fIsDefaultRoute then
+  begin
+    if aRequest.URL.IsEmpty then
+      requestsegments := NormalizedURL.Split(['/'])
+    else
+    begin
+      paramPos := NormalizedURL.IndexOf('{');
+      if paramPos >= 0 then
+      begin
+        defaultPrefix := NormalizedURL.Substring(0, paramPos);
+        requestsegments := (defaultPrefix + aRequest.URL).Split(['/']);
+      end
+      else
+        requestsegments := aRequest.URL.Split(['/']);
+    end
+  end
+  else
+    requestsegments := aRequest.URL.Split(['/']);
   maxreqseg := High(requestsegments);
   nseg := 0;
 
-  for routesegment in fURL.Split(['/']) do
+  for routesegment in NormalizedURL.Split(['/']) do
   begin
     //check if param value needed
     if routesegment.Contains('{') then
     begin
       //if less request segments and not optional param, not matches route
       if (nseg > maxreqseg) and (not routesegment.Contains('?}')) then raise Exception.Create('One or more URL parameters missing!');
-      Result.ParamValues.Add(GetParamName(routesegment),requestsegments[nseg]);
+      if nseg <= maxreqseg then
+        Result.ParamValues.Add(GetParamName(routesegment),requestsegments[nseg]);
     end  //if parameterless segment not equal to route, not matches route
-    else if (maxreqseg > nseg) and (CompareText(requestsegments[nseg],routesegment) <> 0) then raise Exception.Create('One or more URL parameters missing!');
+    else
+    begin
+      if nseg > maxreqseg then
+        raise Exception.Create('One or more URL parameters missing!');
+      if CompareText(requestsegments[nseg],routesegment) <> 0 then
+        raise Exception.Create('One or more URL parameters missing!');
+    end;
     Inc(nseg);
   end;
 end;
 
 procedure THttpRoute.SetURL(const Value: string);
 begin
-  if Value.StartsWith('/') then fURL := Value.Substring(1)
-    else fURL := Value;
+  fURL := Value;
   fHasParamValues := Value.Contains('{');
+end;
+
+function THttpRoute.NormalizedURL: string;
+begin
+  if fURL.StartsWith('/') then Result := fURL.Substring(1)
+  else Result := fURL;
 end;
 
 end.

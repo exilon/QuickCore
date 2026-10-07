@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Context
   Description : Core Http Mvc Context
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 11/10/2019
   Modified    : 11/10/2019
@@ -45,7 +45,8 @@ uses
   Quick.HttpServer.Response,
   Quick.Core.Mvc.Routing,
   Quick.Core.DependencyInjection,
-  Quick.Core.Security.Claims;
+  Quick.Core.Security.Claims,
+  Quick.Core.Mvc.Session;
 
 type
 
@@ -68,6 +69,7 @@ type
     fRoute : THttpRoute;
     fRequestServices : TServiceProvider;
     fUser : TClaimsPrincipal;
+    fSession : ISession;
     function GetRoute: THttpRoute;
     function GetWebRoot: string;
     procedure SetWebRoot(const Value: string);
@@ -79,6 +81,7 @@ type
     property WebRoot : string read GetWebRoot write SetWebRoot;
     property Route : THttpRoute read GetRoute write fRoute;
     property User : TClaimsPrincipal read fUser write SetUser;
+    property Session : ISession read fSession write fSession;
     property RequestServices : TServiceProvider read fRequestServices write fRequestServices;
     function Request : IHttpRequest; inline;
     function Response : IHttpResponse; inline;

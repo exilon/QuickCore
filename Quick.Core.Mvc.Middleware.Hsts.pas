@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Middleware.Hsts
   Description : Core Mvc Hsts Middleware
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 18/10/2019
   Modified    : 18/10/2019
@@ -74,7 +74,7 @@ end;
 procedure THstsMiddleware.Invoke(aContext: THttpContextBase);
 begin
   inherited;
-  aContext.Response.Headers.AddOrUpdate('Strict-Transport-Security','max-age=max-age=' + fMaxAge.ToString);
+  aContext.Response.Headers.AddOrUpdate('Strict-Transport-Security','max-age=' + fMaxAge.ToString);
   Next(aContext);
 end;
 

@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2019 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.Database
   Description : Core Entity DataBase Factory
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 03/11/2019
-  Modified    : 26/05/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -76,6 +76,7 @@ end;
 
 class function TEntityDatabaseFactory.GetQueryInstance<T>(aDatabase: TEntityDatabase; aModel : TEntityModel): TEntityQuery<T>;
 begin
+  Result := nil;
   if aDatabase is TFireDACEntityDataBase then Result := TFireDACEntityQuery<T>.Create(aDatabase,aModel{aDatabase.Models.Get(TDAORecordClass(T))},aDatabase.QueryGenerator)
   {$IFDEF MSWINDOWS}
   else if aDatabase is TADOEntityDataBase then Result := TADOEntityQuery<T>.Create(aDatabase,aModel{aDatabase.Models.Get(TDAORecordClass(T))},aDatabase.QueryGenerator)
@@ -85,6 +86,7 @@ end;
 
 class function TEntityDatabaseFactory.GetQueryInstance<T>(aDatabase: TEntityDatabase): TEntityQuery<T>;
 begin
+  Result := nil;
   if aDatabase is TFireDACEntityDataBase then Result := TFireDACEntityQuery<T>.Create(aDatabase,aDatabase.Models.Get(TEntityClass(T)),aDatabase.QueryGenerator)
   {$IFDEF MSWINDOWS}
   else if aDatabase is TADOEntityDataBase then Result := TADOEntityQuery<T>.Create(aDatabase,aDatabase.Models.Get(TEntityClass(T)),aDatabase.QueryGenerator)

@@ -1,0 +1,186 @@
+Redis:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: PRO
+  IncludedInfo: "[iiAppName,iiHost,iiEnvironment,iiPlatform]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDebug,etTrace,etDone]"
+  CustomMsgOutput: false
+  Enabled: false
+  Host: klingon
+  Port: 6379
+  DataBase: 1
+  LogKey: WebApi
+  MaxSize: 0
+  Password: pass123
+  OutputAsJson: true
+  JsonOutputOptions:
+    UseUTCTime: true
+    TimeStampName: timestamp
+
+Slack:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: false
+  ChannelName: ""
+  UserName: ""
+  WebHookURL: ""
+
+Rest:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: false
+  URL: ""
+  UserAgent: Quick.Logger Agent
+  JsonOutputOptions:
+    UseUTCTime: false
+    TimeStampName: timestamp
+
+EventLog:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: false
+  Source: WebApiService
+
+ADODB:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: false
+  ConnectionString: ""
+  DBConfig:
+    Provider: dbMSSQL
+    Server: localhost
+    Database: ""
+    Table: Logger
+    UserName: ""
+    Password: ""
+
+Telegram:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: false
+  ChannelName: ""
+  ChannelType: tcPublic
+  BotToken: ""
+
+Console:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDebug,etTrace,etDone]"
+  CustomMsgOutput: false
+  Enabled: true
+  ShowEventColors: true
+  ShowTimeStamp: true
+  ShowEventType: false
+  UnderlineHeaderEventType: false
+
+File:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost,iiUserName,iiOSVersion]"
+  SendLimits:
+    TimeRange: slNoLimit
+    LimitEventTypes: "[]"
+    MaxSent: 0
+  LogLevel: "[etHeader,etInfo,etSuccess,etWarning,etError,etCritical,etException,etDone,etCustom1,etCustom2]"
+  CustomMsgOutput: false
+  Enabled: true
+  FileName: WebApiServer.log
+  AutoFileNameByProcess: false
+  MaxRotateFiles: 5
+  MaxFileSizeInMB: 200
+  DailyRotate: false
+  RotatedFilesPath: ""
+  CompressRotatedFiles: false
+  ShowEventType: true
+  ShowHeaderInfo: true
+  UnderlineHeaderEventType: false
+  AutoFlush: false
+
+Email:
+  MaxFailsToRestart: 2
+  MaxFailsToStop: 0
+  AppName: WebApiService
+  Environment: ""
+  IncludedInfo: "[iiAppName,iiHost,iiUserName,iiOSVersion]"
+  SendLimits:
+    TimeRange: slByDay
+    LimitEventTypes: "[]"
+    MaxSent: 10
+  LogLevel: "[etCritical]"
+  CustomMsgOutput: false
+  Enabled: false
+  SMTP:
+    Host: smtp.mydomain.com
+    Port: 25
+    UserName: "myname@mydomain.com"
+    Password: ""
+    ServerAuth: false
+    UseSSL: true
+  Mail:
+    SenderName: MyName
+    From: "myname@mydomain.com"
+    Recipient: "test@mydomain.com"
+    Subject: Email from apiserver
+    Body: ""
+    CC: ""
+    BCC: ""
+

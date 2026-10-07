@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2021 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Extensions.Service
   Description : Core Service Mvc runs as console or service/daemon
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.8
   Created     : 21/03/2021
   Modified    : 12/07/2021

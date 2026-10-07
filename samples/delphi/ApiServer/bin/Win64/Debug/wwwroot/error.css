@@ -1,0 +1,14 @@
+h4
+{
+	color: rgba(74,134,232,1);
+	font: normal 27px/1 "Trebuchet MS", Helvetica, sans-serif;
+}
+
+div.box1
+{
+     color: #777777;
+     border: solid 1px rgba(140,140,140,0.20);
+     background-color: rgba(180,180,180,0.43);
+     padding: 14px 20px;
+	 font: normal 16px/1 "Trebuchet MS", Helvetica, sans-serif;
+}

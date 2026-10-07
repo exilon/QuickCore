@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Mvc.Extensions.ResponseCaching
   Description : Core MVC Extensions Response Caching
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 19/10/2019
   Modified    : 25/01/2020

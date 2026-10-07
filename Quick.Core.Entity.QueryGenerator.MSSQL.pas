@@ -1,13 +1,13 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.Entity.QueryGenerator.MSSQL
   Description : Core Entity MSSQL Query Generator
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.1
   Created     : 22/06/2018
-  Modified    : 11/09/2020
+  Modified    : 08/05/2026
 
   This file is part of QuickCore: https://github.com/exilon/QuickCore
 
@@ -50,10 +50,13 @@ type
     function AddColumn(aModel : TEntityModel; aField : TEntityField) : string;
     function SetPrimaryKey(aModel : TEntityModel) : string;
     function CreateIndex(aModel : TEntityModel; aIndex : TEntityIndex) : string;
-    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean) : string;
+    function Select(const aTableName, aFieldNames : string; aLimit : Integer; const aWhere : string; aOrderFields : string; aOrderAsc : Boolean; aNoLock : Boolean) : string;
     function Sum(const aTableName, aFieldName, aWhere: string): string;
     function Count(const aTableName : string; const aWhere : string) : string;
     function Add(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
+    function AddReturningId(const aTableName: string; const aFieldNames, aFieldValues, aPrimaryKeyName : string) : string; override;
+    function SupportsInsertReturning : Boolean; override;
+    function LastInsertedIdQuery(const aPrimaryKeyName : string) : string; override;
     function AddOrUpdate(const aTableName: string; const aFieldNames, aFieldValues : string) : string;
     function Update(const aTableName, aFieldPairs, aWhere : string) : string;
     function Delete(const aTableName : string; const aWhere : string) : string;
@@ -97,6 +100,22 @@ begin
   finally
     querytext.Free;
   end;
+end;
+
+function TMSSQLQueryGenerator.AddReturningId(const aTableName, aFieldNames, aFieldValues,
+  aPrimaryKeyName: string): string;
+begin
+  Result := Add(aTableName, aFieldNames, aFieldValues);
+end;
+
+function TMSSQLQueryGenerator.SupportsInsertReturning: Boolean;
+begin
+  Result := False;
+end;
+
+function TMSSQLQueryGenerator.LastInsertedIdQuery(const aPrimaryKeyName: string): string;
+begin
+  Result := 'SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS Id';
 end;
 
 function TMSSQLQueryGenerator.AddColumn(aModel: TEntityModel; aField: TEntityField) : string;
@@ -237,7 +256,7 @@ var
 begin
   querytext := TStringList.Create;
   try
-    querytext.Add(Format('SELECT SUM (%s) FROM [%s] WHERE %s',[aTableName,aFieldName,aWhere]));
+    querytext.Add(Format('SELECT COALESCE(SUM([%s]),0) AS cnt FROM [%s] WHERE %s',[aFieldName,aTableName,aWhere]));
     Result := querytext.Text;
   finally
     querytext.Free;
@@ -245,20 +264,24 @@ begin
 end;
 
 function TMSSQLQueryGenerator.Select(const aTableName, aFieldNames: string; aLimit: Integer;
-  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean) : string;
+  const aWhere: string; aOrderFields: string; aOrderAsc: Boolean; aNolock : Boolean) : string;
 var
   orderdir : string;
   querytext : TStringList;
   toplimit : string;
+  nolock : string;
 begin
   querytext := TStringList.Create;
   try
     //define limited query clause
     if aLimit > 0 then toplimit := Format('TOP %d ',[aLimit])
       else toplimit := '';
+    if aNoLock then nolock := ' WITH(NOLOCK)'
+      else nolock := '';
+
     //define select-where clauses
-    if aFieldNames.IsEmpty then querytext.Add(Format('SELECT %s* FROM [%s] WHERE %s',[toplimit,aTableName,aWhere]))
-      else querytext.Add(Format('SELECT %s%s FROM [%s] WHERE %s',[toplimit,aFieldNames,aTableName,aWhere]));
+    if aFieldNames.IsEmpty then querytext.Add(Format('SELECT %s* FROM [%s]%s WHERE %s',[toplimit,aTableName,nolock,aWhere]))
+      else querytext.Add(Format('SELECT %s%s FROM [%s]%s WHERE %s',[toplimit,aFieldNames,aTableName,nolock,aWhere]));
     //define orderby clause
     if not aOrderFields.IsEmpty then
     begin

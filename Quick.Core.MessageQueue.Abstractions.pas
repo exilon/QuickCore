@@ -1,10 +1,10 @@
 { ***************************************************************************
 
-  Copyright (c) 2016-2020 Kike Pérez
+  Copyright (c) 2016-2026 Kike Perez
 
   Unit        : Quick.Core.MessageQueue.Abstractions
   Description : Core MessageQueue Abstractions
-  Author      : Kike Pérez
+  Author      : Kike Perez
   Version     : 1.0
   Created     : 07/07/2020
   Modified    : 10/07/2020
@@ -42,6 +42,7 @@ type
   IMessageQueue<T> = interface
   ['{0E859677-5431-4D2E-9E3F-F288AECDA75E}']
     function Push(const aMessage : T; aMaxPriority : Boolean) : TMSQWaitResult; overload;
+    function Push(const aMessage : T) : TMSQWaitResult; overload;
     function Pop(out oMessage : T) : TMSQWaitResult;
     function Remove(const aMessage : T) : Boolean; overload;
     function Remove(const aCurrentMessage, aProcessedMessage : T) : Boolean; overload;
